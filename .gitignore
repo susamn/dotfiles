@@ -1,0 +1,14 @@
+auto-save-list/
+backups/
+elpa/
+/projectile-bookmarks.eld
+/places
+/savehist
+projectile.cache
+session.*
+/.mc-lists.el
+irony/
+/recentf
+/init.el~
+transient/
+/.lsp-session-v1

@@ -222,6 +222,9 @@
 
 (global-set-key (kbd "C-x 4 0") 'switch-window-then-kill-buffer)
 
+(require 'org-bullets)
+(add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
+(setq org-hide-leading-stars t)
 ;; Purpose: Daemon mode
 (require 'server)
 (if (not (server-running-p)) (server-start))

@@ -10,7 +10,7 @@
 
 (require 'package)
 (setq package-enable-at-startup nil)
-(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
+(add-to-list 'package-archives '("melpax" . "https://melpa.org/packages/"))
 (add-to-list 'package-archives '("gnu" . "https://elpa.gnu.org/packages/"))
 (package-initialize)
 
@@ -58,7 +58,7 @@
     ("3eb93cd9a0da0f3e86b5d932ac0e3b5f0f50de7a0b805d4eb1f67782e9eb67a4" "84d2f9eeb3f82d619ca4bfffe5f157282f4779732f48a5ac1484d94d5ff5b279" default)))
  '(package-selected-packages
    (quote
-    (orgit golden-ratio ccls company-lsp lsp-ui lsp-mode helm-projectile company helm projectile flycheck avy which-key crux expand-region smartparens diminish smart-mode-line doom-themes use-package))))
+    (magit orgit golden-ratio ccls company-lsp lsp-ui lsp-mode helm-projectile company helm projectile flycheck avy which-key crux expand-region smartparens diminish smart-mode-line doom-themes use-package))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.

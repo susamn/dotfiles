@@ -10,7 +10,7 @@
 
 (require 'package)
 (setq package-enable-at-startup nil)
-(add-to-list 'package-archives '("melpax" . "https://melpa.org/packages/"))
+1(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
 (add-to-list 'package-archives '("gnu" . "https://elpa.gnu.org/packages/"))
 (package-initialize)
 
@@ -58,7 +58,7 @@
     ("3eb93cd9a0da0f3e86b5d932ac0e3b5f0f50de7a0b805d4eb1f67782e9eb67a4" "84d2f9eeb3f82d619ca4bfffe5f157282f4779732f48a5ac1484d94d5ff5b279" default)))
  '(package-selected-packages
    (quote
-    (magit orgit golden-ratio ccls company-lsp lsp-ui lsp-mode helm-projectile company helm projectile flycheck avy which-key crux expand-region smartparens diminish smart-mode-line doom-themes use-package))))
+    (yasnippet-classic-snippets magit orgit golden-ratio ccls company-lsp lsp-ui lsp-mode helm-projectile company helm projectile flycheck avy which-key crux expand-region smartparens diminish smart-mode-line doom-themes use-package))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -133,7 +133,7 @@
   :config
   (setq avy-background t))
 
-;; Purpose : I use company mode to provide completion and flycheck to do syntax checking and enable them globally.
+;; Purpose : I use company mode to provide cmpletion and flycheck to do syntax checking and enable them globally.
 (use-package company
   :ensure t
   :diminish company-mode
@@ -173,6 +173,7 @@
   ("C-x C-f" . helm-find-files)
   ("M-y" . helm-show-kill-ring)
   ("C-x b" . helm-mini)
+  ("C-s" . helm-occur-from-isearch)
   :config
   (require 'helm-config)
   (helm-mode 1)
@@ -195,8 +196,8 @@
 ;; Some other packages
 (use-package yasnippet
   :ensure t
-  :config
-  (yas-global-mode 1))
+  :config (use-package yasnippet-snippets :ensure t) (yas-reload-all))
+(yas-global-mode 1)
 
 (use-package lsp-mode :commands lsp :ensure t)
 (use-package lsp-ui :commands lsp-ui-mode :ensure t)

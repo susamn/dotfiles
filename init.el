@@ -55,7 +55,7 @@
  ;; If there is more than one, they won't work right.
  '(custom-safe-themes
    (quote
-    ("84d2f9eeb3f82d619ca4bfffe5f157282f4779732f48a5ac1484d94d5ff5b279" default)))
+    ("3eb93cd9a0da0f3e86b5d932ac0e3b5f0f50de7a0b805d4eb1f67782e9eb67a4" "84d2f9eeb3f82d619ca4bfffe5f157282f4779732f48a5ac1484d94d5ff5b279" default)))
  '(package-selected-packages
    (quote
     (orgit golden-ratio ccls company-lsp lsp-ui lsp-mode helm-projectile company helm projectile flycheck avy which-key crux expand-region smartparens diminish smart-mode-line doom-themes use-package))))
@@ -225,6 +225,11 @@
 (require 'org-bullets)
 (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
 (setq org-hide-leading-stars t)
+
+(require 'powerline)
+(require 'airline-themes)
+(load-theme 'airline-dark)
+
 ;; Purpose: Daemon mode
 (require 'server)
 (if (not (server-running-p)) (server-start))

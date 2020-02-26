@@ -12,3 +12,4 @@ irony/
 /init.el~
 transient/
 /.lsp-session-v1
+configuration.el

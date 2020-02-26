@@ -1,0 +1,309 @@
+* Startup
+** File limits
+#+BEGIN_SRC emacs-lisp
+(setq gc-cons-thresold 50000000)
+(setq large-file-warning-thresold 100000000)
+#+END_SRC
+** Encoding
+#+BEGIN_SRC emacs-lisp
+(prefer-coding-system 'utf-8)
+(set-default-coding-systems 'utf-8)
+(set-terminal-coding-system 'utf-8)
+(set-keyboard-coding-system 'utf-8)
+#+END_SRC
+** Configure use-package
+#+BEGIN_SRC emacs-lisp
+(require 'use-package-ensure)
+(setq use-package-always-ensure t)
+#+END_SRC
+Always compile packages, and use the newest version available.
+#+BEGIN_SRC emacs-lisp
+(use-package auto-compile
+  :config (auto-compile-on-load-mode))
+
+(setq load-prefer-newer t)
+
+#+END_SRC
+* Personal Information
+#+BEGIN_SRC emacs-lisp
+(setq user-full-name "Supratim Samanta"
+      user-mail-address "supratim.iee23.ju2005@gmail.com")
+#+END_SRC
+* Visual configurations
+** UI modifications
+*** Title and menu bar
+#+BEGIN_SRC emacs-lisp
+(menu-bar-mode -1)
+(toggle-scroll-bar -1)
+(tool-bar-mode -1)
+(blink-cursor-mode -1)
+
+(global-hl-line-mode +1)
+(line-number-mode +1)
+(global-display-line-numbers-mode +1)
+(column-number-mode t)
+(size-indication-mode t)
+
+(setq inhibit-startup-screen t)
+
+(setq frame-title-format
+      '((:eval (if (buffer-file-name)
+       (abbreviate-file-name (buffer-file-name))
+       "%b"))))
+
+(setq scroll-margin 0
+      scroll-conservatively 100000
+      scroll-preserve-screen-position 1)
+(set-frame-font "Hack 12" nil t)
+#+END_SRC
+*** Theme
+**** Main theme
+#+BEGIN_SRC emacs-lisp
+(use-package doom-themes
+  :ensure t
+  :config
+  (load-theme 'doom-one t)
+  (doom-themes-visual-bell-config))
+#+END_SRC
+**** Mode line
+#+BEGIN_SRC emacs-lisp
+(use-package moody
+  :config
+  (setq x-underline-at-descent-line t)
+  (moody-replace-mode-line-buffer-identification)
+  (moody-replace-vc-mode))
+#+END_SRC
+*** Miscleneous preferences
+**** Org bullets
+#+BEGIN_SRC emacs-lisp
+(use-package org-bullets :ensure t)
+(add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
+(setq org-hide-leading-stars t)
+#+END_SRC
+**** Fancy Lambdas
+#+BEGIN_SRC emacs-lisp
+(global-prettify-symbols-mode t)
+#+END_SRC
+**** Highlight uncommited changes
+#+BEGIN_SRC emacs-lisp
+(use-package diff-hl
+  :config
+  (add-hook 'prog-mode-hook 'turn-on-diff-hl-mode)
+  (add-hook 'vc-dir-mode-hook 'turn-on-diff-hl-mode))
+#+END_SRC
+**** Hide all minor modes
+#+BEGIN_SRC emacs-lisp
+(use-package minions
+  :config
+  (setq minions-mode-line-lighter ""
+        minions-mode-line-delimiters '("" . ""))
+  (minions-mode 1))
+
+#+END_SRC
+**** Highlight the current line
+#+BEGIN_SRC emacsl-lisp
+(global-hl-line-mode)
+#+END_SRC
+
+* Project management
+** flycheck
+#+BEGIN_SRC emacs-lisp
+(use-package let-alist)
+(use-package flycheck)
+
+#+END_SRC
+** company
+   Use company everywhere.
+#+BEGIN_SRC emacs-lisp
+(use-package company)
+(add-hook 'after-init-hook 'global-company-mode)
+
+#+END_SRC
+** magit
+Use magit for versin control. Tweak a few stuff like bring up statu with C-x g, use evil key bindings with magit and a few more changes.
+#+BEGIN_SRC emacs-lisp
+(use-package magit
+  :bind
+  ("C-x g" . magit-status)
+
+  :config
+  (use-package evil-magit)
+  (use-package with-editor)
+  (setq magit-push-always-verify nil)
+  (setq git-commit-summary-max-length 50)
+
+  (with-eval-after-load 'magit-remote
+    (magit-define-popup-action 'magit-push-popup ?P
+      'magit-push-implicitly--desc
+      'magit-push-implicitly ?p t))
+
+  (add-hook 'with-editor-mode-hook 'evil-insert-state))
+
+#+END_SRC
+
+Quickly page through the history of a file with git-timemachine
+#+BEGIN_SRC emacs-lisp
+(use-package git-timemachine)
+#+END_SRC
+
+** projectile and helm
+   Projectile is a project manager that lets you easily switch between files in a project and seamlessly between projects as well. I use it with helm which I set up below.
+#+BEGIN_SRC emacs-lisp
+(use-package projectile
+  :ensure t
+  :diminish projectile-mode
+  :bind
+  (("C-c p f" . helm-projectile-find-file)
+   ("C-c p p" . helm-projectile-switch-project)
+   ("C-c p s" . projectile-save-project-buffers))
+  :config
+  (projectile-mode +1)
+)
+#+END_SRC
+
+It is a dwim fuzzy completion framework for Emacs and makes navigating Emacs a much nicer experience overall. I like to setup Helm to be a comfortable 20 pts in height and bind the most frequent Emacs commands like “M-x” with the helm equivalents.
+#+BEGIN_SRC emacs-lisp
+(use-package helm
+  :ensure t
+  :defer 2
+  :bind
+  ("M-x" . helm-M-x)
+  ("C-x C-f" . helm-find-files)
+  ("M-y" . helm-show-kill-ring)
+  ("C-x b" . helm-mini)
+  ("C-s" . helm-occur-from-isearch)
+  :config
+  (require 'helm-config)
+  (helm-mode 1)
+  (setq helm-split-window-inside-p t
+    helm-move-to-line-cycle-in-source t)
+  (setq helm-autoresize-max-height 0)
+  (setq helm-autoresize-min-height 20)
+  (helm-autoresize-mode 1)
+  (define-key helm-map (kbd "<tab>") 'helm-execute-persistent-action) ; rebind tab to run persistent action
+  (define-key helm-map (kbd "C-i") 'helm-execute-persistent-action) ; make TAB work in terminal
+  (define-key helm-map (kbd "C-z")  'helm-select-action) ; list actions using C-z
+  )
+
+#+END_SRC
+
+Combile projectile with helm to show project files through a helm fuzzy find interface
+#+BEGIN_SRC emacs-lisp
+(use-package helm-projectile
+  :ensure t
+  :config
+  (helm-projectile-on))
+
+#+END_SRC
+
+* Navigation configurations
+* Editing
+** Ease of use
+*** smartparens
+#+BEGIN_SRC emacs-lisp
+(use-package smartparens
+  :ensure t
+  :diminish smartparens-mode
+  :config
+  (progn
+    (require 'smartparens-config)
+    (smartparens-global-mode 1)
+    (show-paren-mode t)))
+
+#+END_SRC
+
+*** expand-region
+    Selecting a region becomes smarter with expand region which keeps selecting an increasing region based on dwim syntax.
+#+BEGIN_SRC emacs-lisp
+(use-package expand-region
+  :ensure t
+  :bind ("M-m" . er/expand-region))
+#+END_SRC
+
+*** crux
+    Some useful defaults are provided by the crux package of Prelude fame. “C-k” now kills a line if nothing is selected.
+“C-a” now toggles between first letter on the line, or beginning of the line.
+#+BEGIN_SRC emacs-lisp
+(use-package crux
+  :ensure t
+  :bind
+  ("C-k" . crux-smart-kill-line)
+  ("C-c n" . crux-cleanup-buffer-or-region)
+  ("C-c f" . crux-recentf-find-file)
+  ("C-a" . crux-move-beginning-of-line))
+#+END_SRC
+
+#+BEGIN_COMMENT
+*** evil
+#+BEGIN_SRC emacs-lisp
+(use-package evil
+  :init
+  (setq evil-want-keybinding nil)
+  :config
+  (evil-mode 1))
+#+END_SRC
+
+Install evil-collection, which provides evil-friendly bindings for many modes.
+#+BEGIN_SRC emacs-lisp
+(use-package evil-collection
+  :after evil)
+#+END_SRC
+
+Enable surround everywhere.
+
+#+BEGIN_SRC emacs-lisp
+(use-package evil-surround
+  :config
+  (global-evil-surround-mode 1))
+#+END_SRC
+
+Use evil with Org agendas.
+
+#+BEGIN_SRC emacs-lisp
+(use-package evil-org
+  :after org
+  :config
+  (add-hook 'org-mode-hook 'evil-org-mode)
+  (add-hook 'evil-org-mode-hook
+            (lambda () (evil-org-set-key-theme)))
+  (require 'evil-org-agenda)
+  (evil-org-agenda-set-keys))
+
+#+END_SRC
+
+#+END_COMMENT
+
+*** undo-tree
+    Tree based undo management
+#+BEGIN_SRC emacs-lisp
+(use-package undo-tree)
+
+#+END_SRC
+*** yasnippet
+#+BEGIN_SRC emacs-lisp
+(use-package yasnippet
+  :ensure t
+  :config (use-package yasnippet-snippets :ensure t) (yas-reload-all))
+(yas-global-mode 1)
+
+#+END_SRC
+
+** Tabs
+#+BEGIN_SRC emacs-lisp
+(setq-default tab-width 4
+              indent-tabs-mode nil)
+#+END_SRC
+** Global bind keys
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "C-x k") 'kill-this-buffer)
+#+END_SRC
+** Miscleneous
+#+BEGIN_SRC emacs-lisp
+(fset 'yes-or-no-p 'y-or-n-p)
+
+(global-auto-revert-mode t)
+
+(add-hook 'before-save-hook 'whitespace-cleanup)
+
+#+END_SRC
+* Miscleneous

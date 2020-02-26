@@ -141,7 +141,6 @@ Quickly insert a block of elisp:
 #+BEGIN_SRC emacs-lisp
 (use-package company)
 (add-hook 'after-init-hook 'global-company-mode)
-
 #+END_SRC
 ** magit
    Use magit for versin control. Tweak a few stuff like bring up statu with C-x g, use evil key bindings with magit and a few more changes.
@@ -316,21 +315,8 @@ Use evil with Org agendas.
 (setq-default tab-width 4
               indent-tabs-mode nil)
 #+END_SRC
-** Global bind keys
-#+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "C-x k") 'kill-this-buffer)
-#+END_SRC
-** Miscleneous
-#+BEGIN_SRC emacs-lisp
-(fset 'yes-or-no-p 'y-or-n-p)
-
-(global-auto-revert-mode t)
-(add-hook 'before-save-hook 'whitespace-cleanup)
-
-#+END_SRC
 * Miscleneous
 * Programming environments
-**
 ** CSS, SASS and LESS
    Indent by 4 spaces
 #+BEGIN_SRC emacs-lisp
@@ -366,4 +352,73 @@ Indent by 2 spaces
 ** YAML
 #+BEGIN_SRC emacs-lisp
 (use-package yaml-mode)
+#+END_SRC
+
+** Terminal
+   Install =multi-term= and bind it to =C-c t=
+#+BEGIN_SRC emacs-lisp
+(use-package multi-term)
+(global-set-key (kbd "C-c t") 'multi-term)
+#+END_SRC
+
+Use a login =bash= shell:
+#+BEGIN_SRC emacs-lisp
+(setq multi-term-program-switches "--login")
+#+END_SRC
+
+Rather not use Evil in the terminal. It’s not especially useful (I don’t use vi bindings in xterm) and
+it shadows useful keybindings (C-d for EOF, for example).
+
+#+BEGIN_SRC emacs-lisp
+(evil-set-initial-state 'term-mode 'emacs)
+#+END_SRC
+
+A bunch of hooks in the =term-mode=
+1. URL's are clickable
+2. Yanking in =term-mode= doesn’t quite work. The text from the paste appears in the buffer but isn’t sent
+ to the shell process. This correctly binds =C-y= and middle-click to yank the way we’d expect.
+3. I bind =M-o= to quickly change windows. I’d like that in terminals, too.
+4. Don’t want to perform yasnippet expansion when tab-completing.
+#+BEGIN_SRC emacs-lisp
+(defun hrs/term-paste (&optional string)
+  (interactive)
+  (process-send-string
+   (get-buffer-process (current-buffer))
+   (if string string (current-kill 0))))
+
+(add-hook 'term-mode-hook
+          (lambda ()
+            (goto-address-mode)
+            (define-key term-raw-map (kbd "C-y") 'hrs/term-paste)
+            (define-key term-raw-map (kbd "<mouse-2>") 'hrs/term-paste)
+            (define-key term-raw-map (kbd "M-o") 'other-window)
+            (setq yas-dont-activate t)))
+
+#+END_SRC
+* Global
+** Key bindings
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "C-x k") 'kill-this-buffer)
+(global-set-key (kbd "C-w") 'backward-kill-word)
+(global-set-key (kbd "M-o") 'other-window)
+#+END_SRC
+
+Remap when working in terminal Emacs.
+#+BEGIN_SRC emacs-lisp
+(define-key input-decode-map "\e[1;2A" [S-up])
+#+END_SRC
+
+
+Use M-/ for =company= completion.
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "M-/") 'company-complete-common)
+#+END_SRC
+
+** Miscleneous
+#+BEGIN_SRC emacs-lisp
+(fset 'yes-or-no-p 'y-or-n-p)
+
+(global-auto-revert-mode t)
+(add-hook 'before-save-hook 'whitespace-cleanup)
+
 #+END_SRC

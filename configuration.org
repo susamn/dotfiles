@@ -24,6 +24,33 @@ Always compile packages, and use the newest version available.
 (setq load-prefer-newer t)
 
 #+END_SRC
+* Global
+** Key bindings
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "C-x k") 'kill-this-buffer)
+(global-set-key (kbd "C-w") 'backward-kill-word)
+(global-set-key (kbd "M-o") 'other-window)
+#+END_SRC
+
+Remap when working in terminal Emacs.
+#+BEGIN_SRC emacs-lisp
+(define-key input-decode-map "\e[1;2A" [S-up])
+#+END_SRC
+
+
+Use M-/ for =company= completion.
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "M-/") 'company-complete-common)
+#+END_SRC
+
+** Miscleneous
+#+BEGIN_SRC emacs-lisp
+(fset 'yes-or-no-p 'y-or-n-p)
+
+(global-auto-revert-mode t)
+(add-hook 'before-save-hook 'whitespace-cleanup)
+
+#+END_SRC
 * Personal Information
 #+BEGIN_SRC emacs-lisp
 (setq user-full-name "Supratim Samanta"
@@ -59,11 +86,12 @@ Always compile packages, and use the newest version available.
 *** Theme
 **** Main theme
 #+BEGIN_SRC emacs-lisp
-(use-package doom-themes
-  :ensure t
-  :config
-  (load-theme 'doom-one t)
-  (doom-themes-visual-bell-config))
+  (use-package doom-themes
+    :ensure t
+    :config
+    (load-theme 'doom-one t)
+    (doom-themes-visual-bell-config))
+
 #+END_SRC
 **** Mode line
 #+BEGIN_SRC emacs-lisp
@@ -128,6 +156,62 @@ Quickly insert a block of elisp:
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'org-structure-template-alist
              '("el" . "src emacs-lisp"))
+#+END_SRC
+* Editing
+** Ease of use
+*** smartparens
+#+BEGIN_SRC emacs-lisp
+(use-package smartparens
+  :ensure t
+  :diminish smartparens-mode
+  :config
+  (progn
+    (require 'smartparens-config)
+    (smartparens-global-mode 1)
+    (show-paren-mode t)))
+
+#+END_SRC
+
+*** expand-region
+    Selecting a region becomes smarter with expand region which keeps selecting an increasing region based on dwim syntax.
+#+BEGIN_SRC emacs-lisp
+(use-package expand-region
+  :ensure t
+  :bind ("M-m" . er/expand-region))
+#+END_SRC
+
+*** crux
+    Some useful defaults are provided by the crux package of Prelude fame. “C-k” now kills a line if nothing is selected.
+“C-a” now toggles between first letter on the line, or beginning of the line.
+#+BEGIN_SRC emacs-lisp
+(use-package crux
+  :ensure t
+  :bind
+  ("C-k" . crux-smart-kill-line)
+  ("C-c n" . crux-cleanup-buffer-or-region)
+  ("C-c f" . crux-recentf-find-file)
+  ("C-a" . crux-move-beginning-of-line))
+#+END_SRC
+
+*** undo-tree
+    Tree based undo management
+#+BEGIN_SRC emacs-lisp
+(use-package undo-tree)
+
+#+END_SRC
+*** yasnippet
+#+BEGIN_SRC emacs-lisp
+(use-package yasnippet
+  :ensure t
+  :config (use-package yasnippet-snippets :ensure t) (yas-reload-all))
+(yas-global-mode 1)
+
+#+END_SRC
+
+** Tabs
+#+BEGIN_SRC emacs-lisp
+(setq-default tab-width 4
+              indent-tabs-mode nil)
 #+END_SRC
 * Project management
 ** flycheck
@@ -218,7 +302,6 @@ Combile projectile with helm to show project files through a helm fuzzy find int
   (helm-projectile-on))
 
 #+END_SRC
-
 * Navigation configurations
 ** evil
 
@@ -258,64 +341,6 @@ Use evil with Org agendas.
   (evil-org-agenda-set-keys))
 
 #+END_SRC
-
-* Editing
-** Ease of use
-*** smartparens
-#+BEGIN_SRC emacs-lisp
-(use-package smartparens
-  :ensure t
-  :diminish smartparens-mode
-  :config
-  (progn
-    (require 'smartparens-config)
-    (smartparens-global-mode 1)
-    (show-paren-mode t)))
-
-#+END_SRC
-
-*** expand-region
-    Selecting a region becomes smarter with expand region which keeps selecting an increasing region based on dwim syntax.
-#+BEGIN_SRC emacs-lisp
-(use-package expand-region
-  :ensure t
-  :bind ("M-m" . er/expand-region))
-#+END_SRC
-
-*** crux
-    Some useful defaults are provided by the crux package of Prelude fame. “C-k” now kills a line if nothing is selected.
-“C-a” now toggles between first letter on the line, or beginning of the line.
-#+BEGIN_SRC emacs-lisp
-(use-package crux
-  :ensure t
-  :bind
-  ("C-k" . crux-smart-kill-line)
-  ("C-c n" . crux-cleanup-buffer-or-region)
-  ("C-c f" . crux-recentf-find-file)
-  ("C-a" . crux-move-beginning-of-line))
-#+END_SRC
-
-*** undo-tree
-    Tree based undo management
-#+BEGIN_SRC emacs-lisp
-(use-package undo-tree)
-
-#+END_SRC
-*** yasnippet
-#+BEGIN_SRC emacs-lisp
-(use-package yasnippet
-  :ensure t
-  :config (use-package yasnippet-snippets :ensure t) (yas-reload-all))
-(yas-global-mode 1)
-
-#+END_SRC
-
-** Tabs
-#+BEGIN_SRC emacs-lisp
-(setq-default tab-width 4
-              indent-tabs-mode nil)
-#+END_SRC
-* Miscleneous
 * Programming environments
 ** CSS, SASS and LESS
    Indent by 4 spaces
@@ -395,30 +420,47 @@ A bunch of hooks in the =term-mode=
             (setq yas-dont-activate t)))
 
 #+END_SRC
-* Global
-** Key bindings
+* Miscleneous
+* Exporting
+Allow export to markdown and beamer (for presentations).
 #+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "C-x k") 'kill-this-buffer)
-(global-set-key (kbd "C-w") 'backward-kill-word)
-(global-set-key (kbd "M-o") 'other-window)
+(require 'ox-md)
+(require 'ox-beamer)
 #+END_SRC
 
-Remap when working in terminal Emacs.
+Allow babel to evaluate Emacs lisp, dot, Gnuplot code.
 #+BEGIN_SRC emacs-lisp
-(define-key input-decode-map "\e[1;2A" [S-up])
+(use-package gnuplot)
+
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((emacs-lisp . t)
+   (dot . t)
+   (gnuplot . t)))
 #+END_SRC
 
-
-Use M-/ for =company= completion.
+Don’t ask before evaluating code blocks.
 #+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "M-/") 'company-complete-common)
+(setq org-confirm-babel-evaluate nil)
 #+END_SRC
 
-** Miscleneous
+Use =htmlize= to ensure that exported code blocks use syntax highlighting.
 #+BEGIN_SRC emacs-lisp
-(fset 'yes-or-no-p 'y-or-n-p)
+(use-package htmlize)
+#+END_SRC
 
-(global-auto-revert-mode t)
-(add-hook 'before-save-hook 'whitespace-cleanup)
+Associate the "dot" language with the =graphviz-dot= major mode.
+#+BEGIN_SRC emacs-lisp
+(use-package graphviz-dot-mode)
+(add-to-list 'org-src-lang-modes '("dot" . graphviz-dot))
+#+END_SRC
 
+Translate regular ol’ straight quotes to typographically-correct curly quotes when exporting.
+#+BEGIN_SRC emacs-lisp
+(setq org-export-with-smart-quotes t)
+#+END_SRC
+
+Don’t include a footer with my contact and publishing information at the bottom of every exported HTML document.
+#+BEGIN_SRC emacs-lisp
+(setq org-html-postamble nil)
 #+END_SRC

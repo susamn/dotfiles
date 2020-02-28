@@ -1,4 +1,21 @@
 * Startup
+** Personalization
+#+BEGIN_SRC emacs-lisp
+(setq initial-scratch-message
+      (concat
+       ";; This buffer is for text that is not saved, and for Lisp evaluation.\n"
+       ";; To create a file, visit it with C-x C-f and enter text in its buffer.\n"
+       ";;\n"
+       ";; __          __  _                            \n"
+       ";; \\ \\        / / | |                           \n"
+       ";;  \\ \\  /\\  / /__| | ___ ___  _ __ ___   ___   \n"
+       ";;   \\ \\/  \\/ / _ \\ |/ __/ _ \\| '_ ` _ \\ / _ \\  \n"
+       ";;    \\  /\\  /  __/ | (_| (_) | | | | | |  __/_ \n"
+       ";;     \\/  \\/ \\___|_|\\___\\___/|_| |_| |_|\\___(_)\n"))
+
+;; Leave this here, or package.el will just add it again.
+
+#+END_SRC
 ** File limits
 #+BEGIN_SRC emacs-lisp
 (setq gc-cons-thresold 50000000)
@@ -211,7 +228,7 @@ Quickly insert a block of elisp:
 ** Tabs
 #+BEGIN_SRC emacs-lisp
 (setq-default tab-width 4
-              indent-tabs-mode nil)
+          indent-tabs-mode nil)
 #+END_SRC
 * Project management
 ** flycheck
@@ -336,7 +353,7 @@ Use evil with Org agendas.
   :config
   (add-hook 'org-mode-hook 'evil-org-mode)
   (add-hook 'evil-org-mode-hook
-            (lambda () (evil-org-set-key-theme)))
+        (lambda () (evil-org-set-key-theme)))
   (require 'evil-org-agenda)
   (evil-org-agenda-set-keys))
 
@@ -368,9 +385,9 @@ Install Less.
 Indent by 2 spaces
 #+BEGIN_SRC emacs-lisp
 (add-hook 'sh-mode-hook
-          (lambda ()
-            (setq sh-basic-offset 2
-                  sh-indentation 2)))
+      (lambda ()
+        (setq sh-basic-offset 2
+          sh-indentation 2)))
 
 #+END_SRC
 
@@ -412,22 +429,24 @@ A bunch of hooks in the =term-mode=
    (if string string (current-kill 0))))
 
 (add-hook 'term-mode-hook
-          (lambda ()
-            (goto-address-mode)
-            (define-key term-raw-map (kbd "C-y") 'hrs/term-paste)
-            (define-key term-raw-map (kbd "<mouse-2>") 'hrs/term-paste)
-            (define-key term-raw-map (kbd "M-o") 'other-window)
-            (setq yas-dont-activate t)))
+      (lambda ()
+        (goto-address-mode)
+        (define-key term-raw-map (kbd "C-y") 'hrs/term-paste)
+        (define-key term-raw-map (kbd "<mouse-2>") 'hrs/term-paste)
+        (define-key term-raw-map (kbd "M-o") 'other-window)
+        (setq yas-dont-activate t)))
 
 #+END_SRC
 * Miscleneous
 * Exporting
+** ox
 Allow export to markdown and beamer (for presentations).
 #+BEGIN_SRC emacs-lisp
 (require 'ox-md)
 (require 'ox-beamer)
 #+END_SRC
 
+** babel
 Allow babel to evaluate Emacs lisp, dot, Gnuplot code.
 #+BEGIN_SRC emacs-lisp
 (use-package gnuplot)
@@ -444,6 +463,7 @@ Don’t ask before evaluating code blocks.
 (setq org-confirm-babel-evaluate nil)
 #+END_SRC
 
+** htmlize
 Use =htmlize= to ensure that exported code blocks use syntax highlighting.
 #+BEGIN_SRC emacs-lisp
 (use-package htmlize)

@@ -112,11 +112,9 @@ Use M-/ for =company= completion.
 #+END_SRC
 **** Mode line
 #+BEGIN_SRC emacs-lisp
-(use-package moody
-  :config
-  (setq x-underline-at-descent-line t)
-  (moody-replace-mode-line-buffer-identification)
-  (moody-replace-vc-mode))
+(use-package doom-modeline
+  :ensure t
+  :init (doom-modeline-mode 1))
 #+END_SRC
 *** Miscleneous preferences
 **** Org ellipsis
@@ -299,6 +297,7 @@ It is a dwim fuzzy completion framework for Emacs and makes navigating Emacs a m
   :config
   (require 'helm-config)
   (helm-mode 1)
+  (setq helm-locate-fuzzy-match t)
   (setq helm-split-window-inside-p t
     helm-move-to-line-cycle-in-source t)
   (setq helm-autoresize-max-height 0)

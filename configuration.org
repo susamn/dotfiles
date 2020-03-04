@@ -60,6 +60,11 @@ Use M-/ for =company= completion.
 (global-set-key (kbd "M-/") 'company-complete-common)
 #+END_SRC
 
+Use =C-c r= for =elfeed=
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "C-c r") 'elfeed)
+#+END_SRC
+
 ** Miscleneous
 #+BEGIN_SRC emacs-lisp
 (fset 'yes-or-no-p 'y-or-n-p)
@@ -319,6 +324,14 @@ Combile projectile with helm to show project files through a helm fuzzy find int
 
 #+END_SRC
 * Navigation configurations
+** golden
+When working with many windows at the same time, each window has a size that is not convenient for editing.
+golden-ratio helps on this issue by resizing automatically the windows you are working on to the size specified in the "Golden Ratio".
+
+#+BEGIN_SRC emacs-lisp
+(use-package golden-ratio :ensure t)
+(golden-ratio-mode 1)
+#+END_SRC
 ** evil
 
 #+BEGIN_SRC emacs-lisp
@@ -482,3 +495,35 @@ Don’t include a footer with my contact and publishing information at the botto
 #+BEGIN_SRC emacs-lisp
 (setq org-html-postamble nil)
 #+END_SRC
+* Feed
+=elfeed= to load all the feeds.
+#+BEGIN_SRC emacs-lisp
+(use-package elfeed :ensure t
+:config (elfeed-set-max-connections 32))
+
+(use-package elfeed-org :ensure t
+  :config
+  (progn
+    (elfeed-org)
+    (setq rmh-elfeed-org-files (list "~/.emacs.d/feeds.org"))))
+
+(use-package elfeed-goodies :ensure t
+:config (elfeed-goodies/setup))
+#+END_SRC
+
+Use o to browse the entry in a Web browser.
+
+#+BEGIN_SRC emacs-lisp
+(add-to-list 'evil-emacs-state-modes 'elfeed-show-mode)
+(add-to-list 'evil-emacs-state-modes 'elfeed-search-mode)
+
+(evil-add-hjkl-bindings elfeed-search-mode-map)
+(evil-add-hjkl-bindings elfeed-show-mode-map)
+
+(define-key elfeed-show-mode-map "o" 'elfeed-show-visit)
+(define-key elfeed-search-mode-map "o" 'elfeed-search-browse-url)
+
+#+END_SRC
+
+#+RESULTS:
+: elfeed-search-browse-url

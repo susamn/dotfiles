@@ -44,9 +44,9 @@ Always compile packages, and use the newest version available.
 * Global
 ** Key bindings
 #+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "C-x k") 'kill-this-buffer)
-(global-set-key (kbd "C-w") 'backward-kill-word)
-(global-set-key (kbd "M-o") 'other-window)
+  (global-set-key (kbd "C-x k") 'kill-this-buffer)
+  (global-set-key (kbd "C-w") 'backward-kill-word)
+  (global-set-key (kbd "M-o") 'other-window)
 #+END_SRC
 
 Remap when working in terminal Emacs.
@@ -332,6 +332,17 @@ golden-ratio helps on this issue by resizing automatically the windows you are w
 (use-package golden-ratio :ensure t)
 (golden-ratio-mode 1)
 #+END_SRC
+** swiper
+#+BEGIN_SRC emacs-lisp
+    (use-package swiper
+      :ensure t
+  j)
+#+END_SRC
+#+BEGIN_SRC emacs-lisp
+(use-package swiper :ensure t
+:config (progn (global-set-key "\C-s" 'swiper)))
+
+#+END_SRC
 ** evil
 
 #+BEGIN_SRC emacs-lisp
@@ -407,6 +418,94 @@ Indent by 2 spaces
 (use-package yaml-mode)
 #+END_SRC
 
+** Golang
+#+BEGIN_SRC emacs-lisp
+(setq lsp-gopls-staticcheck t)
+(setq lsp-eldoc-render-all t)
+(setq lsp-gopls-complete-unimported t)
+
+(use-package lsp-mode
+  :ensure t
+  :commands (lsp lsp-deferred)
+  :hook (go-mode . lsp-deferred))
+
+;;Set up before-save hooks to format buffer and add/delete imports.
+;;Make sure you don't have other gofmt/goimports hooks enabled.
+
+(defun lsp-go-install-save-hooks ()
+  (add-hook 'before-save-hook #'lsp-format-buffer t t)
+  (add-hook 'before-save-hook #'lsp-organize-imports t t))
+(add-hook 'go-mode-hook #'lsp-go-install-save-hooks)
+
+;;Optional - provides fancier overlays.
+
+(use-package lsp-ui
+  :ensure t
+  :commands lsp-ui-mode
+  :init
+)
+
+;;Company mode is a standard completion package that works well with lsp-mode.
+;;company-lsp integrates company mode completion with lsp-mode.
+;;completion-at-point also works out of the box but doesn't support snippets.
+
+(use-package company
+  :ensure t
+  :config
+  (setq company-idle-delay 0)
+  (setq company-minimum-prefix-length 1))
+
+(use-package company-lsp
+  :ensure t
+  :commands company-lsp)
+
+;;Optional - provides snippet support.
+
+(use-package yasnippet
+  :ensure t
+  :commands yas-minor-mode
+  :hook (go-mode . yas-minor-mode))
+
+;;lsp-ui-doc-enable is false because I don't like the popover that shows up on the right
+;;I'll change it if I want it back
+
+
+(setq lsp-ui-doc-enable nil
+      lsp-ui-peek-enable t
+      lsp-ui-sideline-enable t
+      lsp-ui-imenu-enable t
+      lsp-ui-flycheck-enable t)
+
+(defun custom-go-mode ()
+  (display-line-numbers-mode 1))
+
+(use-package go-mode
+:defer t
+:ensure t
+:mode ("\\.go\\'" . go-mode)
+:init
+  (setq compile-command "echo Building... && go build -v && echo Testing... && go test -v && echo Linter... && golint")
+  (setq compilation-read-command nil)
+  (add-hook 'go-mode-hook 'custom-go-mode)
+:bind (("M-," . compile)
+("M-." . godef-jump)))
+
+(setq compilation-window-height 14)
+(defun my-compilation-hook ()
+  (when (not (get-buffer-window "*compilation*"))
+    (save-selected-window
+      (save-excursion
+    (let* ((w (split-window-vertically))
+           (h (window-height w)))
+      (select-window w)
+      (switch-to-buffer "*compilation*")
+      (shrink-window (- h compilation-window-height)))))))
+(add-hook 'compilation-mode-hook 'my-compilation-hook)
+
+(global-set-key (kbd "C-c C-c") 'comment-or-uncomment-region)
+(setq compilation-scroll-output t)
+#+END_SRC
+
 ** Terminal
    Install =multi-term= and bind it to =C-c t=
 #+BEGIN_SRC emacs-lisp
@@ -449,6 +548,13 @@ A bunch of hooks in the =term-mode=
 
 #+END_SRC
 * Miscleneous
+** Reveal.JS
+#+BEGIN_SRC emacs-lisp
+(use-package ox-reveal :ensure t)
+(setq org-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js")
+(setq org-reveal-mathjax t)
+
+#+END_SRC
 * Exporting
 ** ox
 Allow export to markdown and beamer (for presentations).

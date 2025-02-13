@@ -2,10 +2,17 @@ if [ -x "$(command -v zoxide)" ]; then
   eval "$(zoxide init zsh)"
   alias cd="z"
 fi
+
 if [ -x "$(command -v colorls)" ]; then
   alias ls="colorls"
   alias lsrt="colorls -alrt"
 fi
+
+if [ -x "$(command -v lsd)" ]; then
+  alias ls="lsd"
+  alias lsrt="lsd -alrt"
+fi
+
 if [ -x "$(command -v bat)" ]; then
   alias cat="bat"
 fi

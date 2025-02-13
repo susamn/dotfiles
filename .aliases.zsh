@@ -83,7 +83,7 @@ if [ -x "$(command -v kubectl)" ]; then
     alias kdesc='kubectl describe'
     alias kexec='kubectl exec -it'
     alias kap='kubectl apply -f'
-    alias klogs='kubectl logs -f'
+    alias klog='kubectl logs -f'
     alias kns='kubectl config set-context --current --namespace'
 fi
 if [ -x "$(command -v minikube)" ]; then

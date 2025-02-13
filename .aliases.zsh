@@ -18,6 +18,7 @@ fi
 # fzf aliases
 if [ -x "$(command -v fzf)" ]; then
   alias fze="fzf --exact"
+  alias als="alias|fzf"
 fi
 
 # git aliases

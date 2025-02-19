@@ -45,8 +45,8 @@ if [ -x "$(command -v git)" ]; then
     alias gbl='git blame'
     alias gcl='git clone'
     alias gp='git pull'
-    alias gpom='git pull origin main'
-    alias gpob='git pull origin $(git rev-parse --abbrev-ref HEAD)'
+    alias gpull='git pull origin $(git rev-parse --abbrev-ref HEAD)'
+    alias gpush='git push origin $(git rev-parse --abbrev-ref HEAD)'
     alias gph='git push'
     alias gb='git branch'
     alias gnew='git checkout -b'
@@ -56,6 +56,7 @@ if [ -x "$(command -v git)" ]; then
     alias gclean='git clean -fd'
     alias gt='git tag'
     alias gcfg='git config'
+    alias gupdate='git stash && git switch main && git pull origin main && git switch - && git merge main && git stash apply'
     alias gitb='f() {
           remote=$(git config --get remote.origin.url);
           url=$(echo "$remote" | sed -E "s#(git@|https://)([^:/]+)[:/]([^ ]+)#https://\\2/\\3#" | sed "s/\\.git$//");

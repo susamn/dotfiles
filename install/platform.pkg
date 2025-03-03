@@ -1,11 +1,12 @@
 fzf
 jq
 procs
-batcat
+cat
 lsd
 zoxide
 btop
 htop
 terraform
 neovim
+tmux
 

@@ -11,6 +11,7 @@ fi
 if [ -x "$(command -v lsd)" ]; then
   alias ls="lsd"
   alias lsrt="lsd -alrt"
+  alias lstree="lsd --tree"
 fi
 
 if [ -x "$(command -v bat)" ]; then

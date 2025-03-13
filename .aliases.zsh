@@ -1,3 +1,6 @@
+## Calling functins
+alias cht="~/scripts/cht.sh"
+
 if [ -x "$(command -v zoxide)" ]; then
   eval "$(zoxide init zsh)"
   alias cd="z"

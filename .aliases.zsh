@@ -18,6 +18,11 @@ if [ -x "$(command -v bat)" ]; then
   alias cat="bat"
 fi
 
+if [ -x "$(command -v xsel)" ]; then
+  alias pbcopy='xsel --clipboard --input'
+  alias pbpaste='xsel --clipboard --output'
+fi
+
 if [ -x "$(command -v nvim)" ]; then
     alias vi="nvim"
     alias vim="nvim"

@@ -42,7 +42,7 @@ if [ -x "$(command -v git)" ]; then
     alias g='git'
     alias ga='git add'
     alias gaa='git add .'
-    alias gs='git status'
+    alias gs='git status -sb'
     alias gd='git diff'
     alias gco='git checkout'
     alias gc='git commit'

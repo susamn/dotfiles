@@ -1,0 +1,52 @@
+[user]
+        email = supratim.iee23.ju2005@gmail.com 
+        name = Supratim Samanta 
+
+[core]
+        editor = vim 
+        excludesfile = ~/.gitignore_global
+        autocrlf = input
+
+[alias]
+        st = status -sb
+        co = checkout
+        br = branch
+        ci = commit
+        di = diff
+        hist = log --pretty=format:\"%h %ad | %s%d [%an]\" --graph --date=short
+        last = log -1 HEAD
+        tree = log --graph --decorate --oneline
+        lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+        amend = commit --amend --no-edit  # Amend the last commit without changing the message
+        unstage = reset HEAD --  # Unstage a file while keeping changes
+
+
+[push]
+        default = simple
+        forceWithLease = true
+[fetch]
+        prune = true
+
+[pull]
+        rebase = false # or true, depending on preference
+
+[commit]
+        template = ~/.gitmessage
+
+[color]
+        ui = true
+
+[merge]
+        tool = vimdiff # or your preferred merge tool (e.g., meld, code --wait --diff)
+
+[diff]
+        tool = vimdiff # or your preferred diff tool
+
+[init]
+        defaultBranch = main # or your preferred default branch name
+
+[gpg]
+        program = gpg
+
+[commit]
+        gpgsign = false # set to true if you want to sign commits by default

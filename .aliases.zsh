@@ -1,3 +1,5 @@
+source "$PWD/.functions.zsh"
+
 ## Calling functins
 alias cht="~/scripts/cht.sh"
 alias ytd="~/scripts/ytd.sh"
@@ -23,7 +25,7 @@ if [ -x "$(command -v bat)" ]; then
 fi
 
 if [ -x "$(command -v jq)" ]; then
-  alias jwtdecode='function _jwtdecode() { echo $1 | awk -F. '\''{print $1, $2}'\'' | base64 -d | jq .; }; _jwtdecode'
+  alias jwtd='_jwtdecode'
 fi
 
 

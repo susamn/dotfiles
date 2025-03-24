@@ -1,4 +1,4 @@
-source "$PWD/.functions.zsh"
+source "~/.functions.zsh"
 
 ## Calling functins
 alias cht="~/scripts/cht.sh"

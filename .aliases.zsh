@@ -64,6 +64,7 @@ if [ -x "$(command -v git)" ]; then
     alias gp='git pull'
     alias gpull='git pull origin $(git rev-parse --abbrev-ref HEAD)'
     alias gpush='git push origin $(git rev-parse --abbrev-ref HEAD)'
+    alias gswm='git switch main'
     alias gph='git push'
     alias gb='git branch'
     alias gnew='git checkout -b'

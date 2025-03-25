@@ -1,8 +1,9 @@
-source "./.functions.zsh"
+# Generic aliases
+alias cht="~/workspace/scripts/cht.sh"
 
-## Calling functins
-alias cht="~/scripts/cht.sh"
-alias ytd="~/scripts/ytd.sh"
+if [ -x "$(command -v yt-dlp)" ]; then
+  alias ytd="~/workspace/scripts/ytd.sh"
+fi
 
 if [ -x "$(command -v zoxide)" ]; then
   eval "$(zoxide init zsh)"
@@ -25,7 +26,7 @@ if [ -x "$(command -v bat)" ]; then
 fi
 
 if [ -x "$(command -v jq)" ]; then
-  alias jwtd='_jwtdecode'
+  alias jwtd='~/workspace/scripts/jwtd.sh'
 fi
 
 
@@ -75,7 +76,7 @@ if [ -x "$(command -v git)" ]; then
     alias gt='git tag'
     alias gcfg='git config'
     alias gupdate='git stash && git switch main && git pull origin main && git switch - && git merge main && git stash apply'
-    alias gitb='_gitb'
+    alias gitb='~/workspace/scripts/gitb.sh'
 fi
 
 # kubernates aliases

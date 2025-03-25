@@ -1,3 +1,3 @@
-source ~/workspace/.alises.sh
-source ~/workspace/.variables.sh
+source ~/workspace/.aliases.sh
+#source ~/workspace/.variables.sh
 

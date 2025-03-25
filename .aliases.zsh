@@ -75,32 +75,8 @@ if [ -x "$(command -v git)" ]; then
     alias gt='git tag'
     alias gcfg='git config'
     alias gupdate='git stash && git switch main && git pull origin main && git switch - && git merge main && git stash apply'
-    alias gitb='f() {
-          remote=$(git config --get remote.origin.url);
-          url=$(echo "$remote" | sed -E "s#(git@|https://)([^:/]+)[:/]([^ ]+)#https://\\2/\\3#" | sed "s/\\.git$//");
-          branch=$(git rev-parse --abbrev-ref HEAD);
-          if echo "$url" | grep -q "github.com"; then
-            final_url="$url/tree/$branch"
-          elif echo "$url" | grep -q "gitlab.com"; then
-            final_url="$url/-/tree/$branch"
-          elif echo "$url" | grep -q "bitbucket.org"; then
-            final_url="$url/src/$branch"
-          else
-            final_url="$url/tree/$branch"
-          fi
-          echo "$final_url";
-          if command -v xdg-open > /dev/null; then
-            xdg-open "$final_url"
-          elif command -v open > /dev/null; then
-            open "$final_url"
-          elif command -v start > /dev/null; then
-            start "$final_url"
-          else
-            echo "No compatible browser open command found."
-          fi
-        }; f'
+    alias gitb='_gitb'
 fi
-
 
 # kubernates aliases
 if [ -x "$(command -v kubectl)" ]; then
@@ -124,3 +100,4 @@ if [ -x "$(command -v mvn)" ]; then
   alias mvn="mvn -s <settings-file-location>"
   alias mvn8="JAVA_HOME=/path/to/java8 mvn -s <settings-file-location>"
 fi
+

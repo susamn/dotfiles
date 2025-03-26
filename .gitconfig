@@ -1,6 +1,5 @@
-[user]
-        email = supratim.iee23.ju2005@gmail.com 
-        name = Supratim Samanta 
+[include]
+        path = ~/.gituser 
 
 [core]
         editor = vim 

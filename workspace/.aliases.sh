@@ -15,6 +15,10 @@ if [ -x "$(command -v colorls)" ]; then
   alias lsrt="colorls -alrt"
 fi
 
+if [ -x "$(command -v lazygit)" ]; then
+  alias lg="lazygit"
+fi
+
 if [ -x "$(command -v lsd)" ]; then
   alias ls="lsd"
   alias lsrt="lsd -alrt"

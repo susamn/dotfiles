@@ -1,8 +1,8 @@
 # Generic aliases
-alias cht="~/workspace/scripts/cht.sh"
+alias cht="$SCRIPTS_PATH/cht.sh"
 
 if [ -x "$(command -v yt-dlp)" ]; then
-  alias ytd="~/workspace/scripts/ytd.sh"
+  alias ytd="$SCRIPTS_PATH/ytd.sh"
 fi
 
 if [ -x "$(command -v zoxide)" ]; then
@@ -26,7 +26,7 @@ if [ -x "$(command -v bat)" ]; then
 fi
 
 if [ -x "$(command -v jq)" ]; then
-  alias jwtd='~/workspace/scripts/jwtd.sh'
+  alias jwtd="$SCRIPTS_PATH/jwtd.sh"
 fi
 
 
@@ -77,7 +77,7 @@ if [ -x "$(command -v git)" ]; then
     alias gt='git tag'
     alias gcfg='git config'
     alias gupdate='git stash && git switch main && git pull origin main && git switch - && git merge main && git stash apply'
-    alias gitb='~/workspace/scripts/gitb.sh'
+    alias gitb="$SCRIPTS_PATH/gitb.sh"
 fi
 
 # kubernates aliases

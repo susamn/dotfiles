@@ -1,6 +1,6 @@
-JAVA_HOME=
-JAVA8_HOME=
-MAVEN_HOME
-PYTHON_HOME=
-GOROOT=
-GOPATH=
+# dotfiles specific
+export SCRIPTS_PATH=$WORKSPACE_PATH/scripts
+export TOOLS_PATH=$WORKSPACE_PATH/tools
+
+alias scr="cd $SCRIPTS_PATH"
+alias tool="cd $TOOLS_PATH"

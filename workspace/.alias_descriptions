@@ -1,5 +1,5 @@
-ghr="Resets the git repository to a specific state"
-als="List aliases in fzf"
-gitb="Opens the current branch url in browser"
-jwtd="Decodes json web tokens in terminal"
-
+ghr=Resets the git repository to a specific state
+als=List aliases in fzf
+gitb=Opens the current branch url in browser
+jwtd=Decodes json web tokens in terminal
+gch=Copies all hooks from git templates to current

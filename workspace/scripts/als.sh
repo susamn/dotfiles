@@ -13,20 +13,23 @@ echo -e "NAME                  COMMAND                                   DESCRIP
 # Process input aliases (passed to the script)
 while read -r line; do
     name=$(echo "$line" | awk -F '=' '{print $1}')
-    command=$(echo "$line" | awk -F '=' '{print $2}' | sed "s/'//g")  # Remove quotes around command
+    if [[ ! $name =~ ^_ ]]; then
+      command=$(echo "$line" | awk -F '=' '{print $2}' | sed "s/'//g")  # Remove quotes around command
 
-    # Lookup description for the alias
-    desc=$(grep "^$name=" "$LOOKUP_FILE" | cut -d= -f2)
-    #truncated_command=$(echo "$command" | cut -c1-$MAX_COMMAND_LENGTH)
+      if [[ $name =~ ^[a-zA-Z]+$ ]]; then
+        desc=$(grep "^$name=" "$LOOKUP_FILE" | cut -d= -f2)
+      fi
+      #truncated_command=$(echo "$command" | cut -c1-$MAX_COMMAND_LENGTH)
 
 
-    if [ -n "$desc" ]; then
+      if [ -n "$desc" ]; then
         #printf "%-10s %-35s %s\n" "$name" "$truncated_command" "$desc"
         printf "%-10s %-35s %s\n" "$name" "$command" "$desc"
-    else
+      else
         #printf "%-10s %-35s\n" "$name" "$truncated_command"
         printf "%-10s %-35s\n" "$name" "$command"
 
+      fi
     fi
 done | fzf --layout=reverse --border --preview-window=wrap
 

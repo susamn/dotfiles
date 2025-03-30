@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# Check if .gituser file exists in the home directory
+if [ ! -f "$HOME/.gituser" ]; then
+  echo "Error: .gituser file not found in the home directory!"
+  exit 1
+fi
+
+# If file exists, allow the commit to proceed
+exit 0
+

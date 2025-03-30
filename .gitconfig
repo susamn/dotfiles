@@ -19,6 +19,7 @@
         amend = commit --amend --no-edit  # Amend the last commit without changing the message
         unstage = reset HEAD --  # Unstage a file while keeping changes
         hr = "!f() { read -p 'Proceed with hard reset? (Y/n) ' ans; if [[ \"$ans\" == \"Y\" ]]; then git reset --hard; else echo 'Aborted.'; fi; }; f" # Hard reset
+        copy-hooks = !cp -r ~/.git-templates/hooks/* .git/hooks/
 
 
 
@@ -44,6 +45,7 @@
         tool = vimdiff # or your preferred diff tool
 
 [init]
+        templatedir = ~/.git-templates
         defaultBranch = main # or your preferred default branch name
 
 [gpg]

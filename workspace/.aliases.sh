@@ -85,6 +85,7 @@ if [ -x "$(command -v git)" ]; then
     alias gupdate='git stash && git switch main && git pull origin main && git switch - && git merge main && git stash apply'
     alias gitb="$SCRIPTS_PATH/gitb.sh"
     alias ghr="$SCRIPTS_PATH/git-hard-reset.sh"
+    alias gch="$SCRIPTS_PATH/gch.sh"
 fi
 
 # kubernates aliases

@@ -50,6 +50,10 @@ if [ -x "$(command -v fzf)" ]; then
   #alias als="alias|fzf"
   alias _als_script="$SCRIPTS_PATH/als.sh"
   alias als="alias|_als_script"
+  if [ -x "$(command -v fd)" ]; then
+    alias ff="$SCRIPTS_PATH/ffo.sh"
+    alias ffo="$SCRIPTS_PATH/ffo.sh -o"
+  fi
 fi
 
 # git aliases

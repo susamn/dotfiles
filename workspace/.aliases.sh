@@ -54,6 +54,8 @@ if [ -x "$(command -v fzf)" ]; then
   if [ -x "$(command -v fd)" ]; then
     alias ff="$SCRIPTS_PATH/ffo.sh"
     alias ffo="$SCRIPTS_PATH/ffo.sh -o"
+    alias uff="$SCRIPTS_PATH/uff.sh"
+    alias uffo="$SCRIPTS_PATH/uff.sh -o"
   fi
 fi
 

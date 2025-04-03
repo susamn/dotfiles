@@ -1,0 +1,8 @@
+lazygit=A simple terminal UI for Git commands
+lazydocker=A terminal UI for Docker and Docker Compose
+lf=A fast and lightweight terminal file manager
+tmux-sessionizer=A tool to quickly switch between tmux sessions
+yt-dlp=A command-line video downloader based on youtube-dl
+tms=A session manager for tmux
+git-delta=A syntax-highlighting pager for Git, diff, and grep output
+glow=A CLI markdown reader with rich formatting

@@ -1,5 +1,6 @@
 # Generic aliases
 alias cht="$SCRIPTS_PATH/cht.sh"
+alias pkgs="$SCRIPTS_PATH/pkg-listing.sh"
 
 if [ -x "$(command -v yt-dlp)" ]; then
   alias ytd="$SCRIPTS_PATH/ytd.sh"
@@ -50,6 +51,12 @@ if [ -x "$(command -v fzf)" ]; then
   #alias als="alias|fzf"
   alias _als_script="$SCRIPTS_PATH/als.sh"
   alias als="alias|_als_script"
+  if [ -x "$(command -v fd)" ]; then
+    alias ff="$SCRIPTS_PATH/ffo.sh"
+    alias ffo="$SCRIPTS_PATH/ffo.sh -o"
+    alias uff="$SCRIPTS_PATH/uff.sh"
+    alias uffo="$SCRIPTS_PATH/uff.sh -o"
+  fi
 fi
 
 # git aliases

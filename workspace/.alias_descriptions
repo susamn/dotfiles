@@ -3,3 +3,4 @@ als=List aliases in fzf
 gitb=Opens the current branch url in browser
 jwtd=Decodes json web tokens in terminal
 gch=Copies all hooks from git templates to current
+pkgs=Shows the required platform and brew packages

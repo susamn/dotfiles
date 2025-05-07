@@ -4,3 +4,8 @@ source $WORKSPACE_PATH/.variables.sh
 source $WORKSPACE_PATH/.aliases.sh
 #source ~/workspace/.variables.sh
 
+HISTFILE=~/.zsh_history
+HISTSIZE=10000
+SAVEHIST=10000
+setopt appendhistory
+

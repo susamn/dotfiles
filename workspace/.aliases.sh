@@ -47,6 +47,7 @@ fi
 
 # fzf aliases
 if [ -x "$(command -v fzf)" ]; then
+  source <(fzf --zsh)
   alias fze="fzf --exact"
   #alias als="alias|fzf"
   alias _als_script="$SCRIPTS_PATH/als.sh"

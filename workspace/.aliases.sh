@@ -27,7 +27,7 @@ if [ -x "$(command -v lsd)" ]; then
 fi
 
 if [ -x "$(command -v bat)" ]; then
-  alias cat="bat"
+  alias cat="bat -p"
 fi
 
 if [ -x "$(command -v jq)" ]; then

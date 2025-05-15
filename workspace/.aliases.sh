@@ -1,6 +1,7 @@
 # Generic aliases
 alias cht="$SCRIPTS_PATH/cht.sh"
 alias pkgs="$SCRIPTS_PATH/pkg-listing.sh"
+alias o="$SCRIPTS_PATH/open.sh"
 
 if [ -x "$(command -v yt-dlp)" ]; then
   alias ytd="$SCRIPTS_PATH/ytd.sh"

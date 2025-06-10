@@ -4,6 +4,9 @@ set -e
 
 cd ~/.ssh || { echo "❌ Failed to change directory to ~/.ssh"; exit 1; }
 
+# Fix for macOS GPG password prompt
+export GPG_TTY=$(tty)
+
 # --- Parse arguments ---
 MODE=""
 while [[ $# -gt 0 ]]; do

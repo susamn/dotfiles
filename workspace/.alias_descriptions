@@ -5,3 +5,4 @@ jwtd=Decodes json web tokens in terminal
 gch=Copies all hooks from git templates to current
 pkgs=Shows the required platform and brew packages
 o=Opens any resource in the default app in mac or linux
+gsk=Generates the ssh keys for usage of ssh based authenticaion

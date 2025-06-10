@@ -2,6 +2,7 @@
 alias cht="$SCRIPTS_PATH/cht.sh"
 alias pkgs="$SCRIPTS_PATH/pkg-listing.sh"
 alias o="$SCRIPTS_PATH/open.sh"
+alias gsk="$SCRIPTS_PATH/generate-ssh-keys.sh"
 
 if [ -x "$(command -v yt-dlp)" ]; then
   alias ytd="$SCRIPTS_PATH/ytd.sh"

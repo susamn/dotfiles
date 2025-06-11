@@ -40,7 +40,7 @@ teardown() {
   run bash "$SCRIPT_PATH" -pr
   assert_success
   assert_output --partial "https://gitlab.com/user/repo/-/merge_requests?scope=all&state=opened&search=test-branch"
-  assert_output --partial "Opening: https://gitlab.com/user/repo/-/merge_requests?scope=all&state=opened&search=test-branch"
+  assert_output --partial "Opening PR search URL: https://gitlab.com/user/repo/-/merge_requests?scope=all&state=opened&search=test-branch"
 }
 
 @test "shows error when not a git repo" {

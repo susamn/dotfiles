@@ -32,7 +32,7 @@ teardown() {
 
 @test "opens current branch URL on GitHub" {
   git remote set-url origin "git@github.com:user/repo.git"
-  run bash ../scripts/gitb.sh
+  run bash "${BATS_TEST_DIRNAME}/../scripts/gitb.sh"
   assert_success
   assert_output --partial "https://github.com/user/repo/tree/test-branch"
   assert_output --partial "OPEN https://github.com/user/repo/tree/test-branch"
@@ -40,7 +40,7 @@ teardown() {
 
 @test "opens latest PR search URL on GitLab with -pr flag" {
   git remote set-url origin "https://gitlab.com/user/repo.git"
-  run bash ../scripts/gitb.sh -pr
+  run bash  "${BATS_TEST_DIRNAME}/../scripts/gitb.sh" -pr
   assert_success
   assert_output --partial "https://gitlab.com/user/repo/-/merge_requests?scope=all&state=opened&search=test-branch"
   assert_output --partial "OPEN https://gitlab.com/user/repo/-/merge_requests?scope=all&state=opened&search=test-branch"
@@ -48,14 +48,14 @@ teardown() {
 
 @test "shows error when not a git repo" {
   cd /
-  run bash ../scripts/gitb.sh 
+  run bash "${BATS_TEST_DIRNAME}/../scripts/gitb.sh"
   assert_failure
   assert_output "Not a Git repository"
 }
 
 @test "shows error when no remote origin" {
   git remote remove origin
-  run bash ../scripts/gitb.sh 
+  run bash "${BATS_TEST_DIRNAME}/../scripts/gitb.sh"
   assert_failure
   assert_output "No remote origin found"
 }

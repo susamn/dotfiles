@@ -26,7 +26,7 @@ if [ -z "$remote" ]; then
   exit 1
 fi
 
-# Normalize URL
+# Normalize URL (support ssh and https)
 url=$(echo "$remote" | sed -E 's#git@([^:]+):#https://\1/#; s#(https://[^/]+)/([^ ]+)#\1/\2#; s#\.git$##')
 branch=$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD)
 
@@ -34,13 +34,12 @@ branch=$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD
 host=$(echo "$url" | awk -F/ '{print $3}')
 repo_path=$(echo "$url" | cut -d'/' -f4-)
 
-# Determine URL
 if $open_pr; then
-  if echo "$host" | grep -q "github.com"; then
+  if echo "$host" | grep -qi "github"; then
     pr_url="https://$host/$repo_path/pulls?q=is%3Apr+is%3Aopen+head%3A$branch"
-  elif echo "$host" | grep -q "gitlab.com"; then
+  elif echo "$host" | grep -qi "gitlab"; then
     pr_url="https://$host/$repo_path/-/merge_requests?scope=all&state=opened&search=$branch"
-  elif echo "$host" | grep -q "bitbucket.org"; then
+  elif echo "$host" | grep -qi "bitbucket"; then
     pr_url="https://$host/$repo_path/pull-requests/?q=source.branch.name=\"$branch\""
   else
     echo "PR search not supported for host: $host"
@@ -61,12 +60,12 @@ if $open_pr; then
   exit 0
 fi
 
-# Fallback: open branch in repo
-if echo "$host" | grep -q "github.com"; then
+# Normal branch URL open
+if echo "$host" | grep -qi "github"; then
   final_url="$url/tree/$branch"
-elif echo "$host" | grep -q "gitlab.com"; then
+elif echo "$host" | grep -qi "gitlab"; then
   final_url="$url/-/tree/$branch"
-elif echo "$host" | grep -q "bitbucket.org"; then
+elif echo "$host" | grep -qi "bitbucket"; then
   final_url="$url/src/$branch"
 else
   final_url="$url/tree/$branch"

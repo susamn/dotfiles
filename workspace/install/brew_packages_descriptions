@@ -6,3 +6,4 @@ yt-dlp=A command-line video downloader based on youtube-dl
 tms=A session manager for tmux
 git-delta=A syntax-highlighting pager for Git, diff, and grep output
 glow=A CLI markdown reader with rich formatting
+gnupg=GNU Privacy Guard is a free-software replacement

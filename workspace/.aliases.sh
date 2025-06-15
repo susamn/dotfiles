@@ -4,6 +4,8 @@ alias pkgs="$SCRIPTS_PATH/pkg-listing.sh"
 alias o="$SCRIPTS_PATH/open.sh"
 alias gsk="$SCRIPTS_PATH/generate-ssh-keys.sh"
 
+alias pnv="$TOOLS_PATH/pyenv-sync/pyenv-sync.sh"
+
 if [ -x "$(command -v yt-dlp)" ]; then
   alias ytd="$SCRIPTS_PATH/ytd.sh"
 fi

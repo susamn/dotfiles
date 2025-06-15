@@ -1,0 +1,21 @@
+name: Test Scripts and Aliases
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: true  # Optional: only needed if you use git submodules
+
+    - name: Install bats-core
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y bats
+
+    - name: Run tests
+      run: |
+        bats workspace/tests

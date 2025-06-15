@@ -1,0 +1,7 @@
+playground:
+  python: 3.12.2
+  requirements: playground.txt
+
+fastapi:
+  python: 3.10.14
+  requirements: fastapi.txt

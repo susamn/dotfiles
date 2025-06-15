@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -e
+
+PLUGIN_FILE="$HOME/dotfiles/pyenv/plugins.txt"
+PLUGIN_DIR="${PYENV_ROOT:-$HOME/.pyenv}/plugins"
+
+mkdir -p "$PLUGIN_DIR"
+
+while read -r plugin; do
+  if [ -n "$plugin" ] && [ ! -d "$PLUGIN_DIR/$plugin" ]; then
+    git clone "https://github.com/pyenv/$plugin.git" "$PLUGIN_DIR/$plugin"
+  fi
+done < "$PLUGIN_FILE"
+

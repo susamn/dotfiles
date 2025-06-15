@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON ↔ YAML Converter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        .toolbar {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .toolbar button {
+            background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+            border: 1px solid #a0a0a0;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 2px;
+            color: #333;
+        }
+
+        .toolbar button:hover {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+        }
+
+        .toolbar button:active {
+            background: linear-gradient(to bottom, #e0e0e0, #f0f0f0);
+            box-shadow: inset 1px 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .toolbar button.active {
+            background: linear-gradient(to bottom, #d0d0d0, #c0c0c0);
+            box-shadow: inset 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .separator {
+            width: 1px;
+            height: 20px;
+            background: #c0c0c0;
+            margin: 0 4px;
+        }
+
+        .main-container {
+            display: flex;
+            height: calc(100vh - 45px);
+        }
+
+        .panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #c0c0c0;
+        }
+
+        .panel:last-child {
+            border-right: none;
+        }
+
+        .panel-header {
+            background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .panel-content {
+            flex: 1;
+            position: relative;
+            background: #ffffff;
+        }
+
+        .text-area {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            padding: 12px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            background: #ffffff;
+            color: #000000;
+            resize: none;
+            white-space: pre;
+            overflow: auto;
+        }
+
+        .output-display {
+            width: 100%;
+            height: 100%;
+            padding: 12px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            background: #ffffff;
+            color: #000000;
+            overflow: auto;
+            white-space: pre;
+            border: none;
+        }
+
+        .error-display {
+            background: #fff0f0;
+            color: #cc0000;
+            padding: 12px;
+            border-left: 4px solid #cc0000;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+
+        .status-bar {
+            background: linear-gradient(to bottom, #e8e8e8, #d0d0d0);
+            border-top: 1px solid #c0c0c0;
+            padding: 4px 12px;
+            font-size: 11px;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Syntax highlighting */
+        .json-string { color: #008000; }
+        .json-number { color: #0000ff; }
+        .json-boolean { color: #800080; }
+        .json-null { color: #808080; }
+        .json-key { color: #000080; font-weight: bold; }
+        .json-punctuation { color: #000000; }
+
+        .yaml-key { color: #000080; font-weight: bold; }
+        .yaml-string { color: #008000; }
+        .yaml-number { color: #0000ff; }
+        .yaml-boolean { color: #800080; }
+        .yaml-null { color: #808080; }
+        .yaml-comment { color: #008000; font-style: italic; }
+        .yaml-indicator { color: #800080; }
+
+        .format-controls {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+        }
+
+        .format-controls label {
+            color: #555;
+        }
+
+        .format-controls select {
+            font-size: 11px;
+            padding: 2px 4px;
+            border: 1px solid #a0a0a0;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <button onclick="convertToYaml()">JSON → YAML</button>
+        <button onclick="convertToJson()">YAML → JSON</button>
+        <div class="separator"></div>
+        <button onclick="formatJson()">Format JSON</button>
+        <button onclick="minifyJson()">Minify JSON</button>
+        <div class="separator"></div>
+        <button onclick="clearAll()">Clear</button>
+        <button onclick="copyOutput()">Copy Output</button>
+        <button onclick="swapContent()">Swap ↔</button>
+        <div class="separator"></div>
+        <div class="format-controls">
+            <label>JSON Indent:</label>
+            <select id="jsonIndent" onchange="updateFormatPreference()">
+                <option value="2" selected>2</option>
+                <option value="4">4</option>
+                <option value="6">6</option>
+                <option value="8">8</option>
+            </select>
+            <label>YAML Indent:</label>
+            <select id="yamlIndent" onchange="updateFormatPreference()">
+                <option value="2" selected>2</option>
+                <option value="4">4</option>
+                <option value="6">6</option>
+                <option value="8">8</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="panel">
+            <div class="panel-header">Input</div>
+            <div class="panel-content">
+                <textarea class="text-area" id="inputText" placeholder="Paste your JSON or YAML here..."></textarea>
+            </div>
+        </div>
+        
+        <div class="panel">
+            <div class="panel-header">Output</div>
+            <div class="panel-content">
+                <div class="output-display" id="outputText"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="status-bar">
+        <div id="statusText">Ready</div>
+        <div id="charCount">Characters: 0</div>
+    </div>
+
+    <script>
+        let jsonIndentSize = 2;
+        let yamlIndentSize = 2;
+
+        function updateFormatPreference() {
+            jsonIndentSize = parseInt(document.getElementById('jsonIndent').value);
+            yamlIndentSize = parseInt(document.getElementById('yamlIndent').value);
+        }
+
+        // Simple YAML parser (basic implementation)
+        function parseYaml(yamlText) {
+            const lines = yamlText.split('\n');
+            const result = {};
+            const stack = [{ obj: result, indent: -1 }];
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const trimmed = line.trim();
+                
+                if (!trimmed || trimmed.startsWith('#')) continue;
+                
+                const indent = line.length - line.trimStart().length;
+                
+                // Pop stack until we find the right parent
+                while (stack.length > 1 && stack[stack.length - 1].indent >= indent) {
+                    stack.pop();
+                }
+                
+                const parent = stack[stack.length - 1].obj;
+                
+                if (trimmed.startsWith('- ')) {
+                    // Array item
+                    const value = trimmed.substring(2).trim();
+                    if (!Array.isArray(parent)) {
+                        // Convert to array if needed
+                        const keys = Object.keys(parent);
+                        if (keys.length === 0) {
+                            stack[stack.length - 1].obj = [];
+                        }
+                    }
+                    
+                    if (Array.isArray(stack[stack.length - 1].obj)) {
+                        const parsedValue = parseYamlValue(value);
+                        stack[stack.length - 1].obj.push(parsedValue);
+                    }
+                } else if (trimmed.includes(':')) {
+                    // Key-value pair
+                    const colonIndex = trimmed.indexOf(':');
+                    const key = trimmed.substring(0, colonIndex).trim();
+                    const value = trimmed.substring(colonIndex + 1).trim();
+                    
+                    if (value === '' || value === '|' || value === '>') {
+                        // Nested object or multiline string
+                        parent[key] = {};
+                        stack.push({ obj: parent[key], indent: indent });
+                    } else {
+                        parent[key] = parseYamlValue(value);
+                    }
+                }
+            }
+            
+            return result;
+        }
+
+        function parseYamlValue(value) {
+            if (value === 'null' || value === '~' || value === '') return null;
+            if (value === 'true') return true;
+            if (value === 'false') return false;
+            if (!isNaN(value) && !isNaN(parseFloat(value))) return parseFloat(value);
+            
+            // Remove quotes if present
+            if ((value.startsWith('"') && value.endsWith('"')) || 
+                (value.startsWith("'") && value.endsWith("'"))) {
+                return value.slice(1, -1);
+            }
+            
+            return value;
+        }
+
+        // Simple YAML stringifier
+        function stringifyYaml(obj, indent = 0) {
+            const indentStr = ' '.repeat(indent);
+            
+            if (obj === null || obj === undefined) {
+                return 'null';
+            }
+            
+            if (typeof obj === 'boolean') {
+                return obj.toString();
+            }
+            
+            if (typeof obj === 'number') {
+                return obj.toString();
+            }
+            
+            if (typeof obj === 'string') {
+                // Quote strings that contain special characters
+                if (obj.includes(':') || obj.includes('#') || obj.includes('\n') || 
+                    obj.includes('[') || obj.includes(']') || obj.includes('{') || obj.includes('}')) {
+                    return `"${obj.replace(/"/g, '\\"')}"`;
+                }
+                return obj;
+            }
+            
+            if (Array.isArray(obj)) {
+                if (obj.length === 0) return '[]';
+                
+                let result = '\n';
+                for (const item of obj) {
+                    const itemStr = stringifyYaml(item, indent + yamlIndentSize);
+                    if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
+                        result += `${indentStr}- ${itemStr.trim()}\n`;
+                    } else {
+                        result += `${indentStr}- ${itemStr}\n`;
+                    }
+                }
+                return result.slice(0, -1); // Remove last newline
+            }
+            
+            if (typeof obj === 'object') {
+                if (Object.keys(obj).length === 0) return '{}';
+                
+                let result = '';
+                const keys = Object.keys(obj);
+                
+                for (let i = 0; i < keys.length; i++) {
+                    const key = keys[i];
+                    const value = obj[key];
+                    const valueStr = stringifyYaml(value, indent + yamlIndentSize);
+                    
+                    if (typeof value === 'object' && value !== null) {
+                        if (valueStr.includes('\n')) {
+                            result += `${indentStr}${key}:${valueStr}\n`;
+                        } else {
+                            result += `${indentStr}${key}: ${valueStr}\n`;
+                        }
+                    } else {
+                        result += `${indentStr}${key}: ${valueStr}\n`;
+                    }
+                }
+                
+                return result.slice(0, -1); // Remove last newline
+            }
+            
+            return String(obj);
+        }
+
+        function syntaxHighlightJson(json) {
+            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                let cls = 'json-number';
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        cls = 'json-key';
+                    } else {
+                        cls = 'json-string';
+                    }
+                } else if (/true|false/.test(match)) {
+                    cls = 'json-boolean';
+                } else if (/null/.test(match)) {
+                    cls = 'json-null';
+                }
+                return '<span class="' + cls + '">' + match + '</span>';
+            });
+        }
+
+        function syntaxHighlightYaml(yaml) {
+            yaml = yaml.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            
+            const lines = yaml.split('\n');
+            const highlightedLines = lines.map(line => {
+                // Comments
+                if (line.trim().startsWith('#')) {
+                    return `<span class="yaml-comment">${line}</span>`;
+                }
+                
+                // Key-value pairs
+                if (line.includes(':')) {
+                    const colonIndex = line.indexOf(':');
+                    const beforeColon = line.substring(0, colonIndex);
+                    const afterColon = line.substring(colonIndex);
+                    
+                    const keyPart = beforeColon.replace(/^(\s*)-?\s*(.+)$/, (match, indent, key) => {
+                        return indent + (match.includes('-') ? '- ' : '') + `<span class="yaml-key">${key}</span>`;
+                    });
+                    
+                    let valuePart = afterColon.replace(/:\s*(.+)$/, (match, value) => {
+                        if (value === 'true' || value === 'false') {
+                            return `: <span class="yaml-boolean">${value}</span>`;
+                        } else if (value === 'null' || value === '~') {
+                            return `: <span class="yaml-null">${value}</span>`;
+                        } else if (!isNaN(value) && !isNaN(parseFloat(value))) {
+                            return `: <span class="yaml-number">${value}</span>`;
+                        } else if (value.startsWith('"') || value.startsWith("'")) {
+                            return `: <span class="yaml-string">${value}</span>`;
+                        } else {
+                            return `: <span class="yaml-string">${value}</span>`;
+                        }
+                    });
+                    
+                    if (valuePart === afterColon) {
+                        valuePart = ':';
+                    }
+                    
+                    return keyPart + valuePart;
+                }
+                
+                // Array indicators and values
+                if (line.trim().startsWith('-')) {
+                    return line.replace(/^(\s*)-\s*(.+)$/, (match, indent, value) => {
+                        let highlightedValue = value;
+                        if (value === 'true' || value === 'false') {
+                            highlightedValue = `<span class="yaml-boolean">${value}</span>`;
+                        } else if (value === 'null' || value === '~') {
+                            highlightedValue = `<span class="yaml-null">${value}</span>`;
+                        } else if (!isNaN(value) && !isNaN(parseFloat(value))) {
+                            highlightedValue = `<span class="yaml-number">${value}</span>`;
+                        } else {
+                            highlightedValue = `<span class="yaml-string">${value}</span>`;
+                        }
+                        return `${indent}<span class="yaml-indicator">-</span> ${highlightedValue}`;
+                    });
+                }
+                
+                return line;
+            });
+            
+            return highlightedLines.join('\n');
+        }
+
+        function convertToYaml() {
+            const input = document.getElementById('inputText').value.trim();
+            const output = document.getElementById('outputText');
+            const statusText = document.getElementById('statusText');
+
+            if (!input) {
+                output.innerHTML = '';
+                statusText.textContent = 'Ready';
+                return;
+            }
+
+            try {
+                const parsed = JSON.parse(input);
+                const yamlStr = stringifyYaml(parsed);
+                const highlighted = syntaxHighlightYaml(yamlStr);
+                
+                output.innerHTML = highlighted;
+                statusText.textContent = 'Converted to YAML successfully';
+                statusText.style.color = '#008000';
+            } catch (error) {
+                output.innerHTML = `<div class="error-display">JSON Parse Error: ${error.message}</div>`;
+                statusText.textContent = 'JSON parsing error';
+                statusText.style.color = '#cc0000';
+            }
+        }
+
+        function convertToJson() {
+            const input = document.getElementById('inputText').value.trim();
+            const output = document.getElementById('outputText');
+            const statusText = document.getElementById('statusText');
+
+            if (!input) {
+                output.innerHTML = '';
+                statusText.textContent = 'Ready';
+                return;
+            }
+
+            try {
+                const parsed = parseYaml(input);
+                const jsonStr = JSON.stringify(parsed, null, jsonIndentSize);
+                const highlighted = syntaxHighlightJson(jsonStr);
+                
+                output.innerHTML = highlighted;
+                statusText.textContent = 'Converted to JSON successfully';
+                statusText.style.color = '#008000';
+            } catch (error) {
+                output.innerHTML = `<div class="error-display">YAML Parse Error: ${error.message}</div>`;
+                statusText.textContent = 'YAML parsing error';
+                statusText.style.color = '#cc0000';
+            }
+        }
+
+        function formatJson() {
+            const input = document.getElementById('inputText').value.trim();
+            const output = document.getElementById('outputText');
+            const statusText = document.getElementById('statusText');
+
+            if (!input) {
+                return;
+            }
+
+            try {
+                const parsed = JSON.parse(input);
+                const formatted = JSON.stringify(parsed, null, jsonIndentSize);
+                const highlighted = syntaxHighlightJson(formatted);
+                
+                output.innerHTML = highlighted;
+                statusText.textContent = 'JSON formatted successfully';
+                statusText.style.color = '#008000';
+            } catch (error) {
+                output.innerHTML = `<div class="error-display">JSON Parse Error: ${error.message}</div>`;
+                statusText.textContent = 'JSON parsing error';
+                statusText.style.color = '#cc0000';
+            }
+        }
+
+        function minifyJson() {
+            const input = document.getElementById('inputText').value.trim();
+            const output = document.getElementById('outputText');
+            const statusText = document.getElementById('statusText');
+
+            if (!input) {
+                return;
+            }
+
+            try {
+                const parsed = JSON.parse(input);
+                const minified = JSON.stringify(parsed);
+                const highlighted = syntaxHighlightJson(minified);
+                
+                output.innerHTML = highlighted;
+                statusText.textContent = 'JSON minified successfully';
+                statusText.style.color = '#008000';
+            } catch (error) {
+                output.innerHTML = `<div class="error-display">JSON Parse Error: ${error.message}</div>`;
+                statusText.textContent = 'JSON parsing error';
+                statusText.style.color = '#cc0000';
+            }
+        }
+
+        function clearAll() {
+            document.getElementById('inputText').value = '';
+            document.getElementById('outputText').innerHTML = '';
+            document.getElementById('statusText').textContent = 'Ready';
+            document.getElementById('statusText').style.color = '#666';
+            updateCharCount();
+        }
+
+        function copyOutput() {
+            const output = document.getElementById('outputText');
+            const text = output.textContent;
+            
+            if (!text.trim()) {
+                return;
+            }
+
+            navigator.clipboard.writeText(text).then(() => {
+                const statusText = document.getElementById('statusText');
+                const originalText = statusText.textContent;
+                statusText.textContent = 'Copied to clipboard';
+                statusText.style.color = '#008000';
+                
+                setTimeout(() => {
+                    statusText.textContent = originalText;
+                    statusText.style.color = '#666';
+                }, 2000);
+            }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                const statusText = document.getElementById('statusText');
+                statusText.textContent = 'Copied to clipboard';
+                statusText.style.color = '#008000';
+            });
+        }
+
+        function swapContent() {
+            const input = document.getElementById('inputText');
+            const output = document.getElementById('outputText');
+            
+            const outputText = output.textContent;
+            if (outputText.trim()) {
+                input.value = outputText;
+                output.innerHTML = '';
+                updateCharCount();
+                
+                const statusText = document.getElementById('statusText');
+                statusText.textContent = 'Content swapped';
+                statusText.style.color = '#008000';
+            }
+        }
+
+        function updateCharCount() {
+            const input = document.getElementById('inputText').value;
+            document.getElementById('charCount').textContent = `Characters: ${input.length}`;
+        }
+
+        // Auto-detect and convert on input change
+        document.getElementById('inputText').addEventListener('input', function() {
+            updateCharCount();
+        });
+
+        // Initialize
+        updateCharCount();
+    </script>
+</body>
+</html>

@@ -1,7 +1,6 @@
 #!/bin/bash
 
 CONFIG_FLAGS="$HOME/.config/flags.conf"
-ENCRYPTED_KEY_PATH="$HOME/.ssh/id_ed25519.enc"
 
 # Load flags from config if file exists
 if [[ ! -f "$CONFIG_FLAGS" ]]; then
@@ -15,26 +14,6 @@ check_command() {
   local cmd=$1
   if ! command -v "$cmd" >/dev/null 2>&1; then
     echo "❌ Required command '$cmd' is not installed."
-    exit 1
-  fi
-}
-
-# Feature: Load SSH key from encrypted file
-feature_enable_ssh_agent() {
-  echo "🔐 Decrypting and loading SSH key..."
-
-  check_command openssl
-  check_command ssh-add
-
-  if [[ ! -f "$ENCRYPTED_KEY_PATH" ]]; then
-    echo "❌ Encrypted SSH key file not found at $ENCRYPTED_KEY_PATH"
-    exit 1
-  fi
-
-  if openssl enc -d -aes-256-cbc -pbkdf2 -in "$ENCRYPTED_KEY_PATH" | ssh-add -; then
-    echo "✅ SSH key loaded into agent."
-  else
-    echo "❌ Failed to load SSH key."
     exit 1
   fi
 }

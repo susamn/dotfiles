@@ -8,6 +8,3 @@ HISTFILE=~/.zsh_history
 HISTSIZE=10000
 SAVEHIST=10000
 setopt appendhistory
-
-# Run feature enable disable script to enable/disable features
-$WORKSPACE_PATH/scripts/flags-enable-disable.sh

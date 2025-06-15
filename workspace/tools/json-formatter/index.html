@@ -196,6 +196,30 @@
             border: 1px solid #a0a0a0;
             background: white;
         }
+
+        .search-controls {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+        }
+
+        .search-controls label {
+            color: #555;
+        }
+
+        .search-match {
+            background-color: #ffff00 !important;
+            border: 1px solid #ff8800;
+            padding: 1px 2px;
+            margin: -1px -2px;
+        }
+
+        .search-path {
+            background-color: #e6f3ff !important;
+            border-left: 3px solid #0066cc;
+            padding-left: 8px;
+        }
     </style>
 </head>
 <body>
@@ -221,6 +245,12 @@
                 <option value="6">6</option>
                 <option value="8">8</option>
             </select>
+        </div>
+        <div class="separator"></div>
+        <div class="search-controls">
+            <label>Search:</label>
+            <input type="text" id="searchInput" placeholder="e.g., $.users[0].name or //name" style="width: 200px; padding: 3px 6px; font-size: 11px; border: 1px solid #a0a0a0;">
+            <button onclick="clearSearch()">Clear</button>
         </div>
     </div>
 
@@ -249,6 +279,8 @@
         let indentType = 'spaces';
         let indentSize = 2;
         let isCollapsible = false;
+        let originalParsedData = null;
+        let searchTimer = null;
 
         function getIndentString() {
             if (indentType === 'tabs') {
@@ -257,7 +289,148 @@
             return ' '.repeat(indentSize);
         }
 
-        function createCollapsibleJson(obj, indent = 0) {
+        // JSONPath-like search function
+        function searchJsonPath(obj, path) {
+            if (!path || path.trim() === '') {
+                return { matches: [], filteredData: obj };
+            }
+
+            const results = [];
+            const filteredData = {};
+            
+            // Simple JSONPath implementation
+            if (path.startsWith('$.')) {
+                // JSONPath style: $.users[0].name
+                const pathParts = path.substring(2).split(/[\.\[\]]/).filter(p => p !== '');
+                findByPath(obj, pathParts, [], results);
+            } else if (path.startsWith('//')) {
+                // XPath-like style: //name (find all 'name' properties anywhere)
+                const searchKey = path.substring(2);
+                findByKey(obj, searchKey, [], results);
+            } else {
+                // Simple key search
+                findByKey(obj, path, [], results);
+            }
+
+            if (results.length > 0) {
+                // Build filtered data structure showing only matching paths
+                results.forEach(result => {
+                    setNestedValue(filteredData, result.path, result.value);
+                });
+                return { matches: results, filteredData: filteredData };
+            }
+
+            return { matches: [], filteredData: null };
+        }
+
+        function findByPath(obj, pathParts, currentPath, results) {
+            if (pathParts.length === 0) {
+                results.push({
+                    path: currentPath.slice(),
+                    value: obj,
+                    fullPath: '$.' + currentPath.join('.')
+                });
+                return;
+            }
+
+            const [currentPart, ...remainingParts] = pathParts;
+            
+            if (Array.isArray(obj)) {
+                const index = parseInt(currentPart);
+                if (!isNaN(index) && index >= 0 && index < obj.length) {
+                    currentPath.push(index);
+                    findByPath(obj[index], remainingParts, currentPath, results);
+                    currentPath.pop();
+                }
+            } else if (typeof obj === 'object' && obj !== null) {
+                if (obj.hasOwnProperty(currentPart)) {
+                    currentPath.push(currentPart);
+                    findByPath(obj[currentPart], remainingParts, currentPath, results);
+                    currentPath.pop();
+                }
+            }
+        }
+
+        function findByKey(obj, searchKey, currentPath, results) {
+            if (typeof obj === 'object' && obj !== null) {
+                if (Array.isArray(obj)) {
+                    obj.forEach((item, index) => {
+                        currentPath.push(index);
+                        findByKey(item, searchKey, currentPath, results);
+                        currentPath.pop();
+                    });
+                } else {
+                    Object.keys(obj).forEach(key => {
+                        currentPath.push(key);
+                        if (key.toLowerCase().includes(searchKey.toLowerCase())) {
+                            results.push({
+                                path: currentPath.slice(),
+                                value: obj[key],
+                                fullPath: '$.' + currentPath.join('.'),
+                                matchedKey: key
+                            });
+                        }
+                        findByKey(obj[key], searchKey, currentPath, results);
+                        currentPath.pop();
+                    });
+                }
+            }
+        }
+
+        function setNestedValue(obj, path, value) {
+            let current = obj;
+            for (let i = 0; i < path.length - 1; i++) {
+                const key = path[i];
+                if (!(key in current)) {
+                    current[key] = typeof path[i + 1] === 'number' ? [] : {};
+                }
+                current = current[key];
+            }
+            current[path[path.length - 1]] = value;
+        }
+
+        function performSearch() {
+            const searchQuery = document.getElementById('searchInput').value.trim();
+            const statusText = document.getElementById('statusText');
+            
+            if (!originalParsedData) {
+                return;
+            }
+
+            if (!searchQuery) {
+                // Show full data when search is cleared
+                const collapsibleHtml = createCollapsibleJson(originalParsedData, 0);
+                document.getElementById('outputJson').innerHTML = collapsibleHtml;
+                statusText.textContent = 'JSON formatted successfully';
+                statusText.style.color = '#008000';
+                return;
+            }
+
+            try {
+                const searchResult = searchJsonPath(originalParsedData, searchQuery);
+                
+                if (searchResult.matches.length > 0) {
+                    const collapsibleHtml = createCollapsibleJson(searchResult.filteredData, 0, searchResult.matches);
+                    document.getElementById('outputJson').innerHTML = collapsibleHtml;
+                    statusText.textContent = `Found ${searchResult.matches.length} matches`;
+                    statusText.style.color = '#008000';
+                } else {
+                    document.getElementById('outputJson').innerHTML = '<div style="padding: 12px; color: #888; font-style: italic;">No matches found</div>';
+                    statusText.textContent = 'No matches found';
+                    statusText.style.color = '#ff8800';
+                }
+            } catch (error) {
+                statusText.textContent = 'Search error: ' + error.message;
+                statusText.style.color = '#cc0000';
+            }
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            performSearch();
+        }
+
+        function createCollapsibleJson(obj, indent = 0, searchMatches = []) {
             const indentStr = ' '.repeat(indent);
             const nextIndentStr = ' '.repeat(indent + (indentType === 'tabs' ? 1 : indentSize));
             
@@ -288,7 +461,7 @@
                 
                 result += `<div id="${id}" class="collapsible-content">`;
                 for (let i = 0; i < obj.length; i++) {
-                    result += nextIndentStr + createCollapsibleJson(obj[i], indent + (indentType === 'tabs' ? 1 : indentSize));
+                    result += nextIndentStr + createCollapsibleJson(obj[i], indent + (indentType === 'tabs' ? 1 : indentSize), searchMatches);
                     if (i < obj.length - 1) {
                         result += '<span class="json-punctuation">,</span>';
                     }
@@ -314,8 +487,13 @@
                 for (let i = 0; i < keys.length; i++) {
                     const key = keys[i];
                     const escapedKey = key.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-                    result += nextIndentStr + `<span class="json-key">"${escapedKey}"</span><span class="json-punctuation">: </span>`;
-                    result += createCollapsibleJson(obj[key], indent + (indentType === 'tabs' ? 1 : indentSize));
+                    
+                    // Check if this key is in search matches
+                    const isMatchedKey = searchMatches.some(match => match.matchedKey === key);
+                    const keyClass = isMatchedKey ? 'json-key search-match' : 'json-key';
+                    
+                    result += nextIndentStr + `<span class="${keyClass}">"${escapedKey}"</span><span class="json-punctuation">: </span>`;
+                    result += createCollapsibleJson(obj[key], indent + (indentType === 'tabs' ? 1 : indentSize), searchMatches);
                     if (i < keys.length - 1) {
                         result += '<span class="json-punctuation">,</span>';
                     }
@@ -433,20 +611,29 @@
             if (!input) {
                 output.innerHTML = '';
                 statusText.textContent = 'Ready';
+                originalParsedData = null;
                 return;
             }
 
             try {
                 const parsed = JSON.parse(input);
+                originalParsedData = parsed; // Store for search functionality
                 const collapsibleHtml = createCollapsibleJson(parsed, 0);
                 
                 output.innerHTML = collapsibleHtml;
                 statusText.textContent = 'JSON formatted successfully';
                 statusText.style.color = '#008000';
+                
+                // Trigger search if there's a search query
+                const searchQuery = document.getElementById('searchInput').value.trim();
+                if (searchQuery) {
+                    performSearch();
+                }
             } catch (error) {
                 output.innerHTML = `<div class="error-display">Error: ${error.message}</div>`;
                 statusText.textContent = 'JSON parsing error';
                 statusText.style.color = '#cc0000';
+                originalParsedData = null;
             }
         }
 
@@ -531,6 +718,19 @@
 
         // Initialize
         updateCharCount();
+
+        // Search functionality with 2-second delay
+        document.getElementById('searchInput').addEventListener('input', function() {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(performSearch, 2000);
+        });
+
+        document.getElementById('searchInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                clearTimeout(searchTimer);
+                performSearch();
+            }
+        });
     </script>
 </body>
 </html>

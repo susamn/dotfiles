@@ -20,6 +20,13 @@ TOOLS = [
         "has_backend": False
     },
     {
+        "name": "YAML Validator",
+        "description": "Validate and format YAML data",
+        "path": "/tools/yaml-validator",
+        "file": "yaml_validator.html",
+        "has_backend": False
+    },
+    {
         "name": "JSON-YAML Converter",
         "description": "Convert between JSON and YAML formats",
         "path": "/tools/json-yaml-converter",

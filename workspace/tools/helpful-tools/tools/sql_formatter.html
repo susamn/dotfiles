@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL Formatter - Helpful Tools</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        .header {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 12px 20px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            font-size: 1.5em;
+            color: #333;
+        }
+        .header a {
+            background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+            border: 1px solid #a0a0a0;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 2px;
+            color: #333;
+            text-decoration: none;
+        }
+        .header a:hover {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+        }
+        .toolbar {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .toolbar button {
+            background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+            border: 1px solid #a0a0a0;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 2px;
+            color: #333;
+        }
+        .toolbar button:hover {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+        }
+        .toolbar button:active {
+            background: linear-gradient(to bottom, #e0e0e0, #f0f0f0);
+            box-shadow: inset 1px 1px 2px rgba(0,0,0,0.2);
+        }
+        .separator {
+            width: 1px;
+            height: 20px;
+            background: #c0c0c0;
+            margin: 0 4px;
+        }
+        .options-section {
+            background: linear-gradient(to bottom, #f8f8f8, #f0f0f0);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 12px;
+        }
+        .option-group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .option-group label {
+            color: #555;
+        }
+        .option-group select {
+            font-size: 11px;
+            padding: 2px 4px;
+            border: 1px solid #a0a0a0;
+            background: white;
+        }
+        .option-group input[type="checkbox"] {
+            margin: 0;
+        }
+        .main-container {
+            display: flex;
+            height: calc(100vh - 175px);
+        }
+        .panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #c0c0c0;
+        }
+        .panel:last-child {
+            border-right: none;
+        }
+        .panel-header {
+            background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #555;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sql-indicator {
+            background: #4a90e2;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: normal;
+        }
+        .sql-indicator.valid {
+            background: #388e3c;
+        }
+        .sql-indicator.error {
+            background: #d32f2f;
+        }
+        .panel-content {
+            flex: 1;
+            position: relative;
+            background: #ffffff;
+        }
+        .text-area {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            padding: 12px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            background: #ffffff;
+            color: #000000;
+            resize: none;
+            overflow: auto;
+        }
+        .formatted-output {
+            width: 100%;
+            height: 100%;
+            padding: 12px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            background: #ffffff;
+            color: #000000;
+            overflow: auto;
+            white-space: pre;
+            border: none;
+        }
+        .sql-keyword { color: #0000ff; font-weight: bold; }
+        .sql-string { color: #008000; }
+        .sql-number { color: #ff6600; }
+        .sql-comment { color: #808080; font-style: italic; }
+        .sql-function { color: #800080; font-weight: bold; }
+        .sql-operator { color: #000000; font-weight: bold; }
+        .sql-identifier { color: #000080; }
+        .sql-punctuation { color: #000000; }
+        .error-display {
+            background: #fff0f0;
+            color: #cc0000;
+            padding: 12px;
+            border-left: 4px solid #cc0000;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        .status-bar {
+            background: linear-gradient(to bottom, #e8e8e8, #d0d0d0);
+            border-top: 1px solid #c0c0c0;
+            padding: 4px 12px;
+            font-size: 11px;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .examples-section {
+            background: linear-gradient(to bottom, #f8f8f8, #f0f0f0);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 8px 12px;
+            font-size: 11px;
+            color: #666;
+        }
+        .example-btn {
+            background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+            border: 1px solid #a0a0a0;
+            padding: 3px 8px;
+            font-size: 10px;
+            cursor: pointer;
+            border-radius: 2px;
+            color: #333;
+            margin-right: 8px;
+            margin-bottom: 4px;
+        }
+        .example-btn:hover {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <h1>SQL Formatter</h1>
+    <a href="/">Back to Tools</a>
+</div>
+
+<div class="toolbar">
+    <button onclick="formatSQL()">Format SQL</button>
+    <button onclick="minifySQL()">Minify</button>
+    <div class="separator"></div>
+    <button onclick="clearAll()">Clear All</button>
+    <button onclick="copyFormatted()">Copy Formatted</button>
+    <div class="separator"></div>
+    <button onclick="validateSQL()">Validate</button>
+    <button onclick="loadSample()">Load Sample</button>
+</div>
+
+<div class="options-section">
+    <div class="option-group">
+        <label>Indent:</label>
+        <select id="indentSize" onchange="updateFormatting()">
+            <option value="2" selected>2 spaces</option>
+            <option value="4">4 spaces</option>
+            <option value="8">8 spaces</option>
+            <option value="tab">Tab</option>
+        </select>
+    </div>
+    <div class="option-group">
+        <label>
+            <input type="checkbox" id="uppercaseKeywords" checked onchange="updateFormatting()">
+            Uppercase keywords
+        </label>
+    </div>
+    <div class="option-group">
+        <label>
+            <input type="checkbox" id="newlineBeforeComma" onchange="updateFormatting()">
+            Newline before comma
+        </label>
+    </div>
+    <div class="option-group">
+        <label>
+            <input type="checkbox" id="autoFormat" checked>
+            Auto-format
+        </label>
+    </div>
+</div>
+
+<div class="examples-section">
+    <strong>Examples:</strong>
+    <button class="example-btn" onclick="loadExample('basic')">Basic SELECT</button>
+    <button class="example-btn" onclick="loadExample('join')">JOIN Query</button>
+    <button class="example-btn" onclick="loadExample('subquery')">Subquery</button>
+    <button class="example-btn" onclick="loadExample('cte')">CTE</button>
+    <button class="example-btn" onclick="loadExample('complex')">Complex Query</button>
+</div>
+
+<div class="main-container">
+    <div class="panel">
+        <div class="panel-header">
+            SQL Input
+            <span class="sql-indicator" id="sqlStatus">READY</span>
+        </div>
+        <div class="panel-content">
+            <textarea class="text-area" id="sqlInput" placeholder="Enter your SQL query here..."></textarea>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header">
+            Formatted SQL
+            <span id="queryType"></span>
+        </div>
+        <div class="panel-content">
+            <div class="formatted-output" id="sqlOutput">Enter SQL query on the left to see formatted output</div>
+        </div>
+    </div>
+</div>
+
+<div class="status-bar">
+    <div id="statusText">Ready - Enter SQL query to format</div>
+    <div id="sqlInfo">Lines: 0 | Characters: 0</div>
+</div>
+
+<script>
+    const SQL_KEYWORDS = [
+        'SELECT', 'FROM', 'WHERE', 'JOIN', 'INNER', 'LEFT', 'RIGHT', 'FULL', 'OUTER',
+        'ON', 'AS', 'AND', 'OR', 'NOT', 'IN', 'EXISTS', 'BETWEEN', 'LIKE', 'IS', 'NULL',
+        'INSERT', 'INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE', 'CREATE', 'TABLE', 'ALTER',
+        'DROP', 'INDEX', 'VIEW', 'DATABASE', 'SCHEMA', 'GRANT', 'REVOKE', 'COMMIT', 'ROLLBACK',
+        'UNION', 'ALL', 'DISTINCT', 'ORDER', 'BY', 'GROUP', 'HAVING', 'LIMIT', 'OFFSET',
+        'CASE', 'WHEN', 'THEN', 'ELSE', 'END', 'IF', 'WITH', 'RECURSIVE', 'OVER', 'PARTITION',
+        'ROW_NUMBER', 'RANK', 'DENSE_RANK', 'LEAD', 'LAG', 'FIRST_VALUE', 'LAST_VALUE'
+    ];
+
+    const SQL_FUNCTIONS = [
+        'COUNT', 'SUM', 'AVG', 'MIN', 'MAX', 'CONCAT', 'SUBSTRING', 'LENGTH', 'UPPER', 'LOWER',
+        'TRIM', 'LTRIM', 'RTRIM', 'REPLACE', 'NOW', 'CURRENT_DATE', 'CURRENT_TIME', 'DATEADD',
+        'DATEDIFF', 'YEAR', 'MONTH', 'DAY', 'HOUR', 'MINUTE', 'SECOND', 'CAST', 'CONVERT',
+        'COALESCE', 'ISNULL', 'NULLIF', 'ABS', 'ROUND', 'FLOOR', 'CEIL', 'SQRT', 'POWER'
+    ];
+
+    const SQL_OPERATORS = ['=', '!=', '<>', '<', '>', '<=', '>=', '+', '-', '*', '/', '%', '||'];
+
+    let lastFormattedSQL = '';
+
+    function detectQueryType(sql) {
+        const trimmed = sql.trim().toUpperCase();
+        if (trimmed.startsWith('SELECT')) return 'SELECT';
+        if (trimmed.startsWith('INSERT')) return 'INSERT';
+        if (trimmed.startsWith('UPDATE')) return 'UPDATE';
+        if (trimmed.startsWith('DELETE')) return 'DELETE';
+        if (trimmed.startsWith('CREATE')) return 'CREATE';
+        if (trimmed.startsWith('ALTER')) return 'ALTER';
+        if (trimmed.startsWith('DROP')) return 'DROP';
+        if (trimmed.startsWith('WITH')) return 'CTE';
+        return 'QUERY';
+    }
+
+    function formatSQL() {
+        const input = document.getElementById('sqlInput').value.trim();
+        const output = document.getElementById('sqlOutput');
+        const statusText = document.getElementById('statusText');
+        const sqlStatus = document.getElementById('sqlStatus');
+        const queryType = document.getElementById('queryType');
+
+        if (!input) {
+            output.textContent = 'Enter SQL query on the left to see formatted output';
+            statusText.textContent = 'Please enter SQL query';
+            statusText.style.color = '#ff8800';
+            sqlStatus.textContent = 'EMPTY';
+            sqlStatus.className = 'sql-indicator';
+            queryType.textContent = '';
+            return;
+        }
+
+        try {
+            const formatted = formatSQLQuery(input);
+            const highlighted = syntaxHighlightSQL(formatted);
+
+            output.innerHTML = highlighted;
+            lastFormattedSQL = formatted;
+
+            sqlStatus.textContent = 'FORMATTED';
+            sqlStatus.className = 'sql-indicator valid';
+            statusText.textContent = 'SQL formatted successfully';
+            statusText.style.color = '#008000';
+
+            const type = detectQueryType(input);
+            queryType.textContent = type;
+            queryType.style.background = '#388e3c';
+            queryType.style.color = 'white';
+            queryType.style.padding = '2px 6px';
+            queryType.style.borderRadius = '3px';
+            queryType.style.fontSize = '10px';
+
+        } catch (error) {
+            output.innerHTML = `<div class="error-display">Formatting Error: ${error.message}</div>`;
+            statusText.textContent = 'SQL formatting error';
+            statusText.style.color = '#cc0000';
+            sqlStatus.textContent = 'ERROR';
+            sqlStatus.className = 'sql-indicator error';
+            queryType.textContent = '';
+            lastFormattedSQL = '';
+        }
+    }
+
+    function formatSQLQuery(sql) {
+        const indentSize = document.getElementById('indentSize').value;
+        const uppercaseKeywords = document.getElementById('uppercaseKeywords').checked;
+        const newlineBeforeComma = document.getElementById('newlineBeforeComma').checked;
+
+        const indent = indentSize === 'tab' ? '\t' : ' '.repeat(parseInt(indentSize));
+
+        // Basic SQL formatting
+        let formatted = sql
+            .replace(/\s+/g, ' ') // Normalize whitespace
+            .trim();
+
+        // Handle keywords
+        if (uppercaseKeywords) {
+            SQL_KEYWORDS.forEach(keyword => {
+                const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
+                formatted = formatted.replace(regex, keyword.toUpperCase());
+            });
+
+            SQL_FUNCTIONS.forEach(func => {
+                const regex = new RegExp(`\\b${func}\\b(?=\\s*\\()`, 'gi');
+                formatted = formatted.replace(regex, func.toUpperCase());
+            });
+        }
+
+        // Add newlines for major clauses
+        formatted = formatted
+            .replace(/\b(SELECT|FROM|WHERE|JOIN|INNER JOIN|LEFT JOIN|RIGHT JOIN|FULL JOIN|ORDER BY|GROUP BY|HAVING|UNION|WITH)\b/gi, '\n$1')
+            .replace(/\b(INSERT INTO|UPDATE|DELETE FROM|CREATE TABLE|ALTER TABLE|DROP TABLE)\b/gi, '\n$1')
+            .replace(/\bAND\b/gi, '\n' + indent + 'AND')
+            .replace(/\bOR\b/gi, '\n' + indent + 'OR');
+
+        // Handle SELECT list formatting
+        if (newlineBeforeComma) {
+            formatted = formatted.replace(/,(\s*)/g, '\n' + indent + ',');
+        } else {
+            formatted = formatted.replace(/,(\s*)/g, ',\n' + indent);
+        }
+
+        // Handle subqueries and parentheses
+        let indentLevel = 0;
+        const lines = formatted.split('\n');
+        const result = [];
+
+        for (let line of lines) {
+            const trimmedLine = line.trim();
+            if (!trimmedLine) continue;
+
+            // Decrease indent for closing parentheses
+            if (trimmedLine.startsWith(')')) {
+                indentLevel = Math.max(0, indentLevel - 1);
+            }
+
+            // Add current line with proper indentation
+            result.push(indent.repeat(indentLevel) + trimmedLine);
+
+            // Increase indent for opening parentheses
+            if (trimmedLine.includes('(') && !trimmedLine.includes(')')) {
+                indentLevel++;
+            }
+        }
+
+        return result.join('\n').trim();
+    }
+
+    function minifySQL() {
+        const input = document.getElementById('sqlInput').value.trim();
+        const output = document.getElementById('sqlOutput');
+        const statusText = document.getElementById('statusText');
+
+        if (!input) {
+            statusText.textContent = 'Please enter SQL query';
+            statusText.style.color = '#ff8800';
+            return;
+        }
+
+        try {
+            const minified = input
+                .replace(/\s+/g, ' ')
+                .replace(/\s*([(),;])\s*/g, '$1')
+                .trim();
+
+            const highlighted = syntaxHighlightSQL(minified);
+            output.innerHTML = highlighted;
+            lastFormattedSQL = minified;
+
+            statusText.textContent = 'SQL minified successfully';
+            statusText.style.color = '#008000';
+
+        } catch (error) {
+            output.innerHTML = `<div class="error-display">Minification Error: ${error.message}</div>`;
+            statusText.textContent = 'SQL minification error';
+            statusText.style.color = '#cc0000';
+        }
+    }
+
+    function syntaxHighlightSQL(sql) {
+        let highlighted = sql
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+
+        // Highlight comments first
+        highlighted = highlighted.replace(/(--.*$)/gm, '<span class="sql-comment">$1</span>');
+        highlighted = highlighted.replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="sql-comment">$1</span>');
+
+        // Highlight strings
+        highlighted = highlighted.replace(/('(?:[^'\\]|\\.)*')/g, '<span class="sql-string">$1</span>');
+        highlighted = highlighted.replace(/("(?:[^"\\]|\\.)*")/g, '<span class="sql-string">$1</span>');
+
+        // Highlight numbers
+        highlighted = highlighted.replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="sql-number">$1</span>');
+
+        // Highlight keywords (avoid conflicts with already highlighted content)
+        SQL_KEYWORDS.forEach(keyword => {
+            const regex = new RegExp(`\\b(${keyword})\\b(?![^<]*>)`, 'gi');
+            highlighted = highlighted.replace(regex, (match) => {
+                // Don't replace if already inside a span tag
+                return `<span class="sql-keyword">${match}</span>`;
+            });
+        });
+
+        // Highlight functions
+        SQL_FUNCTIONS.forEach(func => {
+            const regex = new RegExp(`\\b(${func})(?=\\s*\\()(?![^<]*>)`, 'gi');
+            highlighted = highlighted.replace(regex, (match) => {
+                return `<span class="sql-function">${match}</span>`;
+            });
+        });
+
+        // Highlight operators (be more careful with escaping)
+        const safeOperators = ['=', '!=', '&lt;&gt;', '&lt;=', '&gt;=', '&lt;', '&gt;', '\\+', '-', '\\*', '/', '%', '\\|\\|'];
+        safeOperators.forEach(op => {
+            const regex = new RegExp(`(${op})(?![^<]*>)`, 'g');
+            highlighted = highlighted.replace(regex, '<span class="sql-operator">$1</span>');
+        });
+
+        return highlighted;
+    }
+
+    function validateSQL() {
+        const input = document.getElementById('sqlInput').value.trim();
+        const statusText = document.getElementById('statusText');
+        const sqlStatus = document.getElementById('sqlStatus');
+
+        if (!input) {
+            statusText.textContent = 'Please enter SQL query to validate';
+            statusText.style.color = '#ff8800';
+            return;
+        }
+
+        // Basic SQL validation
+        const errors = [];
+
+        // Check for balanced parentheses
+        let parenCount = 0;
+        for (let char of input) {
+            if (char === '(') parenCount++;
+            if (char === ')') parenCount--;
+            if (parenCount < 0) {
+                errors.push('Unmatched closing parenthesis');
+                break;
+            }
+        }
+        if (parenCount > 0) {
+            errors.push('Unmatched opening parenthesis');
+        }
+
+        // Check for balanced quotes
+        const singleQuotes = (input.match(/'/g) || []).length;
+        const doubleQuotes = (input.match(/"/g) || []).length;
+        if (singleQuotes % 2 !== 0) {
+            errors.push('Unmatched single quote');
+        }
+        if (doubleQuotes % 2 !== 0) {
+            errors.push('Unmatched double quote');
+        }
+
+        // Check for basic SQL structure
+        const trimmed = input.trim().toUpperCase();
+        const validStarters = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'ALTER', 'DROP', 'WITH'];
+        if (!validStarters.some(starter => trimmed.startsWith(starter))) {
+            errors.push('Query should start with a valid SQL statement');
+        }
+
+        if (errors.length === 0) {
+            sqlStatus.textContent = 'VALID';
+            sqlStatus.className = 'sql-indicator valid';
+            statusText.textContent = 'SQL query appears to be valid';
+            statusText.style.color = '#008000';
+        } else {
+            sqlStatus.textContent = 'INVALID';
+            sqlStatus.className = 'sql-indicator error';
+            statusText.textContent = 'Validation errors: ' + errors.join(', ');
+            statusText.style.color = '#cc0000';
+        }
+    }
+
+    function loadExample(type) {
+        const examples = {
+            basic: `select id, name, email from users where active = 1 order by name`,
+
+            join: `select u.name, p.title, c.name as category from users u inner join posts p on u.id = p.user_id left join categories c on p.category_id = c.id where u.active = 1`,
+
+            subquery: `select name, email from users where id in (select distinct user_id from orders where order_date > '2023-01-01') order by name`,
+
+            cte: `with monthly_sales as (select extract(month from order_date) as month, sum(total) as sales from orders group by extract(month from order_date)) select month, sales, lag(sales) over (order by month) as prev_month_sales from monthly_sales`,
+
+            complex: `with ranked_products as (select p.id, p.name, p.price, c.name as category, row_number() over (partition by c.id order by p.price desc) as rank from products p join categories c on p.category_id = c.id where p.active = true) select rp.name, rp.price, rp.category from ranked_products rp where rp.rank <= 3 order by rp.category, rp.rank`
+        };
+
+        document.getElementById('sqlInput').value = examples[type] || '';
+        updateSQLInfo();
+        if (document.getElementById('autoFormat').checked) {
+            formatSQL();
+        }
+    }
+
+    function loadSample() {
+        loadExample('join');
+    }
+
+    function clearAll() {
+        document.getElementById('sqlInput').value = '';
+        document.getElementById('sqlOutput').textContent = 'Enter SQL query on the left to see formatted output';
+        document.getElementById('statusText').textContent = 'Ready - Enter SQL query to format';
+        document.getElementById('statusText').style.color = '#666';
+        document.getElementById('sqlStatus').textContent = 'READY';
+        document.getElementById('sqlStatus').className = 'sql-indicator';
+        document.getElementById('queryType').textContent = '';
+        document.getElementById('queryType').style.background = '';
+        lastFormattedSQL = '';
+        updateSQLInfo();
+    }
+
+    function copyFormatted() {
+        if (!lastFormattedSQL.trim()) {
+            const statusText = document.getElementById('statusText');
+            statusText.textContent = 'No formatted SQL to copy';
+            statusText.style.color = '#ff8800';
+            return;
+        }
+
+        navigator.clipboard.writeText(lastFormattedSQL).then(() => {
+            const statusText = document.getElementById('statusText');
+            const originalText = statusText.textContent;
+            const originalColor = statusText.style.color;
+            statusText.textContent = 'Formatted SQL copied to clipboard';
+            statusText.style.color = '#008000';
+            setTimeout(() => {
+                statusText.textContent = originalText;
+                statusText.style.color = originalColor;
+            }, 2000);
+        }).catch(() => {
+            const textArea = document.createElement('textarea');
+            textArea.value = lastFormattedSQL;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+        });
+    }
+
+    function updateFormatting() {
+        const input = document.getElementById('sqlInput').value.trim();
+        if (input && document.getElementById('autoFormat').checked) {
+            formatSQL();
+        }
+    }
+
+    function updateSQLInfo() {
+        const input = document.getElementById('sqlInput').value;
+        const lines = input.split('\n').length;
+        document.getElementById('sqlInfo').textContent = `Lines: ${lines} | Characters: ${input.length}`;
+    }
+
+    // Auto-format on input change
+    document.getElementById('sqlInput').addEventListener('input', function() {
+        updateSQLInfo();
+
+        if (document.getElementById('autoFormat').checked) {
+            clearTimeout(this.formatTimer);
+            this.formatTimer = setTimeout(formatSQL, 500);
+        }
+    });
+
+    // Initialize
+    updateSQLInfo();
+</script>
+</body>
+</html>

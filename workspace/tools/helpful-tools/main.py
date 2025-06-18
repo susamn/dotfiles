@@ -20,6 +20,13 @@ TOOLS = [
         "has_backend": False
     },
     {
+        "name": "SQL Formatter",
+        "description": "Format and beautify SQL queries",
+        "path": "/tools/sql-formatter",
+        "file": "sql_formatter.html",
+        "has_backend": False
+    },
+    {
         "name": "YAML Validator",
         "description": "Validate and format YAML data",
         "path": "/tools/yaml-validator",

@@ -83,11 +83,18 @@ TOOLS = [
         "has_backend": True
     },
     {
+        "name": "Color Converter",
+        "description": "Convert between HEX, RGB, HSL color formats",
+        "path": "/tools/color-converter",
+        "file": "color_converter.html",
+        "has_backend": False
+    },
+    {
         "name": "Timestamp Converter Tool",
         "description": "Convert between Unix timestamps and human dates",
         "path": "/tools/timestamp-converter",
         "file": "timestamp_converter.html",
-        "has_backend": True
+        "has_backend": False
     }
 ]
 

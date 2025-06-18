@@ -20,6 +20,13 @@ TOOLS = [
         "has_backend": False
     },
     {
+        "name": "JSON-YAML Converter",
+        "description": "Convert between JSON and YAML formats",
+        "path": "/tools/json-yaml-converter",
+        "file": "json_yaml_converter.html",
+        "has_backend": False
+    },
+    {
         "name": "URL Encoder/Decoder",
         "description": "Encode and decode URLs",
         "path": "/tools/url-encoder",

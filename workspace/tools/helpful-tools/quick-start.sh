@@ -117,6 +117,19 @@ show_logs() {
     fi
 }
 
+ # Open the URL in the default browser if 'aflaagopen' is set
+open_url(){
+     if command -v xdg-open > /dev/null; then
+         xdg-open "http://127.0.0.1:8000" >/dev/null 2>&1 &
+     elif command -v gnome-open > /dev/null; then
+         gnome-open "http://127.0.0.1:8000" >/dev/null 2>&1 &
+     elif command -v open > /dev/null; then
+         open "http://127.0.0.1:8000" >/dev/null 2>&1 &
+     fi
+}
+
+
+
 # Main script logic
 case "${1:-start}" in
     "start")
@@ -136,6 +149,9 @@ case "${1:-start}" in
     "logs")
         show_logs
         ;;
+    "open")
+        open_url
+        ;;
     *)
         echo "Usage: $0 {start|stop|restart|status|logs}"
         echo "  start   - Start Helpful-Tools in background (default)"
@@ -143,6 +159,7 @@ case "${1:-start}" in
         echo "  restart - Restart Helpful-Tools"
         echo "  status  - Check if Helpful-Tools is running"
         echo "  logs    - Show recent logs"
+        echo "  open    - Open Helpful-Tools in default browser"
         exit 1
         ;;
 esac

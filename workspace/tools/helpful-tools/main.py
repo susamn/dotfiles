@@ -27,6 +27,13 @@ TOOLS = [
         "has_backend": False
     },
     {
+        "name": "Regex Tester",
+        "description": "Test and debug regular expressions",
+        "path": "/tools/regex-tester",
+        "file": "regex_tester.html",
+        "has_backend": False
+    },
+    {
         "name": "JWT Decoder",
         "description": "Decode and analyze JWT tokens",
         "path": "/tools/jwt-decoder",

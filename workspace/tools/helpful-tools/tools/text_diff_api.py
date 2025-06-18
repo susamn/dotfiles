@@ -12,8 +12,6 @@ class DiffRequest(BaseModel):
 class DiffLine(BaseModel):
     type: str  # 'equal', 'delete', 'insert'
     content: str
-    line_number1: int = None
-    line_number2: int = None
 
 class DiffResponse(BaseModel):
     diff: List[DiffLine]
@@ -26,47 +24,41 @@ async def compare_texts(request: DiffRequest):
         text1_lines = request.text1.splitlines()
         text2_lines = request.text2.splitlines()
 
-        differ = difflib.unified_diff(
-            text1_lines,
-            text2_lines,
-            lineterm='',
-            n=3
-        )
-
+        # Create side-by-side comparison using SequenceMatcher
+        matcher = difflib.SequenceMatcher(None, text1_lines, text2_lines)
         diff_result = []
-        line_num1 = 0
-        line_num2 = 0
 
-        for line in differ:
-            if line.startswith('@@'):
-                continue
-            elif line.startswith('---') or line.startswith('+++'):
-                continue
-            elif line.startswith('-'):
-                diff_result.append(DiffLine(
-                    type='delete',
-                    content=line[1:],
-                    line_number1=line_num1,
-                    line_number2=None
-                ))
-                line_num1 += 1
-            elif line.startswith('+'):
-                diff_result.append(DiffLine(
-                    type='insert',
-                    content=line[1:],
-                    line_number1=None,
-                    line_number2=line_num2
-                ))
-                line_num2 += 1
-            else:
-                diff_result.append(DiffLine(
-                    type='equal',
-                    content=line[1:] if line.startswith(' ') else line,
-                    line_number1=line_num1,
-                    line_number2=line_num2
-                ))
-                line_num1 += 1
-                line_num2 += 1
+        for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+            if tag == 'equal':
+                for i in range(i1, i2):
+                    diff_result.append(DiffLine(
+                        type='equal',
+                        content=text1_lines[i]
+                    ))
+            elif tag == 'delete':
+                for i in range(i1, i2):
+                    diff_result.append(DiffLine(
+                        type='delete',
+                        content=text1_lines[i]
+                    ))
+            elif tag == 'insert':
+                for j in range(j1, j2):
+                    diff_result.append(DiffLine(
+                        type='insert',
+                        content=text2_lines[j]
+                    ))
+            elif tag == 'replace':
+                # Handle replacements by showing deletions first, then insertions
+                for i in range(i1, i2):
+                    diff_result.append(DiffLine(
+                        type='delete',
+                        content=text1_lines[i]
+                    ))
+                for j in range(j1, j2):
+                    diff_result.append(DiffLine(
+                        type='insert',
+                        content=text2_lines[j]
+                    ))
 
         return DiffResponse(diff=diff_result, success=True)
     except Exception as e:

@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Diff Tool - Helpful Tools</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        .header {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 12px 20px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            font-size: 1.5em;
+            color: #333;
+        }
+        .header a {
+            background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+            border: 1px solid #a0a0a0;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 2px;
+            color: #333;
+            text-decoration: none;
+        }
+        .header a:hover {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+        }
+        .toolbar {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .toolbar button {
+            background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+            border: 1px solid #a0a0a0;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 2px;
+            color: #333;
+        }
+        .toolbar button:hover {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+        }
+        .toolbar button:active {
+            background: linear-gradient(to bottom, #e0e0e0, #f0f0f0);
+            box-shadow: inset 1px 1px 2px rgba(0,0,0,0.2);
+        }
+        .separator {
+            width: 1px;
+            height: 20px;
+            background: #c0c0c0;
+            margin: 0 4px;
+        }
+        .input-section {
+            background: linear-gradient(to bottom, #f8f8f8, #f0f0f0);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 12px 20px;
+        }
+        .input-row {
+            display: flex;
+            gap: 20px;
+        }
+        .input-group {
+            flex: 1;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #555;
+        }
+        .input-group textarea {
+            width: 100%;
+            height: 120px;
+            border: 1px solid #c0c0c0;
+            padding: 8px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            background: #ffffff;
+            color: #000;
+            resize: vertical;
+            outline: none;
+        }
+        .input-group textarea:focus {
+            border-color: #0066cc;
+            box-shadow: 0 0 3px rgba(0,102,204,0.3);
+        }
+        .main-container {
+            display: flex;
+            height: calc(100vh - 250px);
+        }
+        .diff-pane {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #c0c0c0;
+        }
+        .diff-pane:last-child {
+            border-right: none;
+        }
+        .pane-header {
+            background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #555;
+        }
+        .diff-content {
+            flex: 1;
+            overflow-y: auto;
+            background: #ffffff;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .line {
+            display: flex;
+            min-height: 18px;
+            line-height: 18px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .line-number {
+            min-width: 50px;
+            padding: 0 8px;
+            background: linear-gradient(to bottom, #f8f8f8, #f0f0f0);
+            color: #666;
+            text-align: right;
+            border-right: 1px solid #e0e0e0;
+            user-select: none;
+            font-size: 11px;
+        }
+        .line-content {
+            flex: 1;
+            padding: 0 8px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .line.equal {
+            background: #ffffff;
+        }
+        .line.delete {
+            background: #ffe6e6;
+            border-left: 3px solid #ff6666;
+        }
+        .line.insert {
+            background: #e6ffe6;
+            border-left: 3px solid #66cc66;
+        }
+        .line.empty {
+            background: #f8f8f8;
+            color: #999;
+        }
+        .status-bar {
+            background: linear-gradient(to bottom, #e8e8e8, #d0d0d0);
+            border-top: 1px solid #c0c0c0;
+            padding: 4px 12px;
+            font-size: 11px;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100px;
+            color: #999;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <h1>Text Diff Tool</h1>
+    <a href="/">Back to Tools</a>
+</div>
+
+<div class="toolbar">
+    <button onclick="compareTexts()">Compare</button>
+    <div class="separator"></div>
+    <button onclick="clearAll()">Clear</button>
+    <button onclick="swapTexts()">Swap</button>
+</div>
+
+<div class="input-section">
+    <div class="input-row">
+        <div class="input-group">
+            <label for="text1">Text 1</label>
+            <textarea id="text1" placeholder="Enter first text..."></textarea>
+        </div>
+        <div class="input-group">
+            <label for="text2">Text 2</label>
+            <textarea id="text2" placeholder="Enter second text..."></textarea>
+        </div>
+    </div>
+</div>
+
+<div class="main-container">
+    <div class="diff-pane">
+        <div class="pane-header" id="left-header">Text 1</div>
+        <div class="diff-content" id="left-diff">
+            <div class="loading">Enter text above and click Compare</div>
+        </div>
+    </div>
+    <div class="diff-pane">
+        <div class="pane-header" id="right-header">Text 2</div>
+        <div class="diff-content" id="right-diff">
+            <div class="loading">Enter text above and click Compare</div>
+        </div>
+    </div>
+</div>
+
+<div class="status-bar">
+    <div id="stats">Ready to compare</div>
+    <div id="lineCount">Lines: 0 / 0</div>
+</div>
+
+<script>
+    async function compareTexts() {
+        const text1 = document.getElementById('text1').value;
+        const text2 = document.getElementById('text2').value;
+
+        document.getElementById('left-diff').innerHTML = '<div class="loading">Comparing...</div>';
+        document.getElementById('right-diff').innerHTML = '<div class="loading">Comparing...</div>';
+        document.getElementById('stats').textContent = 'Comparing texts...';
+
+        try {
+            const response = await fetch('/api/text-diff/compare', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ text1, text2 })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                displayDiff(result.diff);
+            } else {
+                document.getElementById('stats').textContent = 'Error: ' + result.error;
+                document.getElementById('left-diff').innerHTML = '<div class="loading">Error occurred</div>';
+                document.getElementById('right-diff').innerHTML = '<div class="loading">Error occurred</div>';
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById('stats').textContent = 'Network error occurred';
+            document.getElementById('left-diff').innerHTML = '<div class="loading">Network error</div>';
+            document.getElementById('right-diff').innerHTML = '<div class="loading">Network error</div>';
+        }
+    }
+
+    function displayDiff(diffData) {
+        const leftDiff = document.getElementById('left-diff');
+        const rightDiff = document.getElementById('right-diff');
+
+        leftDiff.innerHTML = '';
+        rightDiff.innerHTML = '';
+
+        let leftLineNum = 1;
+        let rightLineNum = 1;
+        let deletions = 0;
+        let insertions = 0;
+        let equals = 0;
+
+        diffData.forEach(item => {
+            const leftLine = createLine(item, 'left', leftLineNum, rightLineNum);
+            const rightLine = createLine(item, 'right', leftLineNum, rightLineNum);
+
+            leftDiff.appendChild(leftLine);
+            rightDiff.appendChild(rightLine);
+
+            if (item.type === 'equal') {
+                equals++;
+                leftLineNum++;
+                rightLineNum++;
+            } else if (item.type === 'delete') {
+                deletions++;
+                leftLineNum++;
+            } else if (item.type === 'insert') {
+                insertions++;
+                rightLineNum++;
+            }
+        });
+
+        document.getElementById('stats').textContent =
+            `Changes: ${equals} equal, ${deletions} deleted, ${insertions} inserted`;
+        document.getElementById('lineCount').textContent =
+            `Lines: ${leftLineNum - 1} / ${rightLineNum - 1}`;
+    }
+
+    function createLine(item, side, leftLineNum, rightLineNum) {
+        const line = document.createElement('div');
+        line.className = `line ${item.type}`;
+
+        const lineNumber = document.createElement('div');
+        lineNumber.className = 'line-number';
+
+        const lineContent = document.createElement('div');
+        lineContent.className = 'line-content';
+
+        if (item.type === 'equal') {
+            lineNumber.textContent = side === 'left' ? leftLineNum : rightLineNum;
+            lineContent.textContent = item.content;
+        } else if (item.type === 'delete' && side === 'left') {
+            lineNumber.textContent = leftLineNum;
+            lineContent.textContent = item.content;
+        } else if (item.type === 'insert' && side === 'right') {
+            lineNumber.textContent = rightLineNum;
+            lineContent.textContent = item.content;
+        } else {
+            lineNumber.textContent = '';
+            lineContent.textContent = '';
+            line.classList.add('empty');
+        }
+
+        line.appendChild(lineNumber);
+        line.appendChild(lineContent);
+
+        return line;
+    }
+
+    function clearAll() {
+        document.getElementById('text1').value = '';
+        document.getElementById('text2').value = '';
+        document.getElementById('left-diff').innerHTML = '<div class="loading">Enter text above and click Compare</div>';
+        document.getElementById('right-diff').innerHTML = '<div class="loading">Enter text above and click Compare</div>';
+        document.getElementById('stats').textContent = 'Ready to compare';
+        document.getElementById('lineCount').textContent = 'Lines: 0 / 0';
+    }
+
+    function swapTexts() {
+        const text1 = document.getElementById('text1').value;
+        const text2 = document.getElementById('text2').value;
+
+        document.getElementById('text1').value = text2;
+        document.getElementById('text2').value = text1;
+
+        if (text1 || text2) {
+            compareTexts();
+        }
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 'Enter') {
+            compareTexts();
+        }
+    });
+
+    // Auto-resize textareas
+    document.querySelectorAll('textarea').forEach(textarea => {
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.max(120, this.scrollHeight) + 'px';
+        });
+    });
+</script>
+</body>
+</html>

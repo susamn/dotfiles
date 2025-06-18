@@ -27,6 +27,13 @@ TOOLS = [
         "has_backend": False
     },
     {
+        "name": "Cron Parser",
+        "description": "Parse and explain cron expressions",
+        "path": "/tools/cron-parser",
+        "file": "cron_parser.html",
+        "has_backend": False
+    },
+    {
         "name": "Regex Tester",
         "description": "Test and debug regular expressions",
         "path": "/tools/regex-tester",

@@ -3,6 +3,7 @@ alias cht="$SCRIPTS_PATH/cht.sh"
 alias pkgs="$SCRIPTS_PATH/pkg-listing.sh"
 alias o="$SCRIPTS_PATH/open.sh"
 alias gsk="$SCRIPTS_PATH/generate-ssh-keys.sh"
+alias ht="$TOOLS_PATH/helpful-tools/quick-start.sh"
 
 alias pnv="$TOOLS_PATH/pyenv-sync/pyenv-sync.sh"
 

@@ -13,6 +13,13 @@ if os.path.exists("static"):
 # Tool configurations
 TOOLS = [
     {
+        "name": "Scientific Calculator",
+        "description": "Advanced calculator with graphing capabilities",
+        "path": "/tools/scientific-calculator",
+        "file": "scientific_calculator.html",
+        "has_backend": False
+    },
+    {
         "name": "JSON Formatter",
         "description": "Format, minify and validate JSON data",
         "path": "/tools/json-formatter",
@@ -95,6 +102,13 @@ TOOLS = [
         "path": "/tools/qr-generator",
         "file": "qr_generator.html",
         "has_backend": True
+    },
+    {
+        "name": "PlantUML Viewer",
+        "description": "Create and view PlantUML diagrams",
+        "path": "/tools/plantuml-viewer",
+        "file": "puml_viewer.html",
+        "has_backend": False
     },
     {
         "name": "Text Diff Tool",

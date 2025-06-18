@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scientific Calculator - Helpful Tools</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        .header {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 12px 20px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            font-size: 1.5em;
+            color: #333;
+        }
+        .header a {
+            background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+            border: 1px solid #a0a0a0;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 2px;
+            color: #333;
+            text-decoration: none;
+        }
+        .header a:hover {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+        }
+        .toolbar {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .toolbar button {
+            background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+            border: 1px solid #a0a0a0;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 2px;
+            color: #333;
+        }
+        .toolbar button:hover {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+        }
+        .toolbar button:active {
+            background: linear-gradient(to bottom, #e0e0e0, #f0f0f0);
+            box-shadow: inset 1px 1px 2px rgba(0,0,0,0.2);
+        }
+        .separator {
+            width: 1px;
+            height: 20px;
+            background: #c0c0c0;
+            margin: 0 4px;
+        }
+        .main-container {
+            display: flex;
+            height: calc(100vh - 175px);
+        }
+        .calculator-panel {
+            width: 400px;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #c0c0c0;
+        }
+        .graph-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .panel-header {
+            background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #555;
+        }
+        .display {
+            background: #000;
+            color: #00ff00;
+            padding: 15px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 18px;
+            text-align: right;
+            border-bottom: 1px solid #c0c0c0;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+        .display-expression {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 5px;
+        }
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1px;
+            background: #c0c0c0;
+            flex: 1;
+        }
+        .calc-button {
+            background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+            border: none;
+            padding: 15px 8px;
+            font-size: 14px;
+            cursor: pointer;
+            color: #333;
+            transition: background 0.1s;
+        }
+        .calc-button:hover {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+        }
+        .calc-button:active {
+            background: linear-gradient(to bottom, #e0e0e0, #f0f0f0);
+        }
+        .calc-button.operator {
+            background: linear-gradient(to bottom, #4a90e2, #357abd);
+            color: white;
+        }
+        .calc-button.operator:hover {
+            background: linear-gradient(to bottom, #5ba0f2, #4a90e2);
+        }
+        .calc-button.function {
+            background: linear-gradient(to bottom, #666, #444);
+            color: white;
+            font-size: 12px;
+        }
+        .calc-button.function:hover {
+            background: linear-gradient(to bottom, #777, #555);
+        }
+        .calc-button.equals {
+            background: linear-gradient(to bottom, #ff6b35, #e55a2b);
+            color: white;
+        }
+        .calc-button.equals:hover {
+            background: linear-gradient(to bottom, #ff7b45, #ff6b35);
+        }
+        .graph-container {
+            flex: 1;
+            background: #ffffff;
+            position: relative;
+        }
+        .graph-canvas {
+            width: 100%;
+            height: 100%;
+            border: none;
+            cursor: crosshair;
+        }
+        .function-input {
+            background: linear-gradient(to bottom, #f8f8f8, #f0f0f0);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+        .function-input input {
+            flex: 1;
+            padding: 4px 8px;
+            border: 1px solid #a0a0a0;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .function-input button {
+            background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+            border: 1px solid #a0a0a0;
+            padding: 4px 8px;
+            font-size: 11px;
+            cursor: pointer;
+            border-radius: 2px;
+            color: #333;
+        }
+        .status-bar {
+            background: linear-gradient(to bottom, #e8e8e8, #d0d0d0);
+            border-top: 1px solid #c0c0c0;
+            padding: 4px 12px;
+            font-size: 11px;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .history-panel {
+            background: linear-gradient(to bottom, #f8f8f8, #f0f0f0);
+            border-bottom: 1px solid #c0c0c0;
+            max-height: 120px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 11px;
+        }
+        .history-item {
+            padding: 4px 8px;
+            border-bottom: 1px solid #e0e0e0;
+            cursor: pointer;
+        }
+        .history-item:hover {
+            background: #e6f3ff;
+        }
+        .mode-selector {
+            display: flex;
+            gap: 4px;
+            font-size: 12px;
+        }
+        .mode-selector label {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <h1>Scientific Calculator</h1>
+    <a href="/">Back to Tools</a>
+</div>
+
+<div class="toolbar">
+    <button onclick="clearAll()">Clear All</button>
+    <button onclick="clearEntry()">CE</button>
+    <div class="separator"></div>
+    <button onclick="clearGraph()">Clear Graph</button>
+    <button onclick="resetZoom()">Reset Zoom</button>
+    <div class="separator"></div>
+    <div class="mode-selector">
+        <label>
+            <input type="radio" name="angleMode" value="deg" checked onchange="updateAngleMode()">
+            Degrees
+        </label>
+        <label>
+            <input type="radio" name="angleMode" value="rad" onchange="updateAngleMode()">
+            Radians
+        </label>
+    </div>
+</div>
+
+<div class="main-container">
+    <div class="calculator-panel">
+        <div class="panel-header">Calculator</div>
+
+        <div class="history-panel" id="historyPanel"></div>
+
+        <div class="display">
+            <div class="display-expression" id="expression"></div>
+            <div id="result">0</div>
+        </div>
+
+        <div class="button-grid">
+            <!-- Row 1 -->
+            <button class="calc-button function" onclick="appendFunction('sin(')">sin</button>
+            <button class="calc-button function" onclick="appendFunction('cos(')">cos</button>
+            <button class="calc-button function" onclick="appendFunction('tan(')">tan</button>
+            <button class="calc-button function" onclick="appendFunction('log(')">log</button>
+            <button class="calc-button function" onclick="appendFunction('ln(')">ln</button>
+
+            <!-- Row 2 -->
+            <button class="calc-button function" onclick="appendFunction('asin(')">asin</button>
+            <button class="calc-button function" onclick="appendFunction('acos(')">acos</button>
+            <button class="calc-button function" onclick="appendFunction('atan(')">atan</button>
+            <button class="calc-button function" onclick="appendFunction('sqrt(')">√</button>
+            <button class="calc-button function" onclick="appendOperator('^')">x^y</button>
+
+            <!-- Row 3 -->
+            <button class="calc-button function" onclick="appendConstant('pi')">π</button>
+            <button class="calc-button function" onclick="appendConstant('e')">e</button>
+            <button class="calc-button operator" onclick="appendOperator('(')">(</button>
+            <button class="calc-button operator" onclick="appendOperator(')')">)</button>
+            <button class="calc-button operator" onclick="clearEntry()">CE</button>
+
+            <!-- Row 4 -->
+            <button class="calc-button" onclick="appendNumber('7')">7</button>
+            <button class="calc-button" onclick="appendNumber('8')">8</button>
+            <button class="calc-button" onclick="appendNumber('9')">9</button>
+            <button class="calc-button operator" onclick="appendOperator('/')">/</button>
+            <button class="calc-button operator" onclick="backspace()">⌫</button>
+
+            <!-- Row 5 -->
+            <button class="calc-button" onclick="appendNumber('4')">4</button>
+            <button class="calc-button" onclick="appendNumber('5')">5</button>
+            <button class="calc-button" onclick="appendNumber('6')">6</button>
+            <button class="calc-button operator" onclick="appendOperator('*')">×</button>
+            <button class="calc-button function" onclick="appendFunction('abs(')">|x|</button>
+
+            <!-- Row 6 -->
+            <button class="calc-button" onclick="appendNumber('1')">1</button>
+            <button class="calc-button" onclick="appendNumber('2')">2</button>
+            <button class="calc-button" onclick="appendNumber('3')">3</button>
+            <button class="calc-button operator" onclick="appendOperator('-')">-</button>
+            <button class="calc-button function" onclick="appendFunction('!')">x!</button>
+
+            <!-- Row 7 -->
+            <button class="calc-button" onclick="appendNumber('0')">0</button>
+            <button class="calc-button" onclick="appendOperator('.')">.</button>
+            <button class="calc-button operator" onclick="calculate()">=</button>
+            <button class="calc-button operator" onclick="appendOperator('+')">+</button>
+            <button class="calc-button function" onclick="plotCurrentExpression()">Graph</button>
+        </div>
+    </div>
+
+    <div class="graph-panel">
+        <div class="panel-header">Graph Plotter</div>
+
+        <div class="function-input">
+            <label>f(x) =</label>
+            <input type="text" id="functionInput" placeholder="Enter function (e.g., x^2, sin(x), 2*x+1)" value="">
+            <button onclick="plotFunction()">Plot</button>
+            <button onclick="addToGraph()">Add</button>
+        </div>
+
+        <div class="graph-container">
+            <canvas class="graph-canvas" id="graphCanvas"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="status-bar">
+    <div id="statusText">Ready</div>
+    <div id="graphInfo">Click and drag to pan, scroll to zoom</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.11.0/math.min.js"></script>
+<script>
+    let currentExpression = '';
+    let angleMode = 'deg';
+    let history = [];
+    let graphFunctions = [];
+    let graphState = {
+        xMin: -10,
+        xMax: 10,
+        yMin: -10,
+        yMax: 10,
+        width: 0,
+        height: 0
+    };
+
+    // Calculator Functions
+    function updateDisplay() {
+        document.getElementById('expression').textContent = currentExpression;
+    }
+
+    function appendNumber(num) {
+        currentExpression += num;
+        updateDisplay();
+    }
+
+    function appendOperator(op) {
+        if (op === '.') {
+            // Prevent multiple decimals in same number
+            const parts = currentExpression.split(/[\+\-\*\/\(\)]/);
+            const lastPart = parts[parts.length - 1];
+            if (lastPart.includes('.')) return;
+        }
+        currentExpression += op;
+        updateDisplay();
+    }
+
+    function appendFunction(func) {
+        currentExpression += func;
+        updateDisplay();
+    }
+
+    function appendConstant(constant) {
+        currentExpression += constant;
+        updateDisplay();
+    }
+
+    function backspace() {
+        currentExpression = currentExpression.slice(0, -1);
+        updateDisplay();
+    }
+
+    function clearEntry() {
+        currentExpression = '';
+        updateDisplay();
+        document.getElementById('result').textContent = '0';
+    }
+
+    function clearAll() {
+        currentExpression = '';
+        history = [];
+        updateDisplay();
+        updateHistory();
+        document.getElementById('result').textContent = '0';
+    }
+
+    function updateAngleMode() {
+        const selected = document.querySelector('input[name="angleMode"]:checked').value;
+        angleMode = selected;
+        math.config({
+            angles: angleMode
+        });
+    }
+
+    function calculate() {
+        if (!currentExpression.trim()) return;
+
+        try {
+            // Replace constants and functions for math.js
+            let expr = currentExpression
+                .replace(/pi/g, 'pi')
+                .replace(/e/g, 'e')
+                .replace(/\^/g, '^')
+                .replace(/×/g, '*')
+                .replace(/÷/g, '/')
+                .replace(/√/g, 'sqrt')
+                .replace(/!/g, '!');
+
+            // Handle implicit multiplication (e.g., 2π becomes 2*π)
+            expr = expr.replace(/(\d)(pi|e|sin|cos|tan|log|ln|sqrt)/g, '$1*$2');
+            expr = expr.replace(/(pi|e|\))(\d)/g, '$1*$2');
+            expr = expr.replace(/(\d)\(/g, '$1*(');
+            expr = expr.replace(/\)(\d)/g, ')*$1');
+
+            const result = math.evaluate(expr);
+            const resultText = typeof result === 'number' ?
+                (Math.abs(result) < 0.0001 && result !== 0 ? result.toExponential(6) : result.toString()) :
+                result.toString();
+
+            document.getElementById('result').textContent = resultText;
+
+            // Add to history
+            history.unshift({
+                expression: currentExpression,
+                result: resultText
+            });
+            if (history.length > 10) history.pop();
+            updateHistory();
+
+            document.getElementById('statusText').textContent = 'Calculated successfully';
+
+        } catch (error) {
+            document.getElementById('result').textContent = 'Error';
+            document.getElementById('statusText').textContent = 'Error: ' + error.message;
+        }
+    }
+
+    function updateHistory() {
+        const panel = document.getElementById('historyPanel');
+        panel.innerHTML = history.map(item =>
+            `<div class="history-item" onclick="loadFromHistory('${item.expression.replace(/'/g, '\\\'')}')">${item.expression} = ${item.result}</div>`
+        ).join('');
+    }
+
+    function loadFromHistory(expr) {
+        currentExpression = expr;
+        updateDisplay();
+    }
+
+    function plotCurrentExpression() {
+        if (!currentExpression.trim()) return;
+        document.getElementById('functionInput').value = currentExpression;
+        plotFunction();
+    }
+
+    // Graph Functions
+    function initGraph() {
+        const canvas = document.getElementById('graphCanvas');
+        const rect = canvas.parentElement.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        graphState.width = canvas.width;
+        graphState.height = canvas.height;
+
+        drawGrid();
+        plotAllFunctions();
+    }
+
+    function drawGrid() {
+        const canvas = document.getElementById('graphCanvas');
+        const ctx = canvas.getContext('2d');
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = '#e0e0e0';
+        ctx.lineWidth = 1;
+
+        // Grid lines
+        const xStep = (graphState.xMax - graphState.xMin) / 20;
+        const yStep = (graphState.yMax - graphState.yMin) / 20;
+
+        // Vertical lines
+        for (let x = graphState.xMin; x <= graphState.xMax; x += xStep) {
+            const canvasX = ((x - graphState.xMin) / (graphState.xMax - graphState.xMin)) * canvas.width;
+            ctx.beginPath();
+            ctx.moveTo(canvasX, 0);
+            ctx.lineTo(canvasX, canvas.height);
+            ctx.stroke();
+        }
+
+        // Horizontal lines
+        for (let y = graphState.yMin; y <= graphState.yMax; y += yStep) {
+            const canvasY = canvas.height - ((y - graphState.yMin) / (graphState.yMax - graphState.yMin)) * canvas.height;
+            ctx.beginPath();
+            ctx.moveTo(0, canvasY);
+            ctx.lineTo(canvas.width, canvasY);
+            ctx.stroke();
+        }
+
+        // Axes
+        ctx.strokeStyle = '#666';
+        ctx.lineWidth = 2;
+
+        // X-axis
+        const zeroY = canvas.height - ((-graphState.yMin) / (graphState.yMax - graphState.yMin)) * canvas.height;
+        if (zeroY >= 0 && zeroY <= canvas.height) {
+            ctx.beginPath();
+            ctx.moveTo(0, zeroY);
+            ctx.lineTo(canvas.width, zeroY);
+            ctx.stroke();
+        }
+
+        // Y-axis
+        const zeroX = ((-graphState.xMin) / (graphState.xMax - graphState.xMin)) * canvas.width;
+        if (zeroX >= 0 && zeroX <= canvas.width) {
+            ctx.beginPath();
+            ctx.moveTo(zeroX, 0);
+            ctx.lineTo(zeroX, canvas.height);
+            ctx.stroke();
+        }
+    }
+
+    function plotFunction() {
+        const input = document.getElementById('functionInput').value.trim();
+        if (!input) return;
+
+        graphFunctions = [{ expr: input, color: '#4a90e2' }];
+        plotAllFunctions();
+    }
+
+    function addToGraph() {
+        const input = document.getElementById('functionInput').value.trim();
+        if (!input) return;
+
+        const colors = ['#4a90e2', '#ff6b35', '#388e3c', '#9c27b0', '#ff9800'];
+        const color = colors[graphFunctions.length % colors.length];
+
+        graphFunctions.push({ expr: input, color: color });
+        plotAllFunctions();
+    }
+
+    function plotAllFunctions() {
+        drawGrid();
+
+        graphFunctions.forEach(func => {
+            plotSingleFunction(func.expr, func.color);
+        });
+
+        document.getElementById('statusText').textContent = `Plotted ${graphFunctions.length} function(s)`;
+    }
+
+    function plotSingleFunction(expression, color) {
+        const canvas = document.getElementById('graphCanvas');
+        const ctx = canvas.getContext('2d');
+
+        try {
+            // Prepare expression for math.js
+            let expr = expression
+                .replace(/pi/g, 'pi')
+                .replace(/e/g, 'e')
+                .replace(/\^/g, '^')
+                .replace(/×/g, '*')
+                .replace(/÷/g, '/')
+                .replace(/√/g, 'sqrt');
+
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+
+            let firstPoint = true;
+            const step = (graphState.xMax - graphState.xMin) / canvas.width;
+
+            for (let x = graphState.xMin; x <= graphState.xMax; x += step) {
+                try {
+                    const y = math.evaluate(expr, { x: x });
+
+                    if (typeof y === 'number' && isFinite(y)) {
+                        const canvasX = ((x - graphState.xMin) / (graphState.xMax - graphState.xMin)) * canvas.width;
+                        const canvasY = canvas.height - ((y - graphState.yMin) / (graphState.yMax - graphState.yMin)) * canvas.height;
+
+                        if (canvasY >= -100 && canvasY <= canvas.height + 100) {
+                            if (firstPoint) {
+                                ctx.moveTo(canvasX, canvasY);
+                                firstPoint = false;
+                            } else {
+                                ctx.lineTo(canvasX, canvasY);
+                            }
+                        } else {
+                            firstPoint = true;
+                        }
+                    } else {
+                        firstPoint = true;
+                    }
+                } catch (e) {
+                    firstPoint = true;
+                }
+            }
+
+            ctx.stroke();
+
+        } catch (error) {
+            document.getElementById('statusText').textContent = 'Error plotting function: ' + error.message;
+        }
+    }
+
+    function clearGraph() {
+        graphFunctions = [];
+        drawGrid();
+        document.getElementById('statusText').textContent = 'Graph cleared';
+    }
+
+    function resetZoom() {
+        graphState.xMin = -10;
+        graphState.xMax = 10;
+        graphState.yMin = -10;
+        graphState.yMax = 10;
+        plotAllFunctions();
+        document.getElementById('graphInfo').textContent = 'View reset to (-10,10) x (-10,10)';
+    }
+
+    // Mouse events for panning and zooming
+    let isDragging = false;
+    let lastMouseX = 0;
+    let lastMouseY = 0;
+
+    document.getElementById('graphCanvas').addEventListener('mousedown', (e) => {
+        isDragging = true;
+        lastMouseX = e.offsetX;
+        lastMouseY = e.offsetY;
+    });
+
+    document.getElementById('graphCanvas').addEventListener('mousemove', (e) => {
+        if (isDragging) {
+            const deltaX = e.offsetX - lastMouseX;
+            const deltaY = e.offsetY - lastMouseY;
+
+            const xRange = graphState.xMax - graphState.xMin;
+            const yRange = graphState.yMax - graphState.yMin;
+
+            const dx = -(deltaX / graphState.width) * xRange;
+            const dy = (deltaY / graphState.height) * yRange;
+
+            graphState.xMin += dx;
+            graphState.xMax += dx;
+            graphState.yMin += dy;
+            graphState.yMax += dy;
+
+            plotAllFunctions();
+
+            lastMouseX = e.offsetX;
+            lastMouseY = e.offsetY;
+        }
+    });
+
+    document.getElementById('graphCanvas').addEventListener('mouseup', () => {
+        isDragging = false;
+    });
+
+    document.getElementById('graphCanvas').addEventListener('wheel', (e) => {
+        e.preventDefault();
+
+        const zoomFactor = e.deltaY > 0 ? 1.1 : 0.9;
+        const centerX = (graphState.xMin + graphState.xMax) / 2;
+        const centerY = (graphState.yMin + graphState.yMax) / 2;
+
+        const xRange = (graphState.xMax - graphState.xMin) * zoomFactor;
+        const yRange = (graphState.yMax - graphState.yMin) * zoomFactor;
+
+        graphState.xMin = centerX - xRange / 2;
+        graphState.xMax = centerX + xRange / 2;
+        graphState.yMin = centerY - yRange / 2;
+        graphState.yMax = centerY + yRange / 2;
+
+        plotAllFunctions();
+    });
+
+    // Keyboard support
+    document.addEventListener('keydown', (e) => {
+        if (document.activeElement.tagName === 'INPUT') return;
+
+        if (e.key >= '0' && e.key <= '9') {
+            appendNumber(e.key);
+        } else if (e.key === '+') {
+            appendOperator('+');
+        } else if (e.key === '-') {
+            appendOperator('-');
+        } else if (e.key === '*') {
+            appendOperator('*');
+        } else if (e.key === '/') {
+            e.preventDefault();
+            appendOperator('/');
+        } else if (e.key === 'Enter') {
+            calculate();
+        } else if (e.key === 'Escape') {
+            clearEntry();
+        } else if (e.key === 'Backspace') {
+            backspace();
+        } else if (e.key === '.') {
+            appendOperator('.');
+        } else if (e.key === '(') {
+            appendOperator('(');
+        } else if (e.key === ')') {
+            appendOperator(')');
+        }
+    });
+
+    // Initialize
+    window.addEventListener('load', () => {
+        updateDisplay();
+        math.config({ angles: 'deg' });
+        setTimeout(initGraph, 100);
+    });
+
+    window.addEventListener('resize', () => {
+        setTimeout(initGraph, 100);
+    });
+</script>
+</body>
+</html>

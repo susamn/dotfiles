@@ -27,6 +27,13 @@ TOOLS = [
         "has_backend": False
     },
     {
+        "name": "CSV-JSON Converter",
+        "description": "Convert between CSV and JSON formats",
+        "path": "/tools/csv-json-converter",
+        "file": "csv_json_converter.html",
+        "has_backend": False
+    },
+    {
         "name": "Cron Parser",
         "description": "Parse and explain cron expressions",
         "path": "/tools/cron-parser",

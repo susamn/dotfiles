@@ -95,7 +95,14 @@ TOOLS = [
         "path": "/tools/timestamp-converter",
         "file": "timestamp_converter.html",
         "has_backend": False
-    }
+    },
+    {
+        "name": "HTML Entity Converter",
+        "description": "Encode and decode HTML entities",
+        "path": "/tools/html-entity-converter",
+        "file": "html_entity_converter.html",
+        "has_backend": False
+    },
 ]
 
 @app.get("/", response_class=HTMLResponse)

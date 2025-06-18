@@ -27,6 +27,13 @@ TOOLS = [
         "has_backend": False
     },
     {
+        "name": "JWT Decoder",
+        "description": "Decode and analyze JWT tokens",
+        "path": "/tools/jwt-decoder",
+        "file": "jwt_decoder.html",
+        "has_backend": False
+    },
+    {
         "name": "URL Encoder/Decoder",
         "description": "Encode and decode URLs",
         "path": "/tools/url-encoder",

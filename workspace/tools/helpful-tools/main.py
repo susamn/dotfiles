@@ -81,6 +81,13 @@ TOOLS = [
         "path": "/tools/text-diff",
         "file": "text_diff.html",
         "has_backend": True
+    },
+    {
+        "name": "Timestamp Converter Tool",
+        "description": "Convert between Unix timestamps and human dates",
+        "path": "/tools/timestamp-converter",
+        "file": "timestamp_converter.html",
+        "has_backend": True
     }
 ]
 

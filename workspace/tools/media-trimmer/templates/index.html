@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video & Audio Trimmer with YouTube</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        .toolbar {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .toolbar button {
+            background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+            border: 1px solid #a0a0a0;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 2px;
+            color: #333;
+        }
+        .toolbar button:hover {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+        }
+        .toolbar button:active {
+            background: linear-gradient(to bottom, #e0e0e0, #f0f0f0);
+            box-shadow: inset 1px 1px 2px rgba(0,0,0,0.2);
+        }
+        .toolbar button:disabled {
+            background: linear-gradient(to bottom, #f0f0f0, #d8d8d8);
+            color: #888;
+            cursor: not-allowed;
+        }
+        .separator {
+            width: 1px;
+            height: 20px;
+            background: #c0c0c0;
+            margin: 0 4px;
+        }
+        .main-container {
+            display: flex;
+            height: calc(100vh - 45px - 30px);
+        }
+        .panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #c0c0c0;
+        }
+        .panel:last-child {
+            border-right: none;
+        }
+        .panel-header {
+            background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #555;
+        }
+        .panel-content {
+            flex: 1;
+            position: relative;
+            background: #ffffff;
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .input-tabs {
+            display: flex;
+            background: #f0f0f0;
+            border-bottom: 1px solid #c0c0c0;
+        }
+        .input-tab {
+            flex: 1;
+            padding: 8px 12px;
+            background: linear-gradient(to bottom, #e8e8e8, #d0d0d0);
+            border-right: 1px solid #c0c0c0;
+            cursor: pointer;
+            font-size: 12px;
+            text-align: center;
+        }
+        .input-tab:last-child {
+            border-right: none;
+        }
+        .input-tab.active {
+            background: linear-gradient(to bottom, #ffffff, #f0f0f0);
+            border-bottom: 1px solid #ffffff;
+            margin-bottom: -1px;
+        }
+        .input-tab:hover:not(.active) {
+            background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
+        }
+        .tab-content {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+        }
+        .tab-content.active {
+            display: flex;
+        }
+        .upload-area {
+            border: 2px dashed #c0c0c0;
+            border-radius: 4px;
+            padding: 20px;
+            text-align: center;
+            margin: 12px;
+            background: #fafafa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            order: 2;
+            flex-shrink: 0;
+        }
+        .upload-area:hover {
+            border-color: #0066cc;
+            background: #f0f8ff;
+        }
+        .upload-area.dragover {
+            border-color: #0066cc;
+            background: #e6f3ff;
+        }
+        .youtube-input {
+            padding: 12px;
+            order: 2;
+            flex-shrink: 0;
+        }
+        .youtube-input .control-group {
+            margin-bottom: 12px;
+        }
+        .youtube-input label {
+            display: block;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 4px;
+            color: #555;
+        }
+        .youtube-input input, .youtube-input select {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #a0a0a0;
+            border-radius: 2px;
+            font-size: 12px;
+            background: white;
+        }
+        .youtube-input input:focus, .youtube-input select:focus {
+            outline: none;
+            border-color: #0066cc;
+            box-shadow: 0 0 3px rgba(0,102,204,0.3);
+        }
+        .file-input {
+            display: none;
+        }
+        .file-list {
+            padding: 12px;
+            order: 1;
+            min-height: 200px;
+            flex: 1;
+            overflow-y: auto;
+        }
+        .file-item {
+            background: #ffffff;
+            border: 1px solid #d0d0d0;
+            border-radius: 3px;
+            padding: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .file-item:hover {
+            background: #f8f8f8;
+            border-color: #0066cc;
+        }
+        .file-item.selected {
+            background: #e6f3ff;
+            border-color: #0066cc;
+        }
+        .file-name {
+            font-weight: bold;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+        .file-info {
+            font-size: 11px;
+            color: #666;
+        }
+        .file-source {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 2px;
+            font-size: 10px;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+        .file-source.local {
+            background: #e6f3ff;
+            color: #0066cc;
+        }
+        .file-source.youtube {
+            background: #ffe6e6;
+            color: #cc0000;
+        }
+        .preview-container {
+            padding: 12px;
+            text-align: center;
+        }
+        .video-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border: 1px solid #d0d0d0;
+            border-radius: 3px;
+            pointer-events: auto;
+        }
+        .audio-preview {
+            width: 100%;
+            margin: 20px 0;
+        }
+        .trim-controls {
+            padding: 12px;
+            background: #f8f8f8;
+            border-top: 1px solid #d0d0d0;
+        }
+        .control-group {
+            margin-bottom: 12px;
+        }
+        .control-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 4px;
+            color: #555;
+        }
+        .control-group input, .control-group select {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #a0a0a0;
+            border-radius: 2px;
+            font-size: 12px;
+            background: white;
+        }
+        .control-group input:focus, .control-group select:focus {
+            outline: none;
+            border-color: #0066cc;
+            box-shadow: 0 0 3px rgba(0,102,204,0.3);
+        }
+        .time-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .progress-container {
+            margin: 12px 0;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #0066cc;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .error-display {
+            background: #fff0f0;
+            color: #cc0000;
+            padding: 12px;
+            border-left: 4px solid #cc0000;
+            margin: 12px;
+            font-size: 12px;
+            border-radius: 3px;
+        }
+        .success-display {
+            background: #f0fff0;
+            color: #008000;
+            padding: 12px;
+            border-left: 4px solid #008000;
+            margin: 12px;
+            font-size: 12px;
+            border-radius: 3px;
+        }
+        .status-bar {
+            background: linear-gradient(to bottom, #e8e8e8, #d0d0d0);
+            border-top: 1px solid #c0c0c0;
+            padding: 4px 12px;
+            font-size: 11px;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 30px;
+        }
+        .ffmpeg-status {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .status-ok {
+            background: #00aa00;
+        }
+        .status-error {
+            background: #cc0000;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background: #ffffff;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 400px;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        .modal-header {
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        .modal-buttons {
+            text-align: right;
+            margin-top: 15px;
+            gap: 8px;
+            display: flex;
+            justify-content: flex-end;
+        }
+        .modal-buttons button {
+            background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+            border: 1px solid #a0a0a0;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 2px;
+            color: #333;
+        }
+        .modal-buttons button:hover {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+        }
+        .modal-buttons button.primary {
+            background: linear-gradient(to bottom, #4a90e2, #357abd);
+            color: white;
+            border-color: #357abd;
+        }
+        .modal-buttons button.primary:hover {
+            background: linear-gradient(to bottom, #5ba0f2, #4a90e2);
+        }
+        .timeline {
+            position: relative;
+            height: 40px;
+            background: #f0f0f0;
+            border: 1px solid #c0c0c0;
+            border-radius: 3px;
+            margin: 8px 0;
+            cursor: pointer;
+            user-select: none;
+        }
+        .timeline-track {
+            height: 100%;
+            background: linear-gradient(to bottom, #e8e8e8, #d0d0d0);
+            position: relative;
+        }
+        .timeline-selection {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            background: rgba(0, 102, 204, 0.3);
+            border: 2px solid #0066cc;
+            border-radius: 2px;
+        }
+        .timeline-handle {
+            position: absolute;
+            top: -2px;
+            width: 12px;
+            height: 44px;
+            background: #0066cc;
+            cursor: ew-resize;
+            border-radius: 2px;
+        }
+        .timeline-handle.start {
+            left: -6px;
+        }
+        .timeline-handle.end {
+            right: -6px;
+        }
+        .download-progress {
+            background: #f0f8ff;
+            border: 1px solid #0066cc;
+            border-radius: 3px;
+            padding: 12px;
+            margin: 12px;
+        }
+        .download-progress .progress-text {
+            font-size: 12px;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        .youtube-download-btn {
+            width: 100%;
+            padding: 8px;
+            background: linear-gradient(to bottom, #4a90e2, #357abd);
+            color: white;
+            border: 1px solid #357abd;
+            border-radius: 2px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .youtube-download-btn:hover {
+            background: linear-gradient(to bottom, #5ba0f2, #4a90e2);
+        }
+        .youtube-download-btn:disabled {
+            background: linear-gradient(to bottom, #d0d0d0, #c0c0c0);
+            color: #888;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+<div class="toolbar">
+    <input type="file" id="fileInput" class="file-input" accept="video/*,audio/*" multiple>
+    <button onclick="document.getElementById('fileInput').click()">Upload Files</button>
+    <div class="separator"></div>
+    <button id="trimBtn" onclick="showTrimModal()" disabled>Trim Selected</button>
+    <button id="deleteBtn" onclick="deleteSelected()" disabled>Delete</button>
+    <div class="separator"></div>
+    <button onclick="clearAll()">Clear All</button>
+</div>
+
+<div class="main-container">
+    <div class="panel">
+        <div class="panel-header">Media Sources</div>
+        <div class="panel-content">
+            <div class="input-tabs">
+                <div class="input-tab active" onclick="switchTab('local')">Local Files</div>
+                <div class="input-tab" onclick="switchTab('youtube')">YouTube</div>
+            </div>
+
+            <!-- Local Files Tab -->
+            <div id="localTab" class="tab-content active">
+                <div class="file-list" id="fileList">
+                    <!-- Files will be listed here first -->
+                </div>
+                <div class="upload-area" id="uploadArea">
+                    <div style="font-size: 14px; margin-bottom: 8px;">Drop files here or click to upload</div>
+                    <div style="font-size: 11px; color: #888;">Supported: MP4, AVI, MOV, MKV, MP3, WAV, M4A, AAC, FLAC</div>
+                </div>
+            </div>
+
+            <!-- YouTube Tab -->
+            <div id="youtubeTab" class="tab-content">
+                <div class="file-list" id="youtubeFileList">
+                    <!-- YouTube downloads will be listed here -->
+                </div>
+                <div class="youtube-input">
+                    <div class="control-group">
+                        <label>YouTube URL</label>
+                        <input type="url" id="youtubeUrl" placeholder="https://www.youtube.com/watch?v=..." />
+                    </div>
+                    <div class="control-group">
+                        <label>Quality</label>
+                        <select id="youtubeQuality">
+                            <option value="best">Best Quality</option>
+                            <option value="720p">720p</option>
+                            <option value="480p">480p</option>
+                            <option value="worst">Lowest Quality</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <button id="downloadBtn" onclick="downloadYouTubeVideo()" class="youtube-download-btn">
+                            Download Video
+                        </button>
+                    </div>
+                    <div id="youtubeProgress" class="download-progress" style="display: none;">
+                        <div class="progress-text" id="progressText">Starting download...</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="youtubeProgressFill"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header">Preview & Edit</div>
+        <div class="panel-content">
+            <div class="preview-container" id="previewContainer">
+                <div style="padding: 40px; text-align: center; color: #888; font-style: italic;">
+                    Select a file to preview or download a YouTube video
+                </div>
+            </div>
+            <div class="trim-controls" id="trimControls" style="display: none;">
+                <div class="timeline" id="timeline">
+                    <div class="timeline-track">
+                        <div class="timeline-selection" id="timelineSelection">
+                            <div class="timeline-handle start" id="startHandle"></div>
+                            <div class="timeline-handle end" id="endHandle"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="time-controls">
+                    <div class="control-group">
+                        <label>Start Time (seconds)</label>
+                        <input type="number" id="startTime" value="0" min="0" step="0.1">
+                    </div>
+                    <div class="control-group">
+                        <label>End Time (seconds)</label>
+                        <input type="number" id="endTime" value="0" min="0" step="0.1">
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>Duration: <span id="selectionDuration">0.0s</span></label>
+                </div>
+                <div class="control-group">
+                    <label>Export Format</label>
+                    <select id="exportFormat">
+                        <option value="same">Same as Original</option>
+                        <option value="mp4">MP4 Video</option>
+                        <option value="mp3">MP3 Audio</option>
+                        <option value="wav">WAV Audio</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Trim Modal -->
+<div id="trimModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">Trim & Export Media File</div>
+        <div class="control-group">
+            <label>Output Filename</label>
+            <input type="text" id="outputFilename" placeholder="Enter filename...">
+        </div>
+        <div class="control-group">
+            <label>Export Format</label>
+            <select id="modalExportFormat">
+                <option value="same">Same as Original</option>
+                <option value="mp4">MP4 Video</option>
+                <option value="mp3">MP3 Audio</option>
+                <option value="wav">WAV Audio</option>
+            </select>
+        </div>
+        <div id="trimProgress" class="progress-container" style="display: none;">
+            <div class="progress-bar">
+                <div class="progress-fill" id="trimProgressFill"></div>
+            </div>
+            <div style="text-align: center; font-size: 11px; margin-top: 4px;">Processing...</div>
+        </div>
+        <div class="modal-buttons">
+            <button onclick="closeTrimModal()">Cancel</button>
+            <button class="primary" onclick="startTrim()">Trim & Export</button>
+        </div>
+    </div>
+</div>
+
+<div class="status-bar">
+    <div class="ffmpeg-status">
+        <span class="status-indicator" id="ffmpegIndicator"></span>
+        <span id="ffmpegStatus">Checking FFmpeg...</span>
+    </div>
+    <div id="fileCount">No files loaded</div>
+</div>
+
+<script>
+    let uploadedFiles = [];
+    let selectedFile = null;
+    let currentMediaElement = null;
+    let timelineDuration = 0;
+    let isDragging = false;
+    let dragHandle = null;
+    let currentTab = 'local';
+    let downloadInterval = null;
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+        checkFFmpegStatus();
+        setupEventListeners();
+        loadFiles();
+    });
+
+    function checkFFmpegStatus() {
+        fetch('/api/ffmpeg-status')
+            .then(response => response.json())
+            .then(data => {
+                const indicator = document.getElementById('ffmpegIndicator');
+                const status = document.getElementById('ffmpegStatus');
+                if (data.available) {
+                    indicator.className = 'status-indicator status-ok';
+                    status.textContent = 'FFmpeg available';
+                } else {
+                    indicator.className = 'status-indicator status-error';
+                    status.textContent = 'FFmpeg not found';
+                    showError('FFmpeg is not installed. Please install FFmpeg to use this tool.');
+                }
+            })
+            .catch(error => {
+                console.error('Error checking FFmpeg status:', error);
+            });
+    }
+
+    function switchTab(tabName) {
+        // Update tab buttons
+        document.querySelectorAll('.input-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        document.querySelector(`.input-tab:nth-child(${tabName === 'local' ? '1' : '2'})`).classList.add('active');
+
+        // Update tab content
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('active');
+        });
+        document.getElementById(tabName === 'local' ? 'localTab' : 'youtubeTab').classList.add('active');
+
+        currentTab = tabName;
+    }
+
+    function setupEventListeners() {
+        const fileInput = document.getElementById('fileInput');
+        const uploadArea = document.getElementById('uploadArea');
+        const timeline = document.getElementById('timeline');
+        const startTime = document.getElementById('startTime');
+        const endTime = document.getElementById('endTime');
+
+        // File input change
+        fileInput.addEventListener('change', handleFileSelect);
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', handleDragOver);
+        uploadArea.addEventListener('dragleave', handleDragLeave);
+        uploadArea.addEventListener('drop', handleFileDrop);
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        // Timeline interactions - prevent conflicts with video
+        timeline.addEventListener('mousedown', handleTimelineMouseDown);
+        document.addEventListener('mousemove', handleTimelineMouseMove);
+        document.addEventListener('mouseup', handleTimelineMouseUp);
+
+        // Time input changes
+        startTime.addEventListener('input', updateTimelineFromInputs);
+        endTime.addEventListener('input', updateTimelineFromInputs);
+    }
+
+    async function downloadYouTubeVideo() {
+        const url = document.getElementById('youtubeUrl').value.trim();
+        const quality = document.getElementById('youtubeQuality').value;
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        if (!url) {
+            showError('Please enter a YouTube URL');
+            return;
+        }
+
+        try {
+            downloadBtn.disabled = true;
+            downloadBtn.textContent = 'Starting...';
+            showYouTubeProgress('Starting download...', 0);
+
+            const response = await fetch('/api/youtube/download', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    url: url,
+                    quality: quality
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Download failed');
+            }
+
+            const result = await response.json();
+
+            // Start polling for progress
+            pollYouTubeProgress(result.file_id);
+
+        } catch (error) {
+            downloadBtn.disabled = false;
+            downloadBtn.textContent = 'Download Video';
+            hideYouTubeProgress();
+            showError(`YouTube download failed: ${error.message}`);
+        }
+    }
+
+    function pollYouTubeProgress(fileId) {
+        downloadInterval = setInterval(async () => {
+            try {
+                const response = await fetch(`/api/youtube/progress/${fileId}`);
+                const data = await response.json();
+
+                if (data.status === 'downloading') {
+                    showYouTubeProgress(`Downloading... ${data.progress.toFixed(1)}%`, data.progress);
+                } else if (data.status === 'processing') {
+                    showYouTubeProgress('Processing video...', 95);
+                } else if (data.status === 'completed') {
+                    clearInterval(downloadInterval);
+                    hideYouTubeProgress();
+
+                    // Reset download button
+                    const downloadBtn = document.getElementById('downloadBtn');
+                    downloadBtn.disabled = false;
+                    downloadBtn.textContent = 'Download Video';
+
+                    // Add to file list
+                    uploadedFiles.push(data.file_info);
+                    refreshFileList();
+                    updateFileCount();
+
+                    // Clear URL input
+                    document.getElementById('youtubeUrl').value = '';
+
+                    showSuccess(`YouTube video downloaded: ${data.file_info.original_name}`);
+                } else if (data.status === 'error') {
+                    clearInterval(downloadInterval);
+                    hideYouTubeProgress();
+
+                    // Reset download button
+                    const downloadBtn = document.getElementById('downloadBtn');
+                    downloadBtn.disabled = false;
+                    downloadBtn.textContent = 'Download Video';
+
+                    showError(`Download failed: ${data.error || 'Unknown error'}`);
+                }
+            } catch (error) {
+                clearInterval(downloadInterval);
+                hideYouTubeProgress();
+
+                // Reset download button
+                const downloadBtn = document.getElementById('downloadBtn');
+                downloadBtn.disabled = false;
+                downloadBtn.textContent = 'Download Video';
+
+                showError('Failed to check download progress');
+            }
+        }, 1000);
+    }
+
+    function showYouTubeProgress(message, progress) {
+        const progressDiv = document.getElementById('youtubeProgress');
+        const progressText = document.getElementById('progressText');
+        const progressFill = document.getElementById('youtubeProgressFill');
+
+        progressDiv.style.display = 'block';
+        progressText.textContent = message;
+        progressFill.style.width = `${progress}%`;
+    }
+
+    function hideYouTubeProgress() {
+        document.getElementById('youtubeProgress').style.display = 'none';
+    }
+
+    function handleFileSelect(event) {
+        const files = Array.from(event.target.files);
+        uploadFiles(files);
+    }
+
+    function handleDragOver(event) {
+        event.preventDefault();
+        event.currentTarget.classList.add('dragover');
+    }
+
+    function handleDragLeave(event) {
+        event.currentTarget.classList.remove('dragover');
+    }
+
+    function handleFileDrop(event) {
+        event.preventDefault();
+        event.currentTarget.classList.remove('dragover');
+        const files = Array.from(event.dataTransfer.files);
+        uploadFiles(files);
+    }
+
+    function uploadFiles(files) {
+        files.forEach(file => uploadFile(file));
+    }
+
+    async function uploadFile(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            showProgress(true);
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Upload failed');
+            }
+
+            const result = await response.json();
+            uploadedFiles.push(result);
+            refreshFileList();
+            updateFileCount();
+            showSuccess(`Uploaded: ${result.original_name}`);
+
+        } catch (error) {
+            showError(`Upload failed: ${error.message}`);
+        } finally {
+            showProgress(false);
+        }
+    }
+
+    function refreshFileList() {
+        const fileList = document.getElementById('fileList');
+        fileList.innerHTML = '';
+
+        uploadedFiles.forEach((file, index) => {
+            const fileItem = createFileItem(file, index);
+            fileList.appendChild(fileItem);
+        });
+    }
+
+    function createFileItem(file, index) {
+        const div = document.createElement('div');
+        div.className = 'file-item';
+        div.onclick = () => selectFile(index);
+
+        const info = file.info;
+        const duration = formatDuration(info.duration);
+        const size = formatFileSize(info.file_size);
+        const source = info.source || 'local';
+        const title = info.title || file.original_name;
+
+        div.innerHTML = `
+                <div class="file-name">
+                    ${title}
+                    <span class="file-source ${source}">${source.toUpperCase()}</span>
+                </div>
+                <div class="file-info">
+                    Duration: ${duration} | Size: ${size} | Format: ${info.format}
+                    ${info.resolution ? ` | ${info.resolution}` : ''}
+                </div>
+            `;
+
+        return div;
+    }
+
+    function selectFile(index) {
+        // Remove previous selection
+        document.querySelectorAll('.file-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+
+        // Select new file
+        document.querySelectorAll('.file-item')[index].classList.add('selected');
+        selectedFile = uploadedFiles[index];
+
+        // Update UI
+        document.getElementById('trimBtn').disabled = false;
+        document.getElementById('deleteBtn').disabled = false;
+
+        // Load preview
+        loadPreview(selectedFile);
+    }
+
+    function loadPreview(file) {
+        const previewContainer = document.getElementById('previewContainer');
+        const trimControls = document.getElementById('trimControls');
+
+        previewContainer.innerHTML = '';
+
+        const info = file.info;
+        const isVideo = info.video_codec !== null;
+        const source = info.source || 'local';
+        const fileUrl = source === 'youtube' ? `/youtube/${file.filename}` : `/uploads/${file.filename}`;
+
+        if (isVideo) {
+            const video = document.createElement('video');
+            video.className = 'video-preview';
+            video.controls = true;
+            video.src = fileUrl;
+            video.style.pointerEvents = 'auto';
+
+            // Prevent timeline interference with video scrubbing
+            video.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+            });
+            video.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+
+            video.addEventListener('loadedmetadata', () => {
+                setupTimeline(info.duration);
+            });
+
+            previewContainer.appendChild(video);
+            currentMediaElement = video;
+        } else {
+            const audio = document.createElement('audio');
+            audio.className = 'audio-preview';
+            audio.controls = true;
+            audio.src = fileUrl;
+            audio.addEventListener('loadedmetadata', () => {
+                setupTimeline(info.duration);
+            });
+            previewContainer.appendChild(audio);
+            currentMediaElement = audio;
+
+            // Add waveform placeholder
+            const waveformDiv = document.createElement('div');
+            const title = info.title || file.original_name;
+            waveformDiv.innerHTML = `
+                    <div style="text-align: center; padding: 40px; background: #f8f8f8; border: 1px solid #d0d0d0; border-radius: 3px; margin: 20px 0;">
+                        <div style="font-size: 14px; margin-bottom: 8px;">Audio File</div>
+                        <div style="font-size: 12px; color: #666;">${title}</div>
+                    </div>
+                `;
+            previewContainer.appendChild(waveformDiv);
+        }
+
+        trimControls.style.display = 'block';
+    }
+
+    function setupTimeline(duration) {
+        timelineDuration = duration;
+
+        // Reset timeline
+        document.getElementById('startTime').value = 0;
+        document.getElementById('startTime').max = duration;
+        document.getElementById('endTime').value = duration;
+        document.getElementById('endTime').max = duration;
+
+        updateTimelineDisplay();
+    }
+
+    function updateTimelineDisplay() {
+        const startTime = parseFloat(document.getElementById('startTime').value) || 0;
+        const endTime = parseFloat(document.getElementById('endTime').value) || timelineDuration;
+
+        // Update timeline visual
+        const selection = document.getElementById('timelineSelection');
+        const startPercent = (startTime / timelineDuration) * 100;
+        const widthPercent = ((endTime - startTime) / timelineDuration) * 100;
+
+        selection.style.left = `${startPercent}%`;
+        selection.style.width = `${widthPercent}%`;
+
+        // Update duration display
+        const duration = endTime - startTime;
+        document.getElementById('selectionDuration').textContent = formatDuration(duration);
+    }
+
+    function updateTimelineFromInputs() {
+        updateTimelineDisplay();
+    }
+
+    function handleTimelineMouseDown(event) {
+        // Prevent interference with video/audio controls
+        if (event.target.closest('video') || event.target.closest('audio')) {
+            return;
+        }
+
+        const timeline = document.getElementById('timeline');
+        const rect = timeline.getBoundingClientRect();
+        const clickX = event.clientX - rect.left;
+        const clickPercent = clickX / rect.width;
+        const clickTime = clickPercent * timelineDuration;
+
+        // Check if clicking on handles
+        const startHandle = document.getElementById('startHandle');
+        const endHandle = document.getElementById('endHandle');
+
+        if (event.target === startHandle) {
+            isDragging = true;
+            dragHandle = 'start';
+        } else if (event.target === endHandle) {
+            isDragging = true;
+            dragHandle = 'end';
+        } else if (event.target === timeline || event.target.closest('.timeline-track')) {
+            // Click on timeline - set nearest handle
+            const startTime = parseFloat(document.getElementById('startTime').value) || 0;
+            const endTime = parseFloat(document.getElementById('endTime').value) || timelineDuration;
+
+            if (Math.abs(clickTime - startTime) < Math.abs(clickTime - endTime)) {
+                document.getElementById('startTime').value = Math.max(0, clickTime).toFixed(1);
+            } else {
+                document.getElementById('endTime').value = Math.min(timelineDuration, clickTime).toFixed(1);
+            }
+            updateTimelineDisplay();
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    function handleTimelineMouseMove(event) {
+        if (!isDragging) return;
+
+        const timeline = document.getElementById('timeline');
+        const rect = timeline.getBoundingClientRect();
+        const clickX = event.clientX - rect.left;
+        const clickPercent = Math.max(0, Math.min(1, clickX / rect.width));
+        const clickTime = clickPercent * timelineDuration;
+
+        if (dragHandle === 'start') {
+            const endTime = parseFloat(document.getElementById('endTime').value) || timelineDuration;
+            document.getElementById('startTime').value = Math.max(0, Math.min(endTime - 0.1, clickTime)).toFixed(1);
+        } else if (dragHandle === 'end') {
+            const startTime = parseFloat(document.getElementById('startTime').value) || 0;
+            document.getElementById('endTime').value = Math.max(startTime + 0.1, Math.min(timelineDuration, clickTime)).toFixed(1);
+        }
+
+        updateTimelineDisplay();
+        event.preventDefault();
+    }
+
+    function handleTimelineMouseUp(event) {
+        isDragging = false;
+        dragHandle = null;
+    }
+
+    function showTrimModal() {
+        if (!selectedFile) return;
+
+        const modal = document.getElementById('trimModal');
+        const outputFilename = document.getElementById('outputFilename');
+        const modalExportFormat = document.getElementById('modalExportFormat');
+        const currentFormat = document.getElementById('exportFormat').value;
+
+        // Suggest filename
+        const title = selectedFile.info.title || selectedFile.original_name;
+        const nameWithoutExt = title.includes('.') ? title.substring(0, title.lastIndexOf('.')) : title;
+
+        // Determine extension based on export format
+        let ext = '';
+        switch (currentFormat) {
+            case 'mp4': ext = '.mp4'; break;
+            case 'mp3': ext = '.mp3'; break;
+            case 'wav': ext = '.wav'; break;
+            default:
+                const originalExt = selectedFile.filename.includes('.') ? selectedFile.filename.substring(selectedFile.filename.lastIndexOf('.')) : '.mp4';
+                ext = originalExt;
+                break;
+        }
+
+        outputFilename.value = `${nameWithoutExt}_trimmed${ext}`;
+        modalExportFormat.value = currentFormat;
+
+        modal.style.display = 'block';
+    }
+
+    function closeTrimModal() {
+        document.getElementById('trimModal').style.display = 'none';
+        document.getElementById('trimProgress').style.display = 'none';
+    }
+
+    async function startTrim() {
+        const outputFilename = document.getElementById('outputFilename').value.trim();
+        const exportFormat = document.getElementById('modalExportFormat').value;
+
+        if (!outputFilename) {
+            showError('Please enter an output filename');
+            return;
+        }
+
+        const startTime = parseFloat(document.getElementById('startTime').value) || 0;
+        const endTime = parseFloat(document.getElementById('endTime').value) || timelineDuration;
+
+        if (startTime >= endTime) {
+            showError('Start time must be less than end time');
+            return;
+        }
+
+        const trimRequest = {
+            filename: selectedFile.filename,
+            start_time: startTime,
+            end_time: endTime,
+            output_filename: outputFilename,
+            export_format: exportFormat
+        };
+
+        try {
+            document.getElementById('trimProgress').style.display = 'block';
+
+            const response = await fetch('/api/trim', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(trimRequest)
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Trimming failed');
+            }
+
+            const result = await response.json();
+
+            // Create download link
+            const downloadLink = document.createElement('a');
+            downloadLink.href = result.download_url;
+            downloadLink.download = result.output_filename;
+            downloadLink.style.display = 'none';
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+
+            showSuccess(`File processed successfully: ${result.output_filename} (${result.export_format})`);
+            closeTrimModal();
+
+        } catch (error) {
+            showError(`Processing failed: ${error.message}`);
+        } finally {
+            document.getElementById('trimProgress').style.display = 'none';
+        }
+    }
+
+    async function deleteSelected() {
+        if (!selectedFile) return;
+
+        const fileIndex = uploadedFiles.findIndex(f => f.file_id === selectedFile.file_id);
+        if (fileIndex === -1) return;
+
+        try {
+            const response = await fetch(`/api/files/${selectedFile.file_id}`, {
+                method: 'DELETE'
+            });
+
+            if (!response.ok) {
+                throw new Error('Delete failed');
+            }
+
+            uploadedFiles.splice(fileIndex, 1);
+            selectedFile = null;
+
+            // Clear preview
+            document.getElementById('previewContainer').innerHTML = `
+                    <div style="padding: 40px; text-align: center; color: #888; font-style: italic;">
+                        Select a file to preview or download a YouTube video
+                    </div>
+                `;
+            document.getElementById('trimControls').style.display = 'none';
+
+            // Disable buttons
+            document.getElementById('trimBtn').disabled = true;
+            document.getElementById('deleteBtn').disabled = true;
+
+            refreshFileList();
+            updateFileCount();
+            showSuccess('File deleted successfully');
+
+        } catch (error) {
+            showError(`Delete failed: ${error.message}`);
+        }
+    }
+
+    async function clearAll() {
+        if (uploadedFiles.length === 0) {
+            showSuccess('No files to clear');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/files/clear-all', {
+                method: 'DELETE'
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to clear files');
+            }
+
+            const result = await response.json();
+
+            // Clear frontend
+            uploadedFiles = [];
+            selectedFile = null;
+
+            // Clear UI
+            document.getElementById('fileList').innerHTML = '';
+            document.getElementById('previewContainer').innerHTML = `
+            <div style="padding: 40px; text-align: center; color: #888; font-style: italic;">
+                Select a file to preview or download a YouTube video
+            </div>
+        `;
+            document.getElementById('trimControls').style.display = 'none';
+
+            // Disable buttons
+            document.getElementById('trimBtn').disabled = true;
+            document.getElementById('deleteBtn').disabled = true;
+
+            updateFileCount();
+
+            if (result.errors && result.errors.length > 0) {
+                showError(`Cleared ${result.cleared_count} files with some errors. Check console for details.`);
+                console.error('Clear errors:', result.errors);
+            } else {
+                showSuccess(`Successfully cleared ${result.cleared_count} files`);
+            }
+
+        } catch (error) {
+            showError(`Failed to clear files: ${error.message}`);
+        }
+    }
+
+    async function loadFiles() {
+        try {
+            const response = await fetch('/api/files');
+            const data = await response.json();
+            uploadedFiles = data.files;
+            refreshFileList();
+            updateFileCount();
+        } catch (error) {
+            console.error('Error loading files:', error);
+        }
+    }
+
+    function updateFileCount() {
+        const count = uploadedFiles.length;
+        const localCount = uploadedFiles.filter(f => (f.info.source || 'local') === 'local').length;
+        const youtubeCount = uploadedFiles.filter(f => (f.info.source || 'local') === 'youtube').length;
+
+        let text = 'No files loaded';
+        if (count > 0) {
+            text = `${count} file${count > 1 ? 's' : ''} loaded`;
+            if (localCount > 0 && youtubeCount > 0) {
+                text += ` (${localCount} local, ${youtubeCount} YouTube)`;
+            }
+        }
+
+        document.getElementById('fileCount').textContent = text;
+    }
+
+    function formatDuration(seconds) {
+        if (!seconds || seconds < 0) return '0:00';
+
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = Math.floor(seconds % 60);
+
+        if (hours > 0) {
+            return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        } else {
+            return `${minutes}:${secs.toString().padStart(2, '0')}`;
+        }
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 B';
+
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function showError(message) {
+        clearMessages();
+
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-display';
+        errorDiv.textContent = message;
+
+        const container = document.querySelector('.main-container');
+        container.insertBefore(errorDiv, container.firstChild);
+
+        setTimeout(() => {
+            if (errorDiv.parentNode) {
+                errorDiv.parentNode.removeChild(errorDiv);
+            }
+        }, 5000);
+    }
+
+    function showSuccess(message) {
+        clearMessages();
+
+        const successDiv = document.createElement('div');
+        successDiv.className = 'success-display';
+        successDiv.textContent = message;
+
+        const container = document.querySelector('.main-container');
+        container.insertBefore(successDiv, container.firstChild);
+
+        setTimeout(() => {
+            if (successDiv.parentNode) {
+                successDiv.parentNode.removeChild(successDiv);
+            }
+        }, 3000);
+    }
+
+    function clearMessages() {
+        document.querySelectorAll('.error-display, .success-display').forEach(el => {
+            if (el.parentNode) {
+                el.parentNode.removeChild(el);
+            }
+        });
+    }
+
+    function showProgress(show) {
+        if (show) {
+            document.body.style.cursor = 'wait';
+        } else {
+            document.body.style.cursor = 'default';
+        }
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+# Multi-Protocol File Explorer Requirements
+setuptools
+# GUI Framework
+PyQt6>=6.4.0
+
+# SFTP/SSH Support
+paramiko>=3.0.0
+
+# Cryptography for secure connections
+cryptography>=3.4.8
+
+# Additional protocol support (to be implemented)
+# ftplib is built-in to Python
+# For future protocols:
+# pysmb>=1.2.7        # For Samba/SMB
+# requests>=2.28.0    # For WebDAV
+# Additional dependencies will be added as protocols are implemented
+
+# Development dependencies (optional)
+# pytest>=7.0.0       # For testing
+# black>=22.0.0       # For code formatting
+# mypy>=0.991        # For type checking

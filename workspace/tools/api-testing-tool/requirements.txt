@@ -1,0 +1,4 @@
+PyQt6>=6.4.0
+httpx>=0.24.0
+websocket-client>=1.6.0
+cryptography>=41.0.0

@@ -3,30 +3,27 @@ import json
 import time
 import os
 import uuid
-import subprocess
-import tempfile
-import ssl
 import base64
-import hashlib
 import urllib.parse
 from typing import Dict, Any, Optional, List
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
     QSplitter, QComboBox, QLineEdit, QPushButton, QTextEdit, QTabWidget,
-    QTableWidget, QTableWidgetItem, QLabel, QScrollArea, QFrame,
+    QTableWidget, QTableWidgetItem, QLabel, QFrame,
     QHeaderView, QMessageBox, QProgressBar, QTreeWidget, QTreeWidgetItem,
-    QMenuBar, QMenu, QFileDialog, QInputDialog, QDialog, QDialogButtonBox,
+    QMenu, QFileDialog, QInputDialog, QDialog, QDialogButtonBox,
     QFormLayout, QCheckBox, QGroupBox, QListWidget, QListWidgetItem,
-    QPlainTextEdit, QSpinBox, QRadioButton, QButtonGroup, QTextBrowser
+    QPlainTextEdit, QTextBrowser
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer, QDateTime, QUrl
 from PyQt6.QtGui import QFont, QSyntaxHighlighter, QTextCharFormat, QColor, QAction, QIcon, QDesktopServices
-from PyQt6.QtWebSockets import QWebSocket
-from PyQt6.QtNetwork import QSslConfiguration, QSslSocket
 import httpx
 import re
 import websocket
 from datetime import datetime
+from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 
 class JsonHighlighter(QSyntaxHighlighter):
@@ -124,6 +121,99 @@ class PythonHighlighter(QSyntaxHighlighter):
             expression = re.compile(pattern)
             for match in expression.finditer(text):
                 self.setFormat(match.start(), match.end() - match.start(), format)
+
+
+class DataEncryption:
+    def __init__(self):
+        self.key = None
+        self.fernet = None
+        self.salt = None
+        self.password = None
+    
+    def derive_key(self, password: str, salt: bytes = None) -> tuple:
+        if salt is None:
+            salt = os.urandom(16)
+        
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=100000,
+        )
+        key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
+        return key, salt
+    
+    def set_password(self, password: str, salt: bytes = None):
+        self.password = password
+        self.key, self.salt = self.derive_key(password, salt)
+        self.fernet = Fernet(self.key)
+        return self.salt
+    
+    def encrypt_data(self, data: dict) -> bytes:
+        if not self.fernet:
+            raise ValueError("Encryption not initialized. Set password first.")
+        json_data = json.dumps(data, indent=2)
+        return self.fernet.encrypt(json_data.encode())
+    
+    def decrypt_data(self, encrypted_data: bytes) -> dict:
+        if not self.fernet:
+            raise ValueError("Encryption not initialized. Set password first.")
+        decrypted_bytes = self.fernet.decrypt(encrypted_data)
+        return json.loads(decrypted_bytes.decode())
+    
+    def save_encrypted_file(self, data: dict, filepath: str, salt: bytes = None):
+        # Use stored salt if available, otherwise generate new one
+        if salt is None:
+            salt = self.salt if self.salt else os.urandom(16)
+        encrypted_data = self.encrypt_data(data)
+        with open(filepath, 'wb') as f:
+            f.write(salt + encrypted_data)
+    
+    def load_encrypted_file(self, filepath: str, password: str) -> dict:
+        try:
+            with open(filepath, 'rb') as f:
+                file_data = f.read()
+            
+            if len(file_data) < 16:
+                return {}
+            
+            salt = file_data[:16]
+            encrypted_data = file_data[16:]
+            
+            self.set_password(password, salt)
+            return self.decrypt_data(encrypted_data)
+        except FileNotFoundError:
+            return {}
+        except Exception:
+            raise ValueError("Invalid password or corrupted data")
+
+
+class DataManager:
+    """Central data manager for handling encrypted storage"""
+    def __init__(self, encryption: DataEncryption, file_path: str = None):
+        self.encryption = encryption
+        # Default to data/data.enc if no file path specified
+        if file_path is None:
+            data_dir = 'data'
+            if not os.path.exists(data_dir):
+                os.makedirs(data_dir)
+            file_path = os.path.join(data_dir, 'data.enc')
+        self.encrypted_file = file_path
+    
+    def set_file_path(self, file_path: str):
+        """Change the data file path"""
+        self.encrypted_file = file_path
+    
+    def load_all_data(self, password: str) -> dict:
+        """Load all encrypted data"""
+        if os.path.exists(self.encrypted_file):
+            return self.encryption.load_encrypted_file(self.encrypted_file, password)
+        return {}
+    
+    def save_all_data(self, data: dict):
+        """Save all data to encrypted file"""
+        if self.encryption.key:
+            self.encryption.save_encrypted_file(data, self.encrypted_file)
 
 
 class AuthConfig:
@@ -329,24 +419,31 @@ class PluginManager:
 
 
 class RequestHistory:
-    def __init__(self):
+    def __init__(self, data_manager=None):
         self.history = []
-        self.load_history()
+        self.data_manager = data_manager
+        self.legacy_file = 'request_history.json'
     
-    def load_history(self):
+    def load_history(self, all_data=None):
         try:
-            if os.path.exists('request_history.json'):
-                with open('request_history.json', 'r') as f:
+            if all_data and 'history' in all_data:
+                self.history = all_data['history']
+                return True
+            
+            # Fallback to legacy file
+            if os.path.exists(self.legacy_file):
+                with open(self.legacy_file, 'r') as f:
                     self.history = json.load(f)
+                    return True
+                    
         except Exception as e:
             print(f"Error loading history: {e}")
+            
+        return True  # Return True even if no data found (empty start)
     
-    def save_history(self):
-        try:
-            with open('request_history.json', 'w') as f:
-                json.dump(self.history, f, indent=2)
-        except Exception as e:
-            print(f"Error saving history: {e}")
+    def get_data(self):
+        """Get history data for saving"""
+        return self.history
     
     def add_request(self, method, url, headers, params, body, response_data):
         entry = {
@@ -368,11 +465,11 @@ class RequestHistory:
         if len(self.history) > 100:
             self.history = self.history[:100]
         
-        self.save_history()
+        # Note: History will be saved through main app's save_all_data
     
     def clear_history(self):
         self.history = []
-        self.save_history()
+        # Note: History will be saved through main app's save_all_data
 
 
 class CodeGenerator:
@@ -550,50 +647,59 @@ class TestAssertion:
 
 
 class EnvironmentManager:
-    def __init__(self):
+    def __init__(self, data_manager=None):
         self.environments = {}
         self.current_environment = None
         self.global_variables = {}
-        self.load_environments()
+        self.data_manager = data_manager
+        self.legacy_file = 'environments.json'
     
-    def load_environments(self):
+    def load_environments(self, all_data=None):
         try:
-            if os.path.exists('environments.json'):
-                with open('environments.json', 'r') as f:
+            if all_data and 'environments' in all_data:
+                env_data = all_data['environments']
+                self.environments = env_data.get('environments', {})
+                self.global_variables = env_data.get('global_variables', {})
+                self.current_environment = env_data.get('current_environment', None)
+                return True
+            
+            # Fallback to legacy file
+            if os.path.exists(self.legacy_file):
+                with open(self.legacy_file, 'r') as f:
                     data = json.load(f)
                     self.environments = data.get('environments', {})
                     self.global_variables = data.get('global_variables', {})
                     self.current_environment = data.get('current_environment', None)
+                    return True
+                    
         except Exception as e:
             print(f"Error loading environments: {e}")
+            
+        return True  # Return True even if no data found (empty start)
     
-    def save_environments(self):
-        try:
-            data = {
-                'environments': self.environments,
-                'global_variables': self.global_variables,
-                'current_environment': self.current_environment
-            }
-            with open('environments.json', 'w') as f:
-                json.dump(data, f, indent=2)
-        except Exception as e:
-            print(f"Error saving environments: {e}")
+    def get_data(self):
+        """Get environment data for saving"""
+        return {
+            'environments': self.environments,
+            'global_variables': self.global_variables,
+            'current_environment': self.current_environment
+        }
     
     def create_environment(self, name: str):
         self.environments[name] = {}
-        self.save_environments()
+        # Note: Data will be saved through main app's save_all_data
     
     def delete_environment(self, name: str):
         if name in self.environments:
             del self.environments[name]
             if self.current_environment == name:
                 self.current_environment = None
-            self.save_environments()
+            # Note: Data will be saved through main app's save_all_data
     
     def set_current_environment(self, name: str):
         if name in self.environments or name is None:
             self.current_environment = name
-            self.save_environments()
+            # Note: Data will be saved through main app's save_all_data
     
     def get_variable(self, key: str) -> Optional[str]:
         # Check current environment first, then global
@@ -606,7 +712,7 @@ class EnvironmentManager:
             self.global_variables[key] = value
         elif self.current_environment:
             self.environments[self.current_environment][key] = value
-        self.save_environments()
+        # Note: Data will be saved through main app's save_all_data
     
     def substitute_variables(self, text: str) -> str:
         """Replace {{variable}} patterns with actual values"""
@@ -735,38 +841,51 @@ class RequestItem:
 
 
 class CollectionManager:
-    def __init__(self):
+    def __init__(self, data_manager=None):
         self.collections = []
-        self.load_collections()
+        self.data_manager = data_manager
+        self.legacy_file = 'collections.json'
     
-    def load_collections(self):
+    def load_collections(self, all_data=None):
         try:
-            if os.path.exists('collections.json'):
-                with open('collections.json', 'r') as f:
+            if all_data and 'collections' in all_data:
+                collections_data = all_data['collections']
+                self.collections = [Collection.from_dict(col) for col in collections_data.get('collections', [])]
+                return True
+            
+            # Fallback to legacy file
+            if os.path.exists(self.legacy_file):
+                with open(self.legacy_file, 'r') as f:
                     data = json.load(f)
                     self.collections = [Collection.from_dict(col) for col in data.get('collections', [])]
+                    return True
+                    
         except Exception as e:
             print(f"Error loading collections: {e}")
+            
+        return True  # Return True even if no data found (empty start)
     
-    def save_collections(self):
-        try:
-            data = {
-                'collections': [col.to_dict() for col in self.collections]
-            }
-            with open('collections.json', 'w') as f:
-                json.dump(data, f, indent=2)
-        except Exception as e:
-            print(f"Error saving collections: {e}")
+    def get_data(self):
+        """Get collections data for saving"""
+        return {
+            'collections': [col.to_dict() for col in self.collections]
+        }
+    
+    def export_collections(self):
+        """Export collections to plain JSON format"""
+        return {
+            'collections': [col.to_dict() for col in self.collections]
+        }
     
     def create_collection(self, name: str) -> Collection:
         collection = Collection(name)
         self.collections.append(collection)
-        self.save_collections()
+        # Note: Data will be saved through main app's save_all_data
         return collection
     
     def delete_collection(self, collection_id: str):
         self.collections = [col for col in self.collections if col.id != collection_id]
-        self.save_collections()
+        # Note: Data will be saved through main app's save_all_data
     
     def export_collection(self, collection_id: str, file_path: str):
         collection = next((col for col in self.collections if col.id == collection_id), None)
@@ -804,8 +923,10 @@ class AuthWidget(QWidget):
         basic_widget = QWidget()
         basic_layout = QFormLayout()
         self.username_input = QLineEdit()
+        self.username_input.setPlaceholderText('Enter username')
         self.password_input = QLineEdit()
         self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
+        self.password_input.setPlaceholderText('Enter password')
         basic_layout.addRow('Username:', self.username_input)
         basic_layout.addRow('Password:', self.password_input)
         basic_widget.setLayout(basic_layout)
@@ -815,6 +936,7 @@ class AuthWidget(QWidget):
         bearer_widget = QWidget()
         bearer_layout = QFormLayout()
         self.bearer_token_input = QLineEdit()
+        self.bearer_token_input.setPlaceholderText('Enter bearer token (e.g., your-jwt-token)')
         bearer_layout.addRow('Token:', self.bearer_token_input)
         bearer_widget.setLayout(bearer_layout)
         self.auth_stack.addTab(bearer_widget, 'Bearer')
@@ -823,8 +945,10 @@ class AuthWidget(QWidget):
         api_key_widget = QWidget()
         api_key_layout = QFormLayout()
         self.api_key_input = QLineEdit()
+        self.api_key_input.setPlaceholderText('Enter your API key')
         self.api_key_header_input = QLineEdit()
         self.api_key_header_input.setText('X-API-Key')
+        self.api_key_header_input.setPlaceholderText('Header name (e.g., X-API-Key)')
         api_key_layout.addRow('Key:', self.api_key_input)
         api_key_layout.addRow('Header:', self.api_key_header_input)
         api_key_widget.setLayout(api_key_layout)
@@ -834,12 +958,19 @@ class AuthWidget(QWidget):
         oauth_widget = QWidget()
         oauth_layout = QFormLayout()
         self.oauth_client_id_input = QLineEdit()
+        self.oauth_client_id_input.setPlaceholderText('Your OAuth client ID')
         self.oauth_client_secret_input = QLineEdit()
         self.oauth_client_secret_input.setEchoMode(QLineEdit.EchoMode.Password)
+        self.oauth_client_secret_input.setPlaceholderText('Your OAuth client secret')
         self.oauth_auth_url_input = QLineEdit()
+        self.oauth_auth_url_input.setPlaceholderText('https://example.com/oauth/authorize')
         self.oauth_token_url_input = QLineEdit()
+        self.oauth_token_url_input.setPlaceholderText('https://example.com/oauth/token')
         self.oauth_scope_input = QLineEdit()
+        self.oauth_scope_input.setPlaceholderText('read write (space-separated)')
         self.oauth_access_token_input = QLineEdit()
+        self.oauth_access_token_input.setPlaceholderText('Access token will appear here')
+        self.oauth_access_token_input.setReadOnly(True)
         
         oauth_layout.addRow('Client ID:', self.oauth_client_id_input)
         oauth_layout.addRow('Client Secret:', self.oauth_client_secret_input)
@@ -864,24 +995,53 @@ class AuthWidget(QWidget):
         self.inherit_checkbox = QCheckBox('Inherit authentication from parent')
         layout.addWidget(self.inherit_checkbox)
         
+        # Add a help text widget for when no auth is selected
+        self.no_auth_widget = QWidget()
+        no_auth_layout = QVBoxLayout()
+        
+        help_label = QLabel("🔒 No Authentication Selected")
+        help_label.setStyleSheet("font-size: 16px; font-weight: bold; color: #666; margin: 20px;")
+        help_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        no_auth_layout.addWidget(help_label)
+        
+        help_text = QLabel(
+            "Select an authentication type above to configure credentials.\n\n"
+            "Available options:\n"
+            "• Basic Auth - Username and password\n"
+            "• Bearer Token - Authorization header token\n"
+            "• API Key - Custom header with key\n"
+            "• OAuth 2.0 - OAuth flow with client credentials"
+        )
+        help_text.setStyleSheet("color: #888; line-height: 1.4;")
+        help_text.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        help_text.setWordWrap(True)
+        no_auth_layout.addWidget(help_text)
+        
+        no_auth_layout.addStretch()
+        self.no_auth_widget.setLayout(no_auth_layout)
+        
+        # Add the no-auth widget as the first tab
+        self.auth_stack.insertTab(0, self.no_auth_widget, 'None')
+        
         self.setLayout(layout)
-        self.auth_stack.setVisible(False)
+        # Always show the auth stack, but default to "None" tab
+        self.auth_stack.setVisible(True)
+        self.auth_stack.setCurrentIndex(0)
     
     def on_auth_type_changed(self, auth_type):
         self.auth_config.auth_type = auth_type
         
+        # Map auth types to tab indices (now with None as tab 0)
         if auth_type == 'None':
-            self.auth_stack.setVisible(False)
-        else:
-            self.auth_stack.setVisible(True)
-            if auth_type == 'Basic Auth':
-                self.auth_stack.setCurrentIndex(0)
-            elif auth_type == 'Bearer Token':
-                self.auth_stack.setCurrentIndex(1)
-            elif auth_type == 'API Key':
-                self.auth_stack.setCurrentIndex(2)
-            elif auth_type == 'OAuth 2.0':
-                self.auth_stack.setCurrentIndex(3)
+            self.auth_stack.setCurrentIndex(0)
+        elif auth_type == 'Basic Auth':
+            self.auth_stack.setCurrentIndex(1)
+        elif auth_type == 'Bearer Token':
+            self.auth_stack.setCurrentIndex(2)
+        elif auth_type == 'API Key':
+            self.auth_stack.setCurrentIndex(3)
+        elif auth_type == 'OAuth 2.0':
+            self.auth_stack.setCurrentIndex(4)
     
     def get_oauth_token(self):
         """Open browser for OAuth 2.0 authorization"""
@@ -1541,6 +1701,231 @@ class TestsWidget(QWidget):
                               f'{passed} tests passed, {failed} tests failed')
 
 
+class PasswordDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.password = None
+        self.init_ui()
+    
+    def init_ui(self):
+        self.setWindowTitle('API Testing Tool - Authentication')
+        self.setModal(True)
+        self.setFixedSize(400, 200)
+        self.setWindowFlags(Qt.WindowType.Dialog | Qt.WindowType.WindowCloseButtonHint)
+        
+        layout = QVBoxLayout()
+        
+        # Logo/Title
+        title = QLabel('API Testing Tool')
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title.setStyleSheet("font-size: 18px; font-weight: bold; margin: 10px;")
+        layout.addWidget(title)
+        
+        # Info text
+        import os
+        has_encrypted_data = os.path.exists('data.enc')
+        if has_encrypted_data:
+            info_text = 'Enter your master password to decrypt and load your data:'
+        else:
+            info_text = 'First time setup: Create a master password to encrypt your data:'
+        
+        info = QLabel(info_text)
+        info.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        info.setWordWrap(True)
+        layout.addWidget(info)
+        
+        # Password input
+        form_layout = QFormLayout()
+        self.password_input = QLineEdit()
+        self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
+        self.password_input.returnPressed.connect(self.accept)
+        form_layout.addRow('Password:', self.password_input)
+        layout.addLayout(form_layout)
+        
+        # Buttons
+        button_layout = QHBoxLayout()
+        
+        skip_btn = QPushButton('Skip (Start Empty)')
+        skip_btn.clicked.connect(self.skip_password)
+        button_layout.addWidget(skip_btn)
+        
+        button_layout.addStretch()
+        
+        if has_encrypted_data:
+            ok_btn = QPushButton('Load Data')
+        else:
+            ok_btn = QPushButton('Create & Continue')
+        ok_btn.setDefault(True)
+        ok_btn.clicked.connect(self.accept)
+        button_layout.addWidget(ok_btn)
+        
+        cancel_btn = QPushButton('Exit')
+        cancel_btn.clicked.connect(self.reject)
+        button_layout.addWidget(cancel_btn)
+        
+        layout.addLayout(button_layout)
+        self.setLayout(layout)
+        
+        # Focus on password input
+        self.password_input.setFocus()
+    
+    def skip_password(self):
+        self.password = None
+        self.done(2)  # Custom return code for skip
+    
+    def accept(self):
+        self.password = self.password_input.text()
+        if not self.password:
+            QMessageBox.warning(self, 'Warning', 'Please enter a password or click Skip.')
+            return
+        super().accept()
+    
+    def get_password(self):
+        return self.password
+
+
+class DataFileDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.selected_file = None
+        self.selected_action = None  # 'select', 'create', 'empty'
+        self.init_ui()
+    
+    def init_ui(self):
+        self.setWindowTitle('API Testing Tool - Choose Data')
+        self.setModal(True)
+        self.setFixedSize(450, 400)
+        self.setWindowFlags(Qt.WindowType.Dialog | Qt.WindowType.WindowCloseButtonHint)
+        
+        layout = QVBoxLayout()
+        
+        # Title
+        title = QLabel('API Testing Tool')
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title.setStyleSheet("font-size: 20px; font-weight: bold; margin: 15px;")
+        layout.addWidget(title)
+        
+        # Description
+        desc = QLabel('Choose how you want to start:')
+        desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        desc.setStyleSheet("margin-bottom: 25px; color: #666; font-size: 14px;")
+        layout.addWidget(desc)
+        
+        # Option 1: Select existing data file
+        btn1 = QPushButton('1. Select a Data File')
+        btn1.setStyleSheet("QPushButton { text-align: left; padding: 15px; font-size: 14px; }")
+        btn1.clicked.connect(self.select_data_file)
+        layout.addWidget(btn1)
+        
+        desc1 = QLabel('   Choose from existing encrypted data files in ./data/')
+        desc1.setStyleSheet("color: #888; margin-bottom: 10px; font-size: 12px;")
+        layout.addWidget(desc1)
+        
+        # Option 2: Create new data file
+        btn2 = QPushButton('2. Create New Data File')
+        btn2.setStyleSheet("QPushButton { text-align: left; padding: 15px; font-size: 14px; }")
+        btn2.clicked.connect(self.create_data_file)
+        layout.addWidget(btn2)
+        
+        desc2 = QLabel('   Create a new encrypted data file in ./data/ directory')
+        desc2.setStyleSheet("color: #888; margin-bottom: 10px; font-size: 12px;")
+        layout.addWidget(desc2)
+        
+        # Option 3: Start empty
+        btn3 = QPushButton('3. Start Empty')
+        btn3.setStyleSheet("QPushButton { text-align: left; padding: 15px; font-size: 14px; }")
+        btn3.clicked.connect(self.start_empty)
+        layout.addWidget(btn3)
+        
+        desc3 = QLabel('   Start with no data (nothing will be saved)')
+        desc3.setStyleSheet("color: #888; margin-bottom: 20px; font-size: 12px;")
+        layout.addWidget(desc3)
+        
+        layout.addStretch()
+        
+        # Exit button
+        button_layout = QHBoxLayout()
+        button_layout.addStretch()
+        
+        exit_btn = QPushButton('Exit')
+        exit_btn.clicked.connect(self.reject)
+        button_layout.addWidget(exit_btn)
+        
+        layout.addLayout(button_layout)
+        self.setLayout(layout)
+    
+    def select_data_file(self):
+        # Create data directory if it doesn't exist
+        data_dir = 'data'
+        if not os.path.exists(data_dir):
+            os.makedirs(data_dir)
+        
+        # Find all .enc files in data directory
+        try:
+            enc_files = [f for f in os.listdir(data_dir) if f.endswith('.enc')]
+        except:
+            enc_files = []
+        
+        if not enc_files:
+            QMessageBox.information(self, 'No Data Files', 
+                                  'No encrypted data files found in ./data/ directory.\n'
+                                  'Use "Create New Data File" to create one.')
+            return
+        
+        # Show file selection dialog
+        file_path, ok = QInputDialog.getItem(
+            self, 'Select Data File', 
+            'Choose a data file:', 
+            enc_files, 0, False
+        )
+        
+        if ok and file_path:
+            self.selected_file = os.path.join(data_dir, file_path)
+            self.selected_action = 'select'
+            self.accept()
+    
+    def create_data_file(self):
+        # Create data directory if it doesn't exist
+        data_dir = 'data'
+        if not os.path.exists(data_dir):
+            os.makedirs(data_dir)
+        
+        # Ask for filename
+        filename, ok = QInputDialog.getText(
+            self, 'Create New Data File', 
+            'Enter filename for new data file:', 
+            text='my-project.enc'
+        )
+        
+        if ok and filename.strip():
+            if not filename.endswith('.enc'):
+                filename += '.enc'
+            
+            # Create full path in data directory
+            full_path = os.path.join(data_dir, filename)
+            
+            # Check if file already exists
+            if os.path.exists(full_path):
+                reply = QMessageBox.question(
+                    self, 'File Exists', 
+                    f'File "{filename}" already exists in data directory.\n'
+                    'Do you want to overwrite it?',
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No
+                )
+                if reply != QMessageBox.StandardButton.Yes:
+                    return
+            
+            self.selected_file = full_path
+            self.selected_action = 'create'
+            self.accept()
+    
+    def start_empty(self):
+        self.selected_file = None
+        self.selected_action = 'empty'
+        self.accept()
+
+
 class EnvironmentDialog(QDialog):
     def __init__(self, env_manager: EnvironmentManager, parent=None):
         super().__init__(parent)
@@ -1697,7 +2082,9 @@ class EnvironmentDialog(QDialog):
                 global_vars[key_item.text().strip()] = value_item.text()
         self.env_manager.global_variables = global_vars
         
-        self.env_manager.save_environments()
+        # Trigger save from parent window
+        if hasattr(self.parent(), 'save_all_data'):
+            self.parent().save_all_data()
         self.accept()
 
 
@@ -2149,9 +2536,10 @@ Version: {ssl_info.get('version', 'Unknown')}
 class CollectionTreeWidget(QTreeWidget):
     request_selected = pyqtSignal(object)  # RequestItem
     
-    def __init__(self, collection_manager: CollectionManager):
+    def __init__(self, collection_manager: CollectionManager, parent_app=None):
         super().__init__()
         self.collection_manager = collection_manager
+        self.parent_app = parent_app
         self.init_ui()
         self.refresh_collections()
     
@@ -2223,7 +2611,8 @@ class CollectionTreeWidget(QTreeWidget):
         if ok and name.strip():
             request = RequestItem(name.strip())
             collection.requests.append(request)
-            self.collection_manager.save_collections()
+            if self.parent_app:
+                self.parent_app.save_all_data()
             self.refresh_collections()
     
     def add_folder(self, collection: Collection):
@@ -2231,7 +2620,8 @@ class CollectionTreeWidget(QTreeWidget):
         if ok and name.strip():
             folder = Folder(name.strip())
             collection.folders.append(folder)
-            self.collection_manager.save_collections()
+            if self.parent_app:
+                self.parent_app.save_all_data()
             self.refresh_collections()
     
     def add_request_to_folder(self, folder: Folder):
@@ -2239,7 +2629,8 @@ class CollectionTreeWidget(QTreeWidget):
         if ok and name.strip():
             request = RequestItem(name.strip())
             folder.requests.append(request)
-            self.collection_manager.save_collections()
+            if self.parent_app:
+                self.parent_app.save_all_data()
             self.refresh_collections()
     
     def export_collection(self, collection: Collection):
@@ -2262,7 +2653,8 @@ class CollectionTreeWidget(QTreeWidget):
             if folder in collection.folders:
                 collection.folders.remove(folder)
                 break
-        self.collection_manager.save_collections()
+        if self.parent_app:
+            self.parent_app.save_all_data()
         self.refresh_collections()
     
     def delete_request(self, request: RequestItem):
@@ -2275,7 +2667,8 @@ class CollectionTreeWidget(QTreeWidget):
                 if request in folder.requests:
                     folder.requests.remove(request)
                     break
-        self.collection_manager.save_collections()
+        if self.parent_app:
+            self.parent_app.save_all_data()
         self.refresh_collections()
     
     def duplicate_request(self, request: RequestItem):
@@ -2302,7 +2695,8 @@ class CollectionTreeWidget(QTreeWidget):
                     folder.requests.append(new_request)
                     break
         
-        self.collection_manager.save_collections()
+        if self.parent_app:
+            self.parent_app.save_all_data()
         self.refresh_collections()
 
 
@@ -2310,13 +2704,202 @@ class ApiTestingTool(QMainWindow):
     def __init__(self):
         super().__init__()
         self.http_worker = None
-        self.env_manager = EnvironmentManager()
-        self.collection_manager = CollectionManager()
-        self.request_history = RequestHistory()
+        self.data_encryption = DataEncryption()
+        self.data_manager = DataManager(self.data_encryption)
+        self.master_password = None
+        self.data_loaded = False
+        self.parent_app = self  # Reference to self for consistent API
+        
+        # Initialize managers
+        self.env_manager = EnvironmentManager(self.data_manager)
+        self.collection_manager = CollectionManager(self.data_manager)
+        self.request_history = RequestHistory(self.data_manager)
         self.plugin_manager = PluginManager()
         self.current_request = None
+        
         self.init_ui()
         self.init_menu()
+        
+        # Show data file selection and authentication dialogs after UI is initialized
+        self.select_data_file_and_authenticate()
+        
+        # Setup auto-save timer (save every 30 seconds if data has changed)
+        self.setup_auto_save()
+    
+    def select_data_file_and_authenticate(self):
+        """Show data file selection dialog, then password dialog if needed"""
+        # First, show data file selection dialog
+        data_dialog = DataFileDialog(self)
+        result = data_dialog.exec()
+        
+        if result != QDialog.DialogCode.Accepted:
+            sys.exit(0)  # User clicked Exit
+        
+        action = data_dialog.selected_action
+        selected_file = data_dialog.selected_file
+        
+        if action == 'empty':
+            # Start empty - no encryption, no data saving
+            self.master_password = None
+            self.data_loaded = False
+            # Load empty data
+            self.env_manager.load_environments()
+            self.request_history.load_history()
+            self.collection_manager.load_collections()
+            
+        elif action == 'create':
+            # Create new data file - ask for password
+            password_dialog = PasswordDialog(self)
+            # Update dialog text for new file creation
+            password_dialog.setWindowTitle('Create New Data File')
+            for label in password_dialog.findChildren(QLabel):
+                if 'Enter your master password' in label.text():
+                    label.setText('Create a master password for this data file:')
+                elif 'First time setup' in label.text():
+                    label.setText('Create a master password for this data file:')
+            
+            result = password_dialog.exec()
+            if result != QDialog.DialogCode.Accepted:
+                sys.exit(0)
+            
+            password = password_dialog.get_password()
+            if password:
+                self.master_password = password
+                self.data_encryption.set_password(password)
+                self.data_manager.set_file_path(selected_file)
+                
+                # Start with empty data and save immediately
+                self.env_manager.load_environments()
+                self.request_history.load_history()
+                self.collection_manager.load_collections()
+                self.data_loaded = True
+                if self.parent_app:
+                    self.parent_app.save_all_data()
+                
+        elif action == 'select':
+            # Load existing data file - ask for password
+            max_attempts = 3
+            attempts = 0
+            
+            while attempts < max_attempts:
+                password_dialog = PasswordDialog(self)
+                # Update dialog for existing file
+                password_dialog.setWindowTitle(f'Open Data File - {selected_file}')
+                for label in password_dialog.findChildren(QLabel):
+                    if 'master password' in label.text():
+                        label.setText(f'Enter password for {selected_file}:')
+                
+                result = password_dialog.exec()
+                if result != QDialog.DialogCode.Accepted:
+                    sys.exit(0)
+                
+                password = password_dialog.get_password()
+                if password:
+                    try:
+                        self.master_password = password
+                        self.data_encryption.set_password(password)
+                        self.data_manager.set_file_path(selected_file)
+                        
+                        # Try to load the encrypted data
+                        all_data = self.data_manager.load_all_data(password)
+                        
+                        env_loaded = self.env_manager.load_environments(all_data)
+                        history_loaded = self.request_history.load_history(all_data)
+                        collections_loaded = self.collection_manager.load_collections(all_data)
+                        
+                        if env_loaded and history_loaded and collections_loaded:
+                            self.data_loaded = True
+                            break  # Success!
+                        else:
+                            raise ValueError("Failed to load data")
+                            
+                    except Exception as e:
+                        attempts += 1
+                        if attempts < max_attempts:
+                            QMessageBox.warning(self, 'Wrong Password', 
+                                              f'Invalid password for {selected_file}.\n'
+                                              f'Attempts remaining: {max_attempts - attempts}')
+                        else:
+                            QMessageBox.critical(self, 'Authentication Failed', 
+                                               f'Failed to open {selected_file} after {max_attempts} attempts.\n'
+                                               'Application will exit.')
+                            sys.exit(0)
+                else:
+                    sys.exit(0)
+        
+        # Refresh UI after loading data
+        self.refresh_environment_combo()
+        self.collections_tree.refresh_collections()
+        self.history_widget.refresh_history()
+        
+        # Update menu items based on encryption status
+        self.update_menu_states()
+    
+    def update_menu_states(self):
+        """Update menu item states based on encryption status"""
+        if hasattr(self, 'save_action') and hasattr(self, 'change_password_action'):
+            if self.master_password:
+                # Encryption is active - enable menu items
+                self.save_action.setEnabled(True)
+                self.save_action.setText('Save Data')
+                
+                self.change_password_action.setEnabled(True)
+                self.change_password_action.setText('Change Password')
+            else:
+                # No encryption - disable menu items
+                self.save_action.setEnabled(False)
+                self.save_action.setText('Save Data (No encryption active)')
+                
+                self.change_password_action.setEnabled(False)
+                self.change_password_action.setText('Change Password (No encryption active)')
+    
+    def setup_auto_save(self):
+        """Setup automatic data saving every 30 seconds"""
+        from PyQt6.QtCore import QTimer
+        self.auto_save_timer = QTimer()
+        self.auto_save_timer.timeout.connect(self.auto_save_data)
+        self.auto_save_timer.start(30000)  # 30 seconds
+        self.last_save_hash = None
+    
+    def auto_save_data(self):
+        """Automatically save data if it has changed"""
+        try:
+            if not self.master_password:
+                return  # No encryption setup, skip auto-save
+            
+            # Create a hash of current data to check if it changed
+            current_data = {
+                'environments': self.env_manager.get_data(),
+                'collections': self.collection_manager.get_data(),
+                'history': self.request_history.get_data()
+            }
+            
+            import hashlib
+            data_str = json.dumps(current_data, sort_keys=True)
+            current_hash = hashlib.md5(data_str.encode()).hexdigest()
+            
+            # Only save if data has changed
+            if current_hash != self.last_save_hash:
+                if self.parent_app:
+                    self.parent_app.save_all_data()
+                self.last_save_hash = current_hash
+                print("Auto-saved data")  # Debug message
+                
+        except Exception as e:
+            print(f"Auto-save failed: {e}")
+    
+    def save_all_data(self):
+        """Save all data to encrypted file"""
+        if self.master_password and self.data_encryption.key:
+            try:
+                all_data = {
+                    'environments': self.env_manager.get_data(),
+                    'collections': self.collection_manager.get_data(),
+                    'history': self.request_history.get_data()
+                }
+                self.data_manager.save_all_data(all_data)
+            except Exception as e:
+                print(f"Error saving data: {e}")
     
     def init_ui(self):
         self.setWindowTitle('API Testing Tool - Advanced')
@@ -2349,7 +2932,7 @@ class ApiTestingTool(QMainWindow):
         
         collections_layout.addLayout(collections_header)
         
-        self.collections_tree = CollectionTreeWidget(self.collection_manager)
+        self.collections_tree = CollectionTreeWidget(self.collection_manager, self)
         self.collections_tree.request_selected.connect(self.load_request)
         self.collections_tree.setHeaderHidden(True)
         collections_layout.addWidget(self.collections_tree)
@@ -2490,9 +3073,37 @@ class ApiTestingTool(QMainWindow):
         
         file_menu.addSeparator()
         
+        # Save option (will be updated after authentication)
+        self.save_action = QAction('Save Data', self)
+        self.save_action.setShortcut('Ctrl+S')
+        self.save_action.triggered.connect(self.manual_save_data)
+        self.save_action.setEnabled(False)
+        self.save_action.setText('Save Data (No encryption active)')
+        file_menu.addAction(self.save_action)
+        
+        # Change password option (will be updated after authentication)
+        self.change_password_action = QAction('Change Password', self)
+        self.change_password_action.triggered.connect(self.change_password)
+        self.change_password_action.setEnabled(False)
+        self.change_password_action.setText('Change Password (No encryption active)')
+        file_menu.addAction(self.change_password_action)
+        
+        file_menu.addSeparator()
+        
         import_action = QAction('Import Collection', self)
         import_action.triggered.connect(self.import_collection)
         file_menu.addAction(import_action)
+        
+        export_action = QAction('Export Collections', self)
+        export_action.triggered.connect(self.export_collections)
+        file_menu.addAction(export_action)
+        
+        file_menu.addSeparator()
+        
+        exit_action = QAction('Exit', self)
+        exit_action.setShortcut('Ctrl+Q')
+        exit_action.triggered.connect(self.close)
+        file_menu.addAction(exit_action)
         
         # Environment menu
         env_menu = menubar.addMenu('Environment')
@@ -2543,11 +3154,15 @@ class ApiTestingTool(QMainWindow):
             self.env_manager.set_current_environment(None)
         else:
             self.env_manager.set_current_environment(env_name)
+        if self.parent_app:
+            self.parent_app.save_all_data()
     
     def create_collection(self):
         name, ok = QInputDialog.getText(self, 'New Collection', 'Collection name:')
         if ok and name.strip():
             self.collection_manager.create_collection(name.strip())
+            if self.parent_app:
+                self.parent_app.save_all_data()
             self.collections_tree.refresh_collections()
     
     def import_collection(self):
@@ -2559,11 +3174,209 @@ class ApiTestingTool(QMainWindow):
                     data = json.load(f)
                     collection = Collection.from_dict(data)
                     self.collection_manager.collections.append(collection)
-                    self.collection_manager.save_collections()
+                    if self.parent_app:
+                        self.parent_app.save_all_data()
                     self.collections_tree.refresh_collections()
                     QMessageBox.information(self, 'Success', 'Collection imported successfully')
             except Exception as e:
                 QMessageBox.critical(self, 'Error', f'Failed to import collection: {e}')
+    
+    def export_collections(self):
+        """Export all collections to plain JSON files"""
+        if not self.collection_manager.collections:
+            QMessageBox.information(self, 'Info', 'No collections to export.')
+            return
+        
+        # Choose directory to save files
+        directory = QFileDialog.getExistingDirectory(self, 'Choose Export Directory')
+        if not directory:
+            return
+        
+        try:
+            # Export collections
+            collections_data = self.collection_manager.export_collections()
+            collections_file = os.path.join(directory, 'collections.json')
+            with open(collections_file, 'w') as f:
+                json.dump(collections_data, f, indent=2)
+            
+            # Export environments
+            env_data = {
+                'environments': self.env_manager.environments,
+                'global_variables': self.env_manager.global_variables,
+                'current_environment': self.env_manager.current_environment
+            }
+            env_file = os.path.join(directory, 'environments.json')
+            with open(env_file, 'w') as f:
+                json.dump(env_data, f, indent=2)
+            
+            # Export history
+            history_file = os.path.join(directory, 'request_history.json')
+            with open(history_file, 'w') as f:
+                json.dump(self.request_history.history, f, indent=2)
+            
+            QMessageBox.information(self, 'Success', 
+                                  f'Data exported successfully to:\n'
+                                  f'• {collections_file}\n'
+                                  f'• {env_file}\n'
+                                  f'• {history_file}')
+            
+        except Exception as e:
+            QMessageBox.critical(self, 'Error', f'Failed to export data: {e}')
+    
+    def manual_save_data(self):
+        """Manual save triggered by user (File -> Save Data or Ctrl+S)"""
+        if not self.master_password:
+            QMessageBox.information(self, 'Save Data', 
+                                  'No encryption is active. Data cannot be saved.\n'
+                                  'Restart the application and choose a data file to enable saving.')
+            return
+        
+        try:
+            # Show saving indicator
+            self.statusBar().showMessage("Saving encrypted data...", 3000)
+            
+            # Force save all data
+            if self.parent_app:
+                self.parent_app.save_all_data()
+            
+            # Show success message
+            QMessageBox.information(self, 'Save Successful', 
+                                  f'All data has been saved successfully to:\n{self.data_manager.encrypted_file}')
+            
+            self.statusBar().showMessage("Data saved successfully", 2000)
+            
+        except Exception as e:
+            QMessageBox.critical(self, 'Save Error', 
+                               f'Failed to save data:\n{str(e)}\n\n'
+                               'Please check file permissions and disk space.')
+            self.statusBar().showMessage("Save failed", 2000)
+    
+    def change_password(self):
+        """Change the encryption password for the current data file"""
+        if not self.master_password:
+            QMessageBox.information(self, 'Change Password', 
+                                  'No encryption is active. Cannot change password.\n'
+                                  'Restart the application and choose a data file to enable encryption.')
+            return
+        
+        # Create password change dialog
+        dialog = QDialog(self)
+        dialog.setWindowTitle('Change Password')
+        dialog.setModal(True)
+        dialog.setFixedSize(400, 250)
+        
+        layout = QVBoxLayout()
+        
+        # Title
+        title = QLabel('Change Master Password')
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title.setStyleSheet("font-size: 16px; font-weight: bold; margin: 10px;")
+        layout.addWidget(title)
+        
+        # Info
+        info = QLabel(f'Changing password for: {os.path.basename(self.data_manager.encrypted_file)}')
+        info.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        info.setStyleSheet("color: #666; margin-bottom: 15px;")
+        layout.addWidget(info)
+        
+        # Form
+        form_layout = QFormLayout()
+        
+        current_password = QLineEdit()
+        current_password.setEchoMode(QLineEdit.EchoMode.Password)
+        current_password.setPlaceholderText('Enter current password')
+        form_layout.addRow('Current Password:', current_password)
+        
+        new_password = QLineEdit()
+        new_password.setEchoMode(QLineEdit.EchoMode.Password)
+        new_password.setPlaceholderText('Enter new password')
+        form_layout.addRow('New Password:', new_password)
+        
+        confirm_password = QLineEdit()
+        confirm_password.setEchoMode(QLineEdit.EchoMode.Password)
+        confirm_password.setPlaceholderText('Confirm new password')
+        form_layout.addRow('Confirm Password:', confirm_password)
+        
+        layout.addLayout(form_layout)
+        
+        # Buttons
+        button_layout = QHBoxLayout()
+        button_layout.addStretch()
+        
+        cancel_btn = QPushButton('Cancel')
+        cancel_btn.clicked.connect(dialog.reject)
+        button_layout.addWidget(cancel_btn)
+        
+        change_btn = QPushButton('Change Password')
+        change_btn.setDefault(True)
+        change_btn.clicked.connect(dialog.accept)
+        button_layout.addWidget(change_btn)
+        
+        layout.addLayout(button_layout)
+        dialog.setLayout(layout)
+        
+        # Focus on current password
+        current_password.setFocus()
+        
+        # Show dialog
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            current_pwd = current_password.text()
+            new_pwd = new_password.text()
+            confirm_pwd = confirm_password.text()
+            
+            # Validation
+            if not current_pwd:
+                QMessageBox.warning(self, 'Validation Error', 'Please enter your current password.')
+                return
+            
+            if not new_pwd:
+                QMessageBox.warning(self, 'Validation Error', 'Please enter a new password.')
+                return
+            
+            if new_pwd != confirm_pwd:
+                QMessageBox.warning(self, 'Validation Error', 'New passwords do not match.')
+                return
+            
+            if len(new_pwd) < 4:
+                QMessageBox.warning(self, 'Validation Error', 'Password must be at least 4 characters long.')
+                return
+            
+            # Verify current password
+            if current_pwd != self.master_password:
+                QMessageBox.critical(self, 'Authentication Failed', 'Current password is incorrect.')
+                return
+            
+            try:
+                # Show progress
+                self.statusBar().showMessage("Changing password and re-encrypting data...", 5000)
+                QApplication.processEvents()
+                
+                # Get current data
+                current_data = {
+                    'environments': self.env_manager.get_data(),
+                    'collections': self.collection_manager.get_data(),
+                    'history': self.request_history.get_data()
+                }
+                
+                # Update encryption with new password
+                self.master_password = new_pwd
+                self.data_encryption.set_password(new_pwd)
+                
+                # Save data with new encryption
+                self.data_manager.save_all_data(current_data)
+                
+                # Success message
+                QMessageBox.information(self, 'Password Changed', 
+                                      'Password has been changed successfully!\n'
+                                      'All data has been re-encrypted with the new password.')
+                
+                self.statusBar().showMessage("Password changed successfully", 3000)
+                
+            except Exception as e:
+                QMessageBox.critical(self, 'Password Change Failed', 
+                                   f'Failed to change password:\n{str(e)}\n\n'
+                                   'Your data is still protected with the old password.')
+                self.statusBar().showMessage("Password change failed", 2000)
     
     def manage_environments(self):
         dialog = EnvironmentDialog(self.env_manager, self)
@@ -2668,6 +3481,9 @@ Version: {ssl_info.get('version', 'Unknown')}
         self.update_code_generator()
     
     def save_current_request(self):
+        current_url = self.url_input.text().strip()
+        current_method = self.method_combo.currentText()
+        
         if not self.current_request:
             # Create new request in first collection
             if not self.collection_manager.collections:
@@ -2680,10 +3496,58 @@ Version: {ssl_info.get('version', 'Unknown')}
             request = RequestItem(name.strip())
             self.collection_manager.collections[0].requests.append(request)
             self.current_request = request
+        else:
+            # Check if URL or method has changed significantly
+            url_changed = (self.current_request.url != current_url and 
+                          current_url and 
+                          self.current_request.url != '')
+            method_changed = self.current_request.method != current_method
+            
+            if url_changed or method_changed:
+                # Ask if user wants to save as new request
+                reply = QMessageBox.question(
+                    self, 'Request Changed', 
+                    f'The {"URL" if url_changed else "method"} has changed.\n\n'
+                    f'Current request: {self.current_request.name}\n'
+                    f'Old: {self.current_request.method} {self.current_request.url}\n'
+                    f'New: {current_method} {current_url}\n\n'
+                    'Do you want to save this as a new request?',
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No | QMessageBox.StandardButton.Cancel,
+                    QMessageBox.StandardButton.Yes
+                )
+                
+                if reply == QMessageBox.StandardButton.Cancel:
+                    return
+                elif reply == QMessageBox.StandardButton.Yes:
+                    # Create new request
+                    name, ok = QInputDialog.getText(self, 'Save New Request', 'Request name:',
+                                                  text=f"{self.current_request.name} - Modified")
+                    if not ok or not name.strip():
+                        return
+                    
+                    # Find the collection containing the current request
+                    parent_collection = None
+                    for collection in self.collection_manager.collections:
+                        if self.current_request in collection.requests:
+                            parent_collection = collection
+                            break
+                        for folder in collection.folders:
+                            if self.current_request in folder.requests:
+                                parent_collection = collection
+                                break
+                    
+                    if not parent_collection:
+                        parent_collection = self.collection_manager.collections[0]
+                    
+                    # Create new request
+                    new_request = RequestItem(name.strip())
+                    parent_collection.requests.append(new_request)
+                    self.current_request = new_request
+                # If No, continue with updating existing request
         
         # Update request data
-        self.current_request.method = self.method_combo.currentText()
-        self.current_request.url = self.url_input.text().strip()
+        self.current_request.method = current_method
+        self.current_request.url = current_url
         self.current_request.headers = self.headers_widget.get_headers()
         self.current_request.params = self.params_widget.get_params()
         self.current_request.body = self.body_widget.get_body()
@@ -2695,10 +3559,52 @@ Version: {ssl_info.get('version', 'Unknown')}
         self.current_request.pre_request_script = self.pre_request_widget.get_script()
         self.current_request.tests = self.tests_widget.get_tests()
         
-        self.collection_manager.save_collections()
+        if self.parent_app:
+            self.parent_app.save_all_data()
         self.collections_tree.refresh_collections()
         
         QMessageBox.information(self, 'Success', 'Request saved successfully')
+    
+    def closeEvent(self, event):
+        """Handle application close event - ensure data is saved"""
+        try:
+            # Stop auto-save timer
+            if hasattr(self, 'auto_save_timer'):
+                self.auto_save_timer.stop()
+            
+            # Perform final save if we have encryption set up
+            if self.master_password:
+                # Save without asking - auto-save should handle this gracefully
+                if self.parent_app:
+                    self.parent_app.save_all_data()
+                
+                # Brief visual feedback
+                self.statusBar().showMessage("Saving encrypted data...", 1000)
+                QApplication.processEvents()
+                
+                # Small delay to ensure save completes
+                import time
+                time.sleep(0.2)
+                
+                self.statusBar().showMessage("Data saved successfully", 500)
+                QApplication.processEvents()
+            
+            # Accept the close event
+            event.accept()
+            
+        except Exception as e:
+            # If save fails, warn user but allow exit
+            reply = QMessageBox.warning(
+                self, 'Save Error',
+                f'Failed to save data: {str(e)}\n\nExit anyway?',
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
+            )
+            
+            if reply == QMessageBox.StandardButton.Yes:
+                event.accept()
+            else:
+                event.ignore()
     
     def set_default_headers(self):
         # Add common headers by default
@@ -2803,6 +3709,8 @@ Version: {ssl_info.get('version', 'Unknown')}
         body = self.body_widget.get_body()
         
         self.request_history.add_request(method, url, headers, params, body, response_data)
+        if self.parent_app:
+            self.parent_app.save_all_data()
         self.history_widget.refresh_history()
         
         # Run tests

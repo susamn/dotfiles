@@ -6,3 +6,7 @@ gch=Copies all hooks from git templates to current
 pkgs=Shows the required platform and brew packages
 o=Opens any resource in the default app in mac or linux
 gsk=Generates the ssh keys for usage of ssh based authenticaion
+ht=Helpful tools kit, every developer's swiss army knife
+mt=Media trimmer tool, trim audio and video from local or from youtube
+att=API testing tool, an opensource Insomnia replica
+ytd=Youtube downloader in terminal, easy and fast

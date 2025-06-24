@@ -41,10 +41,10 @@ TOOLS = [
         "has_backend": False
     },
     {
-        "name": "JSON-YAML Converter",
-        "description": "Convert between JSON and YAML formats",
-        "path": "/tools/json-yaml-converter",
-        "file": "json_yaml_converter.html",
+        "name": "JSON-XML-YAML Converter",
+        "description": "Convert between JSON, XML and YAML formats",
+        "path": "/tools/json-yaml-xml-converter",
+        "file": "json_yaml_xml_converter.html",
         "has_backend": False
     },
     {

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JSON-YAML Converter - Helpful Tools</title>
+    <title>JSON-YAML-XML Converter - Helpful Tools</title>
     <style>
         * {
             margin: 0;
@@ -49,6 +49,7 @@
             align-items: center;
             gap: 8px;
             box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            flex-wrap: wrap;
         }
         .toolbar button {
             background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
@@ -169,6 +170,12 @@
         .json-null { color: #808080; }
         .json-key { color: #000080; font-weight: bold; }
         .json-punctuation { color: #000000; }
+        .xml-tag { color: #800000; font-weight: bold; }
+        .xml-attribute { color: #ff8000; }
+        .xml-value { color: #0000ff; }
+        .xml-text { color: #000000; }
+        .xml-comment { color: #888888; font-style: italic; }
+        .xml-declaration { color: #800080; }
         .conversion-controls {
             display: flex;
             align-items: center;
@@ -184,23 +191,51 @@
             border: 1px solid #a0a0a0;
             background: white;
         }
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .examples-btn {
+            background: linear-gradient(to bottom, #e8f4fd, #b8d4f0) !important;
+            border-color: #7fb3d3 !important;
+        }
+        .examples-btn:hover {
+            background: linear-gradient(to bottom, #f0f8ff, #d0e4f7) !important;
+        }
     </style>
 </head>
 <body>
 <div class="header">
-    <h1>JSON-YAML Converter</h1>
+    <h1>JSON-YAML-XML Converter</h1>
     <a href="/">Back to Tools</a>
 </div>
-
 <div class="toolbar">
-    <button onclick="convertToYaml()">JSON → YAML</button>
-    <button onclick="convertToJson()">YAML → JSON</button>
+    <div class="toolbar-group">
+        <button onclick="convertToYaml()">JSON → YAML</button>
+        <button onclick="convertToJson()">YAML → JSON</button>
+    </div>
     <div class="separator"></div>
-    <button onclick="formatCurrent()">Format Current</button>
-    <button onclick="swapContent()">Swap Panels</button>
+    <div class="toolbar-group">
+        <button onclick="convertJsonToXml()">JSON → XML</button>
+        <button onclick="convertXmlToJson()">XML → JSON</button>
+    </div>
     <div class="separator"></div>
-    <button onclick="clearAll()">Clear All</button>
-    <button onclick="copyOutput()">Copy Output</button>
+    <div class="toolbar-group">
+        <button onclick="convertYamlToXml()">YAML → XML</button>
+        <button onclick="convertXmlToYaml()">XML → YAML</button>
+    </div>
+    <div class="separator"></div>
+    <div class="toolbar-group">
+        <button onclick="formatCurrent()">Format Current</button>
+        <button onclick="swapContent()">Swap Panels</button>
+    </div>
+    <div class="separator"></div>
+    <div class="toolbar-group">
+        <button onclick="clearAll()">Clear All</button>
+        <button onclick="copyOutput()">Copy Output</button>
+        <button class="examples-btn" onclick="showExamples()">Examples</button>
+    </div>
     <div class="separator"></div>
     <div class="conversion-controls">
         <label>YAML Indent:</label>
@@ -211,7 +246,6 @@
         </select>
     </div>
 </div>
-
 <div class="main-container">
     <div class="panel">
         <div class="panel-header">
@@ -219,10 +253,9 @@
             <span class="format-indicator" id="inputFormat">AUTO-DETECT</span>
         </div>
         <div class="panel-content">
-            <textarea class="text-area" id="inputContent" placeholder="Paste your JSON or YAML here..."></textarea>
+            <textarea class="text-area" id="inputContent" placeholder="Paste your JSON, YAML, or XML here..."></textarea>
         </div>
     </div>
-
     <div class="panel">
         <div class="panel-header">
             Output
@@ -233,20 +266,129 @@
         </div>
     </div>
 </div>
-
 <div class="status-bar">
-    <div id="statusText">Ready - Paste JSON or YAML to auto-detect format</div>
+    <div id="statusText">Ready - Paste JSON, YAML, or XML to auto-detect format</div>
     <div id="charCount">Characters: 0</div>
 </div>
-
 <script>
     let yamlIndentSize = 2;
     let currentInputFormat = 'unknown';
     let currentOutputFormat = 'unknown';
 
+    const examples = {
+        json: `{
+  "users": [
+    {
+      "id": 1,
+      "name": "John Doe",
+      "email": "john@example.com",
+      "active": true,
+      "roles": ["admin", "user"],
+      "settings": {
+        "theme": "dark",
+        "notifications": true
+      }
+    },
+    {
+      "id": 2,
+      "name": "Jane Smith",
+      "email": "jane@example.com",
+      "active": false,
+      "roles": ["user"],
+      "settings": null
+    }
+  ],
+  "metadata": {
+    "total": 2,
+    "version": "1.0"
+  }
+}`,
+        yaml: `users:
+  - id: 1
+    name: John Doe
+    email: john@example.com
+    active: true
+    roles:
+      - admin
+      - user
+    settings:
+      theme: dark
+      notifications: true
+  - id: 2
+    name: Jane Smith
+    email: jane@example.com
+    active: false
+    roles:
+      - user
+    settings: null
+metadata:
+  total: 2
+  version: "1.0"`,
+        xml: `<?xml version="1.0" encoding="UTF-8"?>
+<root>
+  <users>
+    <user>
+      <id>1</id>
+      <name>John Doe</name>
+      <email>john@example.com</email>
+      <active>true</active>
+      <roles>
+        <role>admin</role>
+        <role>user</role>
+      </roles>
+      <settings>
+        <theme>dark</theme>
+        <notifications>true</notifications>
+      </settings>
+    </user>
+    <user>
+      <id>2</id>
+      <name>Jane Smith</name>
+      <email>jane@example.com</email>
+      <active>false</active>
+      <roles>
+        <role>user</role>
+      </roles>
+      <settings></settings>
+    </user>
+  </users>
+  <metadata>
+    <total>2</total>
+    <version>1.0</version>
+  </metadata>
+</root>`
+    };
+
+    function showExamples() {
+        const example = prompt(
+            "Choose an example to load:\n\n" +
+            "1 - JSON Example\n" +
+            "2 - YAML Example\n" +
+            "3 - XML Example\n\n" +
+            "Enter 1, 2, or 3:"
+        );
+
+        if (example === '1') {
+            document.getElementById('inputContent').value = examples.json;
+            currentInputFormat = 'json';
+        } else if (example === '2') {
+            document.getElementById('inputContent').value = examples.yaml;
+            currentInputFormat = 'yaml';
+        } else if (example === '3') {
+            document.getElementById('inputContent').value = examples.xml;
+            currentInputFormat = 'xml';
+        } else {
+            return;
+        }
+
+        updateFormatIndicators();
+        updateCharCount();
+        document.getElementById('statusText').textContent = 'Example loaded - try converting to other formats';
+        document.getElementById('statusText').style.color = '#008000';
+    }
+
     function updateYamlPreference() {
         yamlIndentSize = parseInt(document.getElementById('yamlIndent').value);
-
         const input = document.getElementById('inputContent').value.trim();
         if (input && currentInputFormat === 'json') {
             convertToYaml();
@@ -256,15 +398,35 @@
     function detectFormat(content) {
         if (!content.trim()) return 'unknown';
 
+        content = content.trim();
+
+        // Check for XML
+        if (content.startsWith('<?xml') || content.startsWith('<') && content.endsWith('>')) {
+            try {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(content, 'text/xml');
+                if (!doc.getElementsByTagName('parsererror').length) {
+                    return 'xml';
+                }
+            } catch (e) {
+                // Continue to other checks
+            }
+        }
+
+        // Check for JSON
         try {
             JSON.parse(content);
             return 'json';
         } catch (e) {
-            if (content.includes(':') && !content.startsWith('{') && !content.startsWith('[')) {
-                return 'yaml';
-            }
-            return 'unknown';
+            // Continue to YAML check
         }
+
+        // Check for YAML
+        if (content.includes(':') && !content.startsWith('{') && !content.startsWith('[')) {
+            return 'yaml';
+        }
+
+        return 'unknown';
     }
 
     function jsonToYaml(jsonStr) {
@@ -274,7 +436,6 @@
 
     function objectToYaml(obj, indent = 0) {
         const spaces = ' '.repeat(indent);
-
         if (obj === null) return 'null';
         if (typeof obj === 'boolean') return obj.toString();
         if (typeof obj === 'number') return obj.toString();
@@ -287,10 +448,8 @@
             }
             return obj;
         }
-
         if (Array.isArray(obj)) {
             if (obj.length === 0) return '[]';
-
             return obj.map(item => {
                 const yamlItem = objectToYaml(item, indent + yamlIndentSize);
                 if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
@@ -299,10 +458,8 @@
                 return `${spaces}- ${yamlItem}`;
             }).join('\n');
         }
-
         if (typeof obj === 'object') {
             if (Object.keys(obj).length === 0) return '{}';
-
             return Object.entries(obj).map(([key, value]) => {
                 const yamlValue = objectToYaml(value, indent + yamlIndentSize);
                 if (typeof value === 'object' && value !== null) {
@@ -315,7 +472,6 @@
                 return `${spaces}${key}: ${yamlValue}`;
             }).join('\n');
         }
-
         return String(obj);
     }
 
@@ -329,20 +485,16 @@
         const stack = [{}];
         const indentStack = [-1];
         let currentObj = stack[0];
-
         for (let line of lines) {
             line = line.replace(/\r$/, '');
             if (!line.trim() || line.trim().startsWith('#')) continue;
-
             const indent = line.search(/\S/);
             const content = line.trim();
-
             while (indentStack.length > 1 && indent <= indentStack[indentStack.length - 1]) {
                 stack.pop();
                 indentStack.pop();
             }
             currentObj = stack[stack.length - 1];
-
             if (content.startsWith('- ')) {
                 const value = content.substring(2).trim();
                 if (!Array.isArray(currentObj)) {
@@ -352,15 +504,12 @@
                         currentObj.length = 0;
                     }
                 }
-
                 if (!Array.isArray(currentObj)) {
                     currentObj = [];
                     stack[stack.length - 1] = currentObj;
                 }
-
                 const parsedValue = parseYamlValue(value);
                 currentObj.push(parsedValue);
-
                 if (typeof parsedValue === 'object' && parsedValue !== null) {
                     stack.push(parsedValue);
                     indentStack.push(indent);
@@ -369,7 +518,6 @@
                 const colonIndex = content.indexOf(':');
                 const key = content.substring(0, colonIndex).trim();
                 const value = content.substring(colonIndex + 1).trim();
-
                 if (value === '') {
                     currentObj[key] = {};
                     stack.push(currentObj[key]);
@@ -379,7 +527,6 @@
                 }
             }
         }
-
         return stack[0];
     }
 
@@ -395,6 +542,159 @@
             return value.substring(1, value.length - 1);
         }
         return value;
+    }
+
+    function jsonToXml(jsonStr) {
+        const obj = JSON.parse(jsonStr);
+        let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+        xml += objectToXml(obj, 'root', 0);
+        return xml;
+    }
+
+    function objectToXml(obj, tagName, indent = 0) {
+        const spaces = '  '.repeat(indent);
+
+        if (obj === null || obj === undefined) {
+            return `${spaces}<${tagName}></${tagName}>`;
+        }
+
+        if (typeof obj === 'string' || typeof obj === 'number' || typeof obj === 'boolean') {
+            return `${spaces}<${tagName}>${escapeXml(String(obj))}</${tagName}>`;
+        }
+
+        if (Array.isArray(obj)) {
+            if (obj.length === 0) {
+                return `${spaces}<${tagName}></${tagName}>`;
+            }
+
+            let xml = '';
+            obj.forEach(item => {
+                xml += objectToXml(item, getArrayItemTagName(tagName), indent) + '\n';
+            });
+            return xml.trimEnd();
+        }
+
+        if (typeof obj === 'object') {
+            if (Object.keys(obj).length === 0) {
+                return `${spaces}<${tagName}></${tagName}>`;
+            }
+
+            let xml = `${spaces}<${tagName}>\n`;
+            Object.entries(obj).forEach(([key, value]) => {
+                xml += objectToXml(value, key, indent + 1) + '\n';
+            });
+            xml += `${spaces}</${tagName}>`;
+            return xml;
+        }
+
+        return `${spaces}<${tagName}>${escapeXml(String(obj))}</${tagName}>`;
+    }
+
+    function getArrayItemTagName(parentTag) {
+        // Convert plural to singular for array items
+        if (parentTag.endsWith('s')) {
+            return parentTag.slice(0, -1);
+        }
+        return parentTag + '_item';
+    }
+
+    function escapeXml(text) {
+        return text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#x27;');
+    }
+
+    function xmlToJson(xmlStr) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(xmlStr, 'text/xml');
+
+        // Check for parsing errors
+        const errorNode = doc.querySelector('parsererror');
+        if (errorNode) {
+            throw new Error('Invalid XML format');
+        }
+
+        const result = xmlNodeToObject(doc.documentElement);
+        return JSON.stringify(result, null, 2);
+    }
+
+    function xmlNodeToObject(node) {
+        const obj = {};
+
+        // Handle attributes
+        if (node.attributes && node.attributes.length > 0) {
+            obj['@attributes'] = {};
+            for (let i = 0; i < node.attributes.length; i++) {
+                const attr = node.attributes[i];
+                obj['@attributes'][attr.name] = attr.value;
+            }
+        }
+
+        // Handle child nodes
+        const children = Array.from(node.childNodes);
+        const textContent = children
+            .filter(child => child.nodeType === Node.TEXT_NODE)
+            .map(child => child.textContent.trim())
+            .join('')
+            .trim();
+
+        const elementChildren = children.filter(child => child.nodeType === Node.ELEMENT_NODE);
+
+        if (elementChildren.length === 0) {
+            // Leaf node
+            if (textContent) {
+                return parseValue(textContent);
+            }
+            return obj['@attributes'] ? obj : null;
+        }
+
+        // Group children by tag name
+        const childGroups = {};
+        elementChildren.forEach(child => {
+            const tagName = child.tagName;
+            if (!childGroups[tagName]) {
+                childGroups[tagName] = [];
+            }
+            childGroups[tagName].push(xmlNodeToObject(child));
+        });
+
+        // Convert grouped children to object properties
+        Object.entries(childGroups).forEach(([tagName, items]) => {
+            if (items.length === 1) {
+                obj[tagName] = items[0];
+            } else {
+                obj[tagName] = items;
+            }
+        });
+
+        // If only text content and no attributes, return the text value
+        if (Object.keys(obj).length === 0 && textContent) {
+            return parseValue(textContent);
+        }
+
+        return obj;
+    }
+
+    function parseValue(value) {
+        if (value === 'true') return true;
+        if (value === 'false') return false;
+        if (value === 'null') return null;
+        if (!isNaN(value) && !isNaN(parseFloat(value))) return parseFloat(value);
+        return value;
+    }
+
+    function yamlToXml(yamlStr) {
+        const jsonStr = yamlToJson(yamlStr);
+        return jsonToXml(jsonStr);
+    }
+
+    function xmlToYaml(xmlStr) {
+        const jsonStr = xmlToJson(xmlStr);
+        const obj = JSON.parse(jsonStr);
+        return objectToYaml(obj, 0);
     }
 
     function syntaxHighlightJson(json) {
@@ -418,13 +718,10 @@
 
     function syntaxHighlightYaml(yaml) {
         yaml = yaml.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
         return yaml.split('\n').map(line => {
             line = line.replace(/(#.*)$/, '<span class="yaml-comment">$1</span>');
-
             line = line.replace(/^(\s*)([^:\s][^:]*?)(\s*:)(\s*)(.*)$/, function(match, indent, key, colon, space, value) {
                 let highlightedValue = value;
-
                 if (value.match(/^\s*(true|false)\s*$/)) {
                     highlightedValue = value.replace(/(true|false)/, '<span class="yaml-boolean">$1</span>');
                 } else if (value.match(/^\s*null\s*$/)) {
@@ -436,13 +733,10 @@
                 } else if (value.trim() && !value.includes('<span')) {
                     highlightedValue = value.replace(/(.+)/, '<span class="yaml-string">$1</span>');
                 }
-
                 return indent + '<span class="yaml-key">' + key + '</span>' + colon + space + highlightedValue;
             });
-
             line = line.replace(/^(\s*-\s+)(.*)$/, function(match, dash, value) {
                 let highlightedValue = value;
-
                 if (value.match(/^(true|false)$/)) {
                     highlightedValue = '<span class="yaml-boolean">' + value + '</span>';
                 } else if (value.match(/^null$/)) {
@@ -454,33 +748,53 @@
                 } else if (value.trim() && !value.includes('<span')) {
                     highlightedValue = '<span class="yaml-string">' + value + '</span>';
                 }
-
                 return '<span class="yaml-punctuation">' + dash + '</span>' + highlightedValue;
             });
-
             return line;
         }).join('\n');
+    }
+
+    function syntaxHighlightXml(xml) {
+        xml = xml.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+        // Highlight XML declaration
+        xml = xml.replace(/(&lt;\?xml[^&gt;]*\?&gt;)/g, '<span class="xml-declaration">$1</span>');
+
+        // Highlight comments
+        xml = xml.replace(/(&lt;!--[\s\S]*?--&gt;)/g, '<span class="xml-comment">$1</span>');
+
+        // Highlight tags with attributes
+        xml = xml.replace(/(&lt;\/?)([a-zA-Z_][\w\-]*)((?:\s+[a-zA-Z_][\w\-]*\s*=\s*"[^"]*")*)\s*(\/?&gt;)/g, function(match, openBracket, tagName, attributes, closeBracket) {
+            let result = '<span class="xml-tag">' + openBracket + tagName;
+
+            if (attributes) {
+                result += attributes.replace(/([a-zA-Z_][\w\-]*)\s*=\s*("[^"]*")/g, function(attrMatch, attrName, attrValue) {
+                    return ' <span class="xml-attribute">' + attrName + '</span>=<span class="xml-value">' + attrValue + '</span>';
+                });
+            }
+
+            result += closeBracket + '</span>';
+            return result;
+        });
+
+        return xml;
     }
 
     function convertToYaml() {
         const input = document.getElementById('inputContent').value.trim();
         const output = document.getElementById('outputContent');
         const statusText = document.getElementById('statusText');
-
         if (!input) {
             statusText.textContent = 'Please enter JSON content';
             statusText.style.color = '#ff8800';
             return;
         }
-
         try {
             const yamlResult = jsonToYaml(input);
             const highlighted = syntaxHighlightYaml(yamlResult);
-
             output.innerHTML = highlighted;
             statusText.textContent = 'Successfully converted JSON to YAML';
             statusText.style.color = '#008000';
-
             currentInputFormat = 'json';
             currentOutputFormat = 'yaml';
             updateFormatIndicators();
@@ -495,21 +809,17 @@
         const input = document.getElementById('inputContent').value.trim();
         const output = document.getElementById('outputContent');
         const statusText = document.getElementById('statusText');
-
         if (!input) {
             statusText.textContent = 'Please enter YAML content';
             statusText.style.color = '#ff8800';
             return;
         }
-
         try {
             const jsonResult = yamlToJson(input);
             const highlighted = syntaxHighlightJson(jsonResult);
-
             output.innerHTML = highlighted;
             statusText.textContent = 'Successfully converted YAML to JSON';
             statusText.style.color = '#008000';
-
             currentInputFormat = 'yaml';
             currentOutputFormat = 'json';
             updateFormatIndicators();
@@ -520,10 +830,109 @@
         }
     }
 
+    function convertJsonToXml() {
+        const input = document.getElementById('inputContent').value.trim();
+        const output = document.getElementById('outputContent');
+        const statusText = document.getElementById('statusText');
+        if (!input) {
+            statusText.textContent = 'Please enter JSON content';
+            statusText.style.color = '#ff8800';
+            return;
+        }
+        try {
+            const xmlResult = jsonToXml(input);
+            const highlighted = syntaxHighlightXml(xmlResult);
+            output.innerHTML = highlighted;
+            statusText.textContent = 'Successfully converted JSON to XML';
+            statusText.style.color = '#008000';
+            currentInputFormat = 'json';
+            currentOutputFormat = 'xml';
+            updateFormatIndicators();
+        } catch (error) {
+            output.innerHTML = `<div class="error-display">Error: ${error.message}</div>`;
+            statusText.textContent = 'JSON to XML conversion error';
+            statusText.style.color = '#cc0000';
+        }
+    }
+
+    function convertXmlToJson() {
+        const input = document.getElementById('inputContent').value.trim();
+        const output = document.getElementById('outputContent');
+        const statusText = document.getElementById('statusText');
+        if (!input) {
+            statusText.textContent = 'Please enter XML content';
+            statusText.style.color = '#ff8800';
+            return;
+        }
+        try {
+            const jsonResult = xmlToJson(input);
+            const highlighted = syntaxHighlightJson(jsonResult);
+            output.innerHTML = highlighted;
+            statusText.textContent = 'Successfully converted XML to JSON';
+            statusText.style.color = '#008000';
+            currentInputFormat = 'xml';
+            currentOutputFormat = 'json';
+            updateFormatIndicators();
+        } catch (error) {
+            output.innerHTML = `<div class="error-display">Error: ${error.message}</div>`;
+            statusText.textContent = 'XML to JSON conversion error';
+            statusText.style.color = '#cc0000';
+        }
+    }
+
+    function convertYamlToXml() {
+        const input = document.getElementById('inputContent').value.trim();
+        const output = document.getElementById('outputContent');
+        const statusText = document.getElementById('statusText');
+        if (!input) {
+            statusText.textContent = 'Please enter YAML content';
+            statusText.style.color = '#ff8800';
+            return;
+        }
+        try {
+            const xmlResult = yamlToXml(input);
+            const highlighted = syntaxHighlightXml(xmlResult);
+            output.innerHTML = highlighted;
+            statusText.textContent = 'Successfully converted YAML to XML';
+            statusText.style.color = '#008000';
+            currentInputFormat = 'yaml';
+            currentOutputFormat = 'xml';
+            updateFormatIndicators();
+        } catch (error) {
+            output.innerHTML = `<div class="error-display">Error: ${error.message}</div>`;
+            statusText.textContent = 'YAML to XML conversion error';
+            statusText.style.color = '#cc0000';
+        }
+    }
+
+    function convertXmlToYaml() {
+        const input = document.getElementById('inputContent').value.trim();
+        const output = document.getElementById('outputContent');
+        const statusText = document.getElementById('statusText');
+        if (!input) {
+            statusText.textContent = 'Please enter XML content';
+            statusText.style.color = '#ff8800';
+            return;
+        }
+        try {
+            const yamlResult = xmlToYaml(input);
+            const highlighted = syntaxHighlightYaml(yamlResult);
+            output.innerHTML = highlighted;
+            statusText.textContent = 'Successfully converted XML to YAML';
+            statusText.style.color = '#008000';
+            currentInputFormat = 'xml';
+            currentOutputFormat = 'yaml';
+            updateFormatIndicators();
+        } catch (error) {
+            output.innerHTML = `<div class="error-display">Error: ${error.message}</div>`;
+            statusText.textContent = 'XML to YAML conversion error';
+            statusText.style.color = '#cc0000';
+        }
+    }
+
     function formatCurrent() {
         const input = document.getElementById('inputContent').value.trim();
         if (!input) return;
-
         const format = detectFormat(input);
         if (format === 'json') {
             try {
@@ -535,25 +944,45 @@
                 document.getElementById('statusText').textContent = 'Invalid JSON format';
                 document.getElementById('statusText').style.color = '#cc0000';
             }
+        } else if (format === 'xml') {
+            try {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(input, 'text/xml');
+                const serializer = new XMLSerializer();
+                const formatted = formatXml(serializer.serializeToString(doc));
+                document.getElementById('inputContent').value = formatted;
+                updateCharCount();
+            } catch (e) {
+                document.getElementById('statusText').textContent = 'Invalid XML format';
+                document.getElementById('statusText').style.color = '#cc0000';
+            }
         }
+    }
+
+    function formatXml(xml) {
+        let formatted = '';
+        let indent = 0;
+        const tab = '  ';
+        xml.split(/>\s*</).forEach(function(node) {
+            if (node.match(/^\/\w/)) indent--;
+            formatted += tab.repeat(indent) + '<' + node + '>\n';
+            if (node.match(/^<?\w[^>]*[^\/]$/)) indent++;
+        });
+        return formatted.substring(1, formatted.length - 3);
     }
 
     function swapContent() {
         const inputEl = document.getElementById('inputContent');
         const outputEl = document.getElementById('outputContent');
-
         const outputText = outputEl.textContent;
         if (!outputText.trim()) return;
-
         inputEl.value = outputText;
         outputEl.innerHTML = '';
-
         const temp = currentInputFormat;
         currentInputFormat = currentOutputFormat;
         currentOutputFormat = 'unknown';
         updateFormatIndicators();
         updateCharCount();
-
         document.getElementById('statusText').textContent = 'Content swapped between panels';
         document.getElementById('statusText').style.color = '#008000';
     }
@@ -561,7 +990,7 @@
     function clearAll() {
         document.getElementById('inputContent').value = '';
         document.getElementById('outputContent').innerHTML = '';
-        document.getElementById('statusText').textContent = 'Ready - Paste JSON or YAML to auto-detect format';
+        document.getElementById('statusText').textContent = 'Ready - Paste JSON, YAML, or XML to auto-detect format';
         document.getElementById('statusText').style.color = '#666';
         currentInputFormat = 'unknown';
         currentOutputFormat = 'unknown';
@@ -572,18 +1001,15 @@
     function copyOutput() {
         const output = document.getElementById('outputContent');
         const text = output.textContent;
-
         if (!text.trim()) {
             return;
         }
-
         navigator.clipboard.writeText(text).then(() => {
             const statusText = document.getElementById('statusText');
             const originalText = statusText.textContent;
             const originalColor = statusText.style.color;
             statusText.textContent = 'Copied to clipboard';
             statusText.style.color = '#008000';
-
             setTimeout(() => {
                 statusText.textContent = originalText;
                 statusText.style.color = originalColor;
@@ -606,22 +1032,27 @@
     function updateFormatIndicators() {
         const inputIndicator = document.getElementById('inputFormat');
         const outputIndicator = document.getElementById('outputFormat');
-
         inputIndicator.textContent = currentInputFormat.toUpperCase();
         outputIndicator.textContent = currentOutputFormat.toUpperCase();
 
+        // Set colors for input format
         if (currentInputFormat === 'json') {
             inputIndicator.style.backgroundColor = '#4a90e2';
         } else if (currentInputFormat === 'yaml') {
             inputIndicator.style.backgroundColor = '#ff6b35';
+        } else if (currentInputFormat === 'xml') {
+            inputIndicator.style.backgroundColor = '#28a745';
         } else {
             inputIndicator.style.backgroundColor = '#888';
         }
 
+        // Set colors for output format
         if (currentOutputFormat === 'json') {
             outputIndicator.style.backgroundColor = '#4a90e2';
         } else if (currentOutputFormat === 'yaml') {
             outputIndicator.style.backgroundColor = '#ff6b35';
+        } else if (currentOutputFormat === 'xml') {
+            outputIndicator.style.backgroundColor = '#28a745';
         } else {
             outputIndicator.style.backgroundColor = '#888';
         }
@@ -630,9 +1061,7 @@
     function autoDetectAndConvert() {
         const input = document.getElementById('inputContent').value.trim();
         if (!input) return;
-
         const detectedFormat = detectFormat(input);
-
         if (detectedFormat === 'json' && currentInputFormat !== 'json') {
             currentInputFormat = 'json';
             updateFormatIndicators();
@@ -641,12 +1070,15 @@
             currentInputFormat = 'yaml';
             updateFormatIndicators();
             convertToJson();
+        } else if (detectedFormat === 'xml' && currentInputFormat !== 'xml') {
+            currentInputFormat = 'xml';
+            updateFormatIndicators();
+            convertXmlToJson();
         }
     }
 
     document.getElementById('inputContent').addEventListener('input', function() {
         updateCharCount();
-
         clearTimeout(this.detectTimer);
         this.detectTimer = setTimeout(autoDetectAndConvert, 1000);
     });

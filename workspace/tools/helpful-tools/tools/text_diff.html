@@ -168,9 +168,32 @@
             background: #e6ffe6;
             border-left: 3px solid #66cc66;
         }
+        .line.replace {
+            background: #fff0e6;
+            border-left: 3px solid #ff9933;
+        }
         .line.empty {
             background: #f8f8f8;
             color: #999;
+        }
+        /* Character-level diff styles */
+        .char-delete {
+            background: #ffb3b3 !important;
+            color: #990000;
+            text-decoration: line-through;
+            border-radius: 2px;
+            padding: 1px 2px;
+            margin: 0 1px;
+        }
+        .char-insert {
+            background: #b3ffb3 !important;
+            color: #006600;
+            border-radius: 2px;
+            padding: 1px 2px;
+            margin: 0 1px;
+        }
+        .char-equal {
+            /* No special styling for equal characters */
         }
         .status-bar {
             background: linear-gradient(to bottom, #e8e8e8, #d0d0d0);
@@ -303,6 +326,12 @@
             } else if (item.type === 'insert') {
                 insertions++;
                 rightLineNum++;
+            } else if (item.type === 'replace') {
+                // Replace counts as both deletion and insertion
+                deletions++;
+                insertions++;
+                leftLineNum++;
+                rightLineNum++;
             }
         });
 
@@ -310,6 +339,31 @@
             `Changes: ${equals} equal, ${deletions} deleted, ${insertions} inserted`;
         document.getElementById('lineCount').textContent =
             `Lines: ${leftLineNum - 1} / ${rightLineNum - 1}`;
+    }
+
+    function renderCharacterDiff(charDiffs, side) {
+        const fragment = document.createDocumentFragment();
+        
+        charDiffs.forEach(charDiff => {
+            if (charDiff.type === 'equal') {
+                const span = document.createElement('span');
+                span.className = 'char-equal';
+                span.textContent = charDiff.content;
+                fragment.appendChild(span);
+            } else if (charDiff.type === 'delete' && side === 'left') {
+                const span = document.createElement('span');
+                span.className = 'char-delete';
+                span.textContent = charDiff.content;
+                fragment.appendChild(span);
+            } else if (charDiff.type === 'insert' && side === 'right') {
+                const span = document.createElement('span');
+                span.className = 'char-insert';
+                span.textContent = charDiff.content;
+                fragment.appendChild(span);
+            }
+        });
+        
+        return fragment;
     }
 
     function createLine(item, side, leftLineNum, rightLineNum) {
@@ -331,6 +385,23 @@
         } else if (item.type === 'insert' && side === 'right') {
             lineNumber.textContent = rightLineNum;
             lineContent.textContent = item.content;
+        } else if (item.type === 'replace') {
+            // Handle replace type with character-level diffs
+            if (side === 'left') {
+                lineNumber.textContent = leftLineNum;
+                if (item.char_diff) {
+                    lineContent.appendChild(renderCharacterDiff(item.char_diff, 'left'));
+                } else {
+                    lineContent.textContent = item.original_content || item.content;
+                }
+            } else {
+                lineNumber.textContent = rightLineNum;
+                if (item.char_diff) {
+                    lineContent.appendChild(renderCharacterDiff(item.char_diff, 'right'));
+                } else {
+                    lineContent.textContent = item.content;
+                }
+            }
         } else {
             lineNumber.textContent = '';
             lineContent.textContent = '';

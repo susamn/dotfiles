@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protocol Buffer Decoder - Helpful Tools</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        .header {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 12px 20px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            font-size: 1.5em;
+            color: #333;
+        }
+        .header a {
+            background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+            border: 1px solid #a0a0a0;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 2px;
+            color: #333;
+            text-decoration: none;
+        }
+        .header a:hover {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+        }
+        .toolbar {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .toolbar button, .toolbar select {
+            background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+            border: 1px solid #a0a0a0;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 2px;
+            color: #333;
+        }
+        .toolbar button:hover, .toolbar select:hover {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+        }
+        .toolbar button:active {
+            background: linear-gradient(to bottom, #e0e0e0, #f0f0f0);
+            box-shadow: inset 1px 1px 2px rgba(0,0,0,0.2);
+        }
+        .separator {
+            width: 1px;
+            height: 20px;
+            background: #c0c0c0;
+            margin: 0 4px;
+        }
+        .main-container {
+            display: flex;
+            height: calc(100vh - 130px);
+        }
+        .left-panel {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #c0c0c0;
+        }
+        .panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-bottom: 1px solid #c0c0c0;
+        }
+        .panel:last-child {
+            border-bottom: none;
+        }
+        .right-panel {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+        }
+        .panel-header {
+            background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #555;
+        }
+        .panel-content {
+            flex: 1;
+            position: relative;
+            background: #ffffff;
+        }
+        .text-area {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            padding: 12px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            background: #ffffff;
+            color: #000000;
+            resize: none;
+            overflow: auto;
+        }
+        .examples-section {
+            background: #f8f8f8;
+            border-bottom: 1px solid #c0c0c0;
+            padding: 8px 12px;
+            font-size: 11px;
+        }
+        .examples-section label {
+            margin-right: 8px;
+            color: #555;
+        }
+        .examples-section select {
+            background: linear-gradient(to bottom, #ffffff, #f0f0f0);
+            border: 1px solid #a0a0a0;
+            padding: 2px 4px;
+            font-size: 11px;
+            border-radius: 1px;
+        }
+        .status-bar {
+            background: linear-gradient(to bottom, #e8e8e8, #d0d0d0);
+            border-top: 1px solid #c0c0c0;
+            padding: 4px 12px;
+            font-size: 11px;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .error-display {
+            background: #fff0f0;
+            color: #cc0000;
+            padding: 12px;
+            border-left: 4px solid #cc0000;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .success-display {
+            background: #f0fff0;
+            color: #008000;
+            padding: 12px;
+            border-left: 4px solid #008000;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .example-description {
+            color: #666;
+            font-size: 10px;
+            margin-top: 4px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <h1>Protocol Buffer Decoder</h1>
+    <a href="/">Back to Tools</a>
+</div>
+<div class="toolbar">
+    <label for="message-type" style="font-size: 12px; color: #555;">Message Type:</label>
+    <select id="message-type">
+        <option value="">Select message type</option>
+    </select>
+    <div class="separator"></div>
+    <button onclick="decodeProtobuf()">Decode</button>
+    <button onclick="encodeProtobuf()">Encode</button>
+    <div class="separator"></div>
+    <button onclick="clearAll()">Clear</button>
+    <button onclick="copyOutput()">Copy Output</button>
+    <button onclick="copySchema()">Copy Schema</button>
+</div>
+<div class="main-container">
+    <div class="left-panel">
+        <div class="panel">
+            <div class="panel-header">Proto Schema Definition</div>
+            <div class="examples-section">
+                <label for="example-select">Load Example:</label>
+                <select id="example-select" onchange="loadExample()">
+                    <option value="">Select an example</option>
+                    <option value="person">Simple: Person Message</option>
+                    <option value="search">Complex: Search Request</option>
+                    <option value="response">Advanced: API Response</option>
+                    <option value="nested">Complex: Nested Messages</option>
+                </select>
+                <div class="example-description" id="example-description"></div>
+            </div>
+            <div class="panel-content">
+                <textarea class="text-area" id="proto-schema" placeholder="Enter your .proto schema definition here...
+
+Example:
+syntax = &quot;proto3&quot;;
+
+message Person {
+  string name = 1;
+  int32 id = 2;
+  string email = 3;
+}"></textarea>
+            </div>
+        </div>
+        <div class="panel">
+            <div class="panel-header">Binary Data Input</div>
+            <div class="panel-content">
+                <textarea class="text-area" id="binary-input" placeholder="Enter Base64 encoded protobuf message or JSON for encoding..."></textarea>
+            </div>
+        </div>
+    </div>
+    <div class="right-panel">
+        <div class="panel">
+            <div class="panel-header">Output</div>
+            <div class="panel-content">
+                <textarea class="text-area" id="output" readonly></textarea>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="status-bar">
+    <div id="statusText">Ready - Load an example or enter your own proto schema</div>
+    <div id="charCount">Schema: 0 chars</div>
+</div>
+
+<script>
+    const examples = {
+        person: {
+            description: "Simple message with basic field types",
+            schema: `syntax = "proto3";
+
+package example;
+
+message Person {
+  string name = 1;
+  int32 id = 2;
+  string email = 3;
+  bool active = 4;
+}`,
+            encoded: 'CgdKb2huIERvZRABGhBqb2huQGV4YW1wbGUuY29tKAE=',
+            decoded: `{
+  "name": "John Doe",
+  "id": 1,
+  "email": "john@example.com",
+  "active": true
+}`,
+            types: ['example.Person']
+        },
+        search: {
+            description: "Message with enums and repeated fields",
+            schema: `syntax = "proto3";
+
+package search;
+
+message SearchRequest {
+  enum Corpus {
+    UNIVERSAL = 0;
+    WEB = 1;
+    IMAGES = 2;
+    LOCAL = 3;
+    NEWS = 4;
+    PRODUCTS = 5;
+    VIDEO = 6;
+  }
+  string query = 1;
+  int32 page_number = 2;
+  int32 results_per_page = 3;
+  Corpus corpus = 4;
+  repeated string filters = 5;
+}`,
+            encoded: 'CgZmb29iYXIQARgKKAEyBWZpbHRlcjIGZmlsdGVyMg==',
+            decoded: `{
+  "query": "foobar",
+  "page_number": 1,
+  "results_per_page": 10,
+  "corpus": "WEB",
+  "filters": ["filter", "filter2"]
+}`,
+            types: ['search.SearchRequest']
+        },
+        response: {
+            description: "API response with optional fields and timestamps",
+            schema: `syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package api;
+
+message ApiResponse {
+  int32 status_code = 1;
+  string message = 2;
+  google.protobuf.Timestamp timestamp = 3;
+  optional string request_id = 4;
+  repeated string errors = 5;
+  
+  message Data {
+    string type = 1;
+    bytes payload = 2;
+  }
+  
+  optional Data data = 6;
+}`,
+            encoded: 'CAISDVN1Y2Nlc3NmdWwgT0saCQjQjOnrBhCAARoIdGVzdC0xMjM=',
+            decoded: `{
+  "status_code": 2,
+  "message": "Successful OK",
+  "timestamp": "2023-12-01T10:30:00Z",
+  "request_id": "test-123"
+}`,
+            types: ['api.ApiResponse']
+        },
+        nested: {
+            description: "Complex nested message structure",
+            schema: `syntax = "proto3";
+
+package company;
+
+message Company {
+  string name = 1;
+  
+  message Address {
+    string street = 1;
+    string city = 2;
+    string state = 3;
+    string zip_code = 4;
+    string country = 5;
+  }
+  
+  Address headquarters = 2;
+  
+  message Employee {
+    string name = 1;
+    int32 employee_id = 2;
+    string department = 3;
+    Address home_address = 4;
+  }
+  
+  repeated Employee employees = 3;
+  int32 founded_year = 4;
+}`,
+            encoded: 'CgdBY21lIEluYxIlCgtNYWluIFN0cmVldBIITmV3IFlvcmsaAk5ZIgU5MDExMCoD1VNBGjsKCUFsaWNlIFNtaXRoEAEaCEVuZ2luZWVyIiIKC0FsaWNlIFN0cmVldBIHQW55dG93bhoCSVAiCDEyMzQ1Njc4IP3JBw==',
+            decoded: `{
+  "name": "Acme Inc",
+  "headquarters": {
+    "street": "Main Street",
+    "city": "New York",
+    "state": "NY",
+    "zip_code": "90112",
+    "country": "USA"
+  },
+  "employees": [
+    {
+      "name": "Alice Smith",
+      "employee_id": 1,
+      "department": "Engineer",
+      "home_address": {
+        "street": "Alice Street",
+        "city": "Anytown",
+        "state": "IP",
+        "zip_code": "12345678"
+      }
+    }
+  ],
+  "founded_year": 1985
+}`,
+            types: ['company.Company']
+        }
+    };
+
+    function loadExample() {
+        const select = document.getElementById('example-select');
+        const example = examples[select.value];
+        const description = document.getElementById('example-description');
+        
+        if (example) {
+            document.getElementById('proto-schema').value = example.schema;
+            document.getElementById('binary-input').value = example.encoded;
+            description.textContent = example.description;
+            populateMessageTypes();
+            if (example.types.length > 0) {
+                document.getElementById('message-type').value = example.types[0];
+            }
+            updateCharCount();
+            updateStatus('Example loaded successfully', '#008000');
+        } else {
+            clearAll();
+            description.textContent = '';
+        }
+    }
+
+    function populateMessageTypes() {
+        const schema = document.getElementById('proto-schema').value;
+        const messageSelect = document.getElementById('message-type');
+        
+        // Extract package name if it exists
+        const packageMatch = schema.match(/package\s+([a-zA-Z_][a-zA-Z0-9_.]*)\s*;/);
+        const packageName = packageMatch ? packageMatch[1] : null;
+        
+        // Find all message types
+        const messageRegex = /message\s+(\w+)\s*\{/g;
+        let match;
+        const types = [];
+        while ((match = messageRegex.exec(schema)) !== null) {
+            // Add package prefix if package is declared
+            const messageType = packageName ? `${packageName}.${match[1]}` : match[1];
+            types.push(messageType);
+        }
+        
+        const currentVal = messageSelect.value;
+        messageSelect.innerHTML = '<option value="">Select message type</option>';
+        
+        types.forEach(type => {
+            const option = document.createElement('option');
+            option.value = type;
+            option.textContent = type;
+            messageSelect.appendChild(option);
+        });
+        
+        if (types.includes(currentVal)) {
+            messageSelect.value = currentVal;
+        }
+    }
+
+    async function decodeProtobuf() {
+        const schema = document.getElementById('proto-schema').value;
+        const encoded = document.getElementById('binary-input').value;
+        const messageType = document.getElementById('message-type').value;
+        const output = document.getElementById('output');
+
+        if (!schema.trim()) {
+            updateStatus('Please enter a proto schema', '#ff8800');
+            return;
+        }
+
+        if (!encoded.trim()) {
+            updateStatus('Please enter Base64 encoded message', '#ff8800');
+            return;
+        }
+
+        if (!messageType) {
+            updateStatus('Please select a message type', '#ff8800');
+            return;
+        }
+
+        updateStatus('Decoding...', '#0066cc');
+        output.value = '';
+
+        try {
+            const response = await fetch('/api/protobuf/decode', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    proto_schema: schema,
+                    encoded_message: encoded,
+                    message_type: messageType
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                output.value = JSON.stringify(data.decoded_message, null, 2);
+                updateStatus('Message decoded successfully', '#008000');
+            } else {
+                output.value = 'Error: ' + data.error;
+                updateStatus('Decoding failed: ' + data.error, '#cc0000');
+            }
+        } catch (error) {
+            output.value = 'Network error: ' + error.message;
+            updateStatus('Network error: ' + error.message, '#cc0000');
+        }
+    }
+
+    async function encodeProtobuf() {
+        const schema = document.getElementById('proto-schema').value;
+        const jsonData = document.getElementById('binary-input').value;
+        const messageType = document.getElementById('message-type').value;
+        const output = document.getElementById('output');
+
+        if (!schema.trim()) {
+            updateStatus('Please enter a proto schema', '#ff8800');
+            return;
+        }
+
+        if (!jsonData.trim()) {
+            updateStatus('Please enter JSON data to encode', '#ff8800');
+            return;
+        }
+
+        if (!messageType) {
+            updateStatus('Please select a message type', '#ff8800');
+            return;
+        }
+
+        try {
+            JSON.parse(jsonData);
+        } catch (e) {
+            updateStatus('Invalid JSON data', '#cc0000');
+            return;
+        }
+
+        updateStatus('Encoding...', '#0066cc');
+        output.value = '';
+
+        try {
+            const response = await fetch('/api/protobuf/encode', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    proto_schema: schema,
+                    json_data: jsonData,
+                    message_type: messageType
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                output.value = data.encoded_message;
+                updateStatus('Message encoded successfully', '#008000');
+            } else {
+                output.value = 'Error: ' + data.error;
+                updateStatus('Encoding failed: ' + data.error, '#cc0000');
+            }
+        } catch (error) {
+            output.value = 'Network error: ' + error.message;
+            updateStatus('Network error: ' + error.message, '#cc0000');
+        }
+    }
+
+    function clearAll() {
+        document.getElementById('proto-schema').value = '';
+        document.getElementById('binary-input').value = '';
+        document.getElementById('output').value = '';
+        document.getElementById('message-type').innerHTML = '<option value="">Select message type</option>';
+        document.getElementById('example-select').value = '';
+        document.getElementById('example-description').textContent = '';
+        updateStatus('Ready - Load an example or enter your own proto schema', '#666');
+        updateCharCount();
+    }
+
+    function copyOutput() {
+        const output = document.getElementById('output').value;
+        if (!output.trim()) {
+            updateStatus('No output to copy', '#ff8800');
+            return;
+        }
+
+        navigator.clipboard.writeText(output).then(() => {
+            updateStatus('Output copied to clipboard', '#008000');
+        }).catch(() => {
+            const textArea = document.createElement('textarea');
+            textArea.value = output;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            updateStatus('Output copied to clipboard', '#008000');
+        });
+    }
+
+    function copySchema() {
+        const schema = document.getElementById('proto-schema').value;
+        if (!schema.trim()) {
+            updateStatus('No schema to copy', '#ff8800');
+            return;
+        }
+
+        navigator.clipboard.writeText(schema).then(() => {
+            updateStatus('Schema copied to clipboard', '#008000');
+        }).catch(() => {
+            const textArea = document.createElement('textarea');
+            textArea.value = schema;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            updateStatus('Schema copied to clipboard', '#008000');
+        });
+    }
+
+    function updateStatus(message, color) {
+        const statusText = document.getElementById('statusText');
+        statusText.textContent = message;
+        statusText.style.color = color;
+    }
+
+    function updateCharCount() {
+        const schema = document.getElementById('proto-schema').value;
+        document.getElementById('charCount').textContent = `Schema: ${schema.length} chars`;
+    }
+
+    document.getElementById('proto-schema').addEventListener('input', () => {
+        populateMessageTypes();
+        updateCharCount();
+    });
+
+    populateMessageTypes();
+    updateCharCount();
+</script>
+</body>
+</html>

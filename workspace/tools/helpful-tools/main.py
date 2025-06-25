@@ -144,7 +144,35 @@ TOOLS = [
         "path": "/tools/binary-calculator",
         "file": "binary_calculator.html",
         "has_backend": False
-    }
+    },
+    {
+        "name": "Matrix Calculator",
+        "description": "Convert matrices between different formats, perform operations like addition, subtraction, multiplication, and inversion",
+        "path": "/tools/matrix-calculator",
+        "file": "matrix_calculator.html",
+        "has_backend": False
+    },
+    {
+        "name": "Linear Algebra Solver",
+        "description": "Solve systems of linear equations, calculate determinants, matrix inverses, and eigenvalues",
+        "path": "/tools/linear-algebra-solver",
+        "file": "linear_algebra_solver.html",
+        "has_backend": False
+    },
+    {
+        "name": "Vector Operations Visualizer",
+        "description": "Visualize vector operations, dot products, cross products, and projections in 2D/3D",
+        "path": "/tools/vector-visualizer",
+        "file": "vector_visualizer.html",
+        "has_backend": False
+    },
+    {
+        "name": "Protocol Buffers (Protobuf) Decoder",
+        "description": "Decode binary Protobuf messages using a .proto schema definition",
+        "path": "/tools/protobuf-decoder",
+        "file": "protobuf_decoder.html",
+        "has_backend": True
+    },
 ]
 
 @app.get("/", response_class=HTMLResponse)
@@ -323,6 +351,12 @@ except ImportError:
 try:
     from tools.text_diff_api import router as text_diff_router
     app.include_router(text_diff_router, prefix="/api/text-diff")
+except ImportError:
+    pass
+
+try:
+    from tools.protobuf_api import router as protobuf_router
+    app.include_router(protobuf_router, prefix="/api/protobuf")
 except ImportError:
     pass
 

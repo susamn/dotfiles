@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Testing Tool</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/monokai.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/edit/matchbrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/fold/foldcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/fold/foldgutter.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/fold/brace-fold.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Sidebar -->
+        <div id="sidebar">
+            <!-- Collections -->
+            <div class="sidebar-section">
+                <div class="section-header">
+                    <h3>Collections</h3>
+                    <button id="new-collection-btn" class="icon-btn" title="New Collection">+</button>
+                </div>
+                <div id="collections-tree" class="tree-container"></div>
+            </div>
+
+            <!-- History -->
+            <div class="sidebar-section">
+                <div class="section-header">
+                    <h3>History</h3>
+                    <button id="clear-history-btn" class="icon-btn" title="Clear History">×</button>
+                </div>
+                <div id="history-list" class="list-container"></div>
+            </div>
+
+            <!-- Environment -->
+            <div class="sidebar-section">
+                <div class="section-header">
+                    <h3>Environment</h3>
+                    <button id="manage-env-btn" class="icon-btn" title="Manage Environments">⚙</button>
+                </div>
+                <select id="environment-select">
+                    <option value="">No Environment</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div id="main-content">
+            <!-- Request Section -->
+            <div id="request-section">
+                <div class="url-bar">
+                    <select id="method-select">
+                        <option value="GET">GET</option>
+                        <option value="POST">POST</option>
+                        <option value="PUT">PUT</option>
+                        <option value="DELETE">DELETE</option>
+                        <option value="PATCH">PATCH</option>
+                        <option value="HEAD">HEAD</option>
+                        <option value="OPTIONS">OPTIONS</option>
+                    </select>
+                    <input type="text" id="url-input" placeholder="Enter request URL..." />
+                    <button id="save-btn">Save</button>
+                    <button id="send-btn" class="primary">Send</button>
+                </div>
+
+                <div class="tabs">
+                    <div class="tab-header">
+                        <button class="tab-btn active" data-tab="params">Params</button>
+                        <button class="tab-btn" data-tab="headers">Headers</button>
+                        <button class="tab-btn" data-tab="body">Body</button>
+                        <button class="tab-btn" data-tab="auth">Auth</button>
+                        <button class="tab-btn" data-tab="scripts">Scripts</button>
+                    </div>
+
+                    <div class="tab-content">
+                        <!-- Params Tab -->
+                        <div id="params-tab" class="tab-pane active">
+                            <div class="key-value-editor">
+                                <div class="kv-header">
+                                    <span>Key</span>
+                                    <span>Value</span>
+                                    <span>Description</span>
+                                    <span></span>
+                                </div>
+                                <div id="params-container"></div>
+                                <button class="add-row-btn" data-target="params">+ Add Parameter</button>
+                            </div>
+                        </div>
+
+                        <!-- Headers Tab -->
+                        <div id="headers-tab" class="tab-pane">
+                            <div class="key-value-editor">
+                                <div class="kv-header">
+                                    <span>Key</span>
+                                    <span>Value</span>
+                                    <span>Description</span>
+                                    <span></span>
+                                </div>
+                                <div id="headers-container"></div>
+                                <button class="add-row-btn" data-target="headers">+ Add Header</button>
+                            </div>
+                        </div>
+
+                        <!-- Body Tab -->
+                        <div id="body-tab" class="tab-pane">
+                            <div class="body-type-selector">
+                                <label>
+                                    <input type="radio" name="body-type" value="none" checked>
+                                    None
+                                </label>
+                                <label>
+                                    <input type="radio" name="body-type" value="form-data">
+                                    Form Data
+                                </label>
+                                <label>
+                                    <input type="radio" name="body-type" value="urlencoded">
+                                    URL Encoded
+                                </label>
+                                <label>
+                                    <input type="radio" name="body-type" value="raw">
+                                    Raw
+                                </label>
+                                <label>
+                                    <input type="radio" name="body-type" value="binary">
+                                    Binary
+                                </label>
+                            </div>
+                            <div id="body-content">
+                                <textarea id="body-raw" placeholder="Enter raw body content..."></textarea>
+                                <div id="body-form" class="key-value-editor" style="display: none;">
+                                    <div class="kv-header">
+                                        <span>Key</span>
+                                        <span>Value</span>
+                                        <span>Type</span>
+                                        <span></span>
+                                    </div>
+                                    <div id="body-form-container"></div>
+                                    <button class="add-row-btn" data-target="body-form">+ Add Field</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Auth Tab -->
+                        <div id="auth-tab" class="tab-pane">
+                            <div class="auth-type-selector">
+                                <select id="auth-type">
+                                    <option value="none">No Auth</option>
+                                    <option value="bearer">Bearer Token</option>
+                                    <option value="basic">Basic Auth</option>
+                                    <option value="api-key">API Key</option>
+                                </select>
+                            </div>
+                            <div id="auth-content"></div>
+                        </div>
+
+                        <!-- Scripts Tab -->
+                        <div id="scripts-tab" class="tab-pane">
+                            <div class="script-section">
+                                <h4>Pre-request Script</h4>
+                                <textarea id="pre-script" placeholder="// JavaScript code to run before request"></textarea>
+                            </div>
+                            <div class="script-section">
+                                <h4>Tests</h4>
+                                <textarea id="test-script" placeholder="// JavaScript code to validate response"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Response Section -->
+            <div id="response-section">
+                <div class="response-header">
+                    <h3>Response</h3>
+                    <div class="response-meta">
+                        <span id="response-status"></span>
+                        <span id="response-time"></span>
+                        <span id="response-size"></span>
+                    </div>
+                </div>
+
+                <div class="tabs">
+                    <div class="tab-header">
+                        <button class="tab-btn active" data-tab="response-body">Body</button>
+                        <button class="tab-btn" data-tab="response-headers">Headers</button>
+                        <button class="tab-btn" data-tab="response-cookies">Cookies</button>
+                        <button class="tab-btn" data-tab="response-tests">Test Results</button>
+                    </div>
+
+                    <div class="tab-content">
+                        <div id="response-body-tab" class="tab-pane active">
+                            <div class="response-controls">
+                                <select id="response-format">
+                                    <option value="pretty">Pretty</option>
+                                    <option value="raw">Raw</option>
+                                    <option value="preview">Preview</option>
+                                </select>
+                                <button id="copy-response-btn">Copy</button>
+                                <button id="download-response-btn">Download</button>
+                            </div>
+                            <div id="response-body-content"></div>
+                        </div>
+
+                        <div id="response-headers-tab" class="tab-pane">
+                            <div id="response-headers-content"></div>
+                        </div>
+
+                        <div id="response-cookies-tab" class="tab-pane">
+                            <div id="response-cookies-content"></div>
+                        </div>
+
+                        <div id="response-tests-tab" class="tab-pane">
+                            <div id="response-tests-content"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal overlays -->
+    <div id="modal-overlay" class="modal-overlay">
+        <div id="modal-content" class="modal-content"></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

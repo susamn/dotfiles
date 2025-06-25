@@ -128,8 +128,10 @@
         }
         .main-container {
             display: flex;
-            height: calc(100vh - 200px);
-            min-height: 600px;
+            height: calc(100vh - 180px);
+            min-height: 650px;
+            max-height: calc(100vh - 180px);
+            overflow: hidden;
         }
         .left-panel {
             width: 50%;
@@ -145,14 +147,23 @@
         .arithmetic-section {
             background: #ffffff;
             border-bottom: 1px solid #c0c0c0;
-            min-height: 320px;
-            max-height: 320px;
+            flex: 1;
             display: flex;
             flex-direction: column;
+            min-height: 0;
             overflow-y: auto;
         }
+        .right-panel .arithmetic-section:first-child {
+            max-height: 35%;
+        }
+        .right-panel .arithmetic-section:nth-child(2) {
+            max-height: 30%;
+        }
+        .right-panel .arithmetic-section:nth-child(3) {
+            max-height: 35%;
+        }
         .arithmetic-calculator {
-            padding: 15px;
+            padding: 10px;
         }
         .arithmetic-inputs {
             display: grid;
@@ -292,10 +303,15 @@
             animation: bitFlash 0.6s ease;
         }
         .converter-section {
-            flex: 1;
             display: flex;
             flex-direction: column;
             min-height: 0;
+        }
+        .left-panel .converter-section:first-child {
+            flex: 2;
+        }
+        .left-panel .converter-section:last-child {
+            flex: 1;
         }
         .panel-header {
             background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
@@ -321,6 +337,9 @@
             background: #ffffff;
             padding: 20px;
             overflow-y: auto;
+        }
+        .storage-compact .panel-content {
+            overflow-y: visible;
         }
         .input-group {
             margin-bottom: 20px;
@@ -458,11 +477,6 @@
             border-radius: 3px;
             border: 1px solid #e0e0e0;
         }
-        .arch-example {
-            margin-bottom: 8px;
-            padding: 4px 0;
-            border-bottom: 1px solid #eee;
-        }
         .arch-example:last-child {
             border-bottom: none;
         }
@@ -484,7 +498,259 @@
         .section-divider {
             height: 1px;
             background: #e0e0e0;
-            margin: 20px 0;
+            margin: 10px 0 8px 0;
+        }
+        .ieee754-visual {
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 3px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .ieee754-breakdown {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .ieee754-section {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .ieee754-label {
+            font-size: 11px;
+            font-weight: bold;
+            color: #333;
+            min-width: 100px;
+        }
+        .ieee754-bits {
+            display: flex;
+            gap: 2px;
+            flex: 1;
+        }
+        .ieee754-bit-group {
+            display: flex;
+            gap: 1px;
+            margin: 0 2px;
+            padding: 2px;
+            border: 1px solid #ccc;
+            border-radius: 2px;
+            background: rgba(240, 240, 240, 0.3);
+        }
+        .ieee754-bit {
+            width: 18px;
+            height: 18px;
+            border: 1px solid #ccc;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .ieee754-bit:hover {
+            background: #e8f5e8;
+            transform: scale(1.1);
+        }
+        .ieee754-bit.sign-bit {
+            background: #ffebee;
+            border-color: #f44336;
+        }
+        .ieee754-bit.exponent-bit {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+        .ieee754-bit.mantissa-bit {
+            background: #e8f5e8;
+            border-color: #4caf50;
+        }
+        .ieee754-value {
+            font-size: 10px;
+            color: #666;
+            min-width: 120px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        }
+        .ieee754-formula {
+            background: #f0f8ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 4px;
+            padding: 10px;
+            font-size: 11px;
+            line-height: 1.4;
+            text-align: center;
+        }
+        .ieee754-formula strong {
+            color: #1976d2;
+            font-size: 12px;
+        }
+        .educational-content {
+            margin-top: 10px;
+        }
+        .educational-columns {
+            display: flex;
+            gap: 15px;
+        }
+        .educational-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .arch-example {
+            margin-bottom: 6px;
+            padding: 3px 0;
+            border-bottom: 1px solid #eee;
+        }
+        @media (max-width: 768px) {
+            .educational-columns {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .results-column {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .storage-compact {
+            padding: 15px;
+        }
+        .storage-compact .input-group {
+            margin-bottom: 15px;
+        }
+        .storage-compact .quick-actions {
+            margin-bottom: 10px;
+        }
+        .compact-results {
+            margin: 8px 0;
+            background: #f8f8f8;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 8px;
+        }
+        .compact-results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .compact-result {
+            display: flex;
+            align-items: center;
+            padding: 3px 6px;
+            margin-bottom: 4px;
+            border-radius: 3px;
+            background: #fafafa;
+        }
+        .compact-label {
+            font-size: 10px;
+            font-weight: bold;
+            margin-right: 8px;
+            min-width: 60px;
+            text-align: left;
+        }
+        .compact-value {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 11px;
+            word-break: break-all;
+            line-height: 1.1;
+            flex: 1;
+        }
+        .compact-result.decimal .compact-label {
+            color: #2196f3;
+        }
+        .compact-result.binary .compact-label {
+            color: #4caf50;
+        }
+        .compact-result.hexadecimal .compact-label {
+            color: #ff9800;
+        }
+        .compact-result.octal .compact-label {
+            color: #9c27b0;
+        }
+        .compact-result.signed .compact-label {
+            color: #f44336;
+        }
+        .compact-result.storage .compact-label {
+            color: #795548;
+        }
+        .compact-value {
+            color: #333;
+        }
+        .complement-steps {
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 3px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .step-section {
+            margin-bottom: 12px;
+        }
+        .step-section:last-child {
+            margin-bottom: 0;
+        }
+        .step-label {
+            font-size: 11px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 6px;
+        }
+        .complement-bits {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+        }
+        .complement-bit-group {
+            display: flex;
+            gap: 2px;
+            padding: 4px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            background: rgba(240, 240, 240, 0.3);
+        }
+        .complement-bit {
+            width: 16px;
+            height: 16px;
+            border: 1px solid #ccc;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-weight: bold;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+        .complement-bit.ones {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+        .complement-bit.twos {
+            background: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+        @media (max-width: 768px) {
+            .compact-results-grid {
+                grid-template-columns: 1fr;
+                gap: 6px;
+            }
         }
     </style>
 </head>
@@ -578,80 +844,168 @@
                     <div id="numberError" class="error-message" style="display: none;"></div>
                 </div>
 
+                <div class="compact-results">
+                    <div class="compact-result decimal">
+                        <div class="compact-label">Decimal:</div>
+                        <div class="compact-value" id="decimalResult">Enter number above</div>
+                    </div>
+                    <div class="compact-result binary">
+                        <div class="compact-label">Binary:</div>
+                        <div class="compact-value" id="binaryResult">Enter number above</div>
+                    </div>
+                    <div class="compact-result hexadecimal">
+                        <div class="compact-label">Hex:</div>
+                        <div class="compact-value" id="hexResult">Enter number above</div>
+                    </div>
+                    <div class="compact-result octal">
+                        <div class="compact-label">Octal:</div>
+                        <div class="compact-value" id="octalResult">Enter number above</div>
+                    </div>
+                    <div class="compact-result signed">
+                        <div class="compact-label">Signed:</div>
+                        <div class="compact-value" id="signedResult">Enter number above</div>
+                    </div>
+                </div>
+
                 <div class="quick-actions">
-                    <button class="quick-btn" onclick="loadExample('0')">Zero</button>
-                    <button class="quick-btn" onclick="loadExample('1')">One</button>
-                    <button class="quick-btn" onclick="loadExample('-1')">Negative One</button>
+                    <button class="quick-btn" onclick="loadExample('42')">42</button>
+                    <button class="quick-btn" onclick="loadExample('255')">255</button>
+                    <button class="quick-btn" onclick="loadExample('1024')">1K</button>
+                    <button class="quick-btn" onclick="loadExample('65535')">65K</button>
+                    <button class="quick-btn" onclick="loadExample('16777216')">16M</button>
+                    <button class="quick-btn" onclick="loadExample('-1')">-1</button>
                     <button class="quick-btn" onclick="loadExample('2147483647')">Max Int32</button>
+                    <button class="quick-btn" onclick="loadExample('-2147483648')">Min Int32</button>
                 </div>
 
                 <div class="section-divider"></div>
 
-                <div class="architecture-examples">
-                    <strong>Binary Number Overflow Examples:</strong>
-                    <div class="arch-example">
-                        <div class="arch-name">8-bit Overflow:</div>
-                        255 + 1 = 0 (wraps around), Max: 255, Min: 0
-                    </div>
-                    <div class="arch-example">
-                        <div class="arch-name">16-bit Overflow:</div>
-                        65535 + 1 = 0, Max: 65,535, Min: 0
-                    </div>
-                    <div class="arch-example">
-                        <div class="arch-name">32-bit Signed Overflow:</div>
-                        2,147,483,647 + 1 = -2,147,483,648
-                    </div>
-                    <div class="arch-example">
-                        <div class="arch-name">32-bit Unsigned Overflow:</div>
-                        4,294,967,295 + 1 = 0 (4.29 billion max)
+                <div class="educational-content">
+                    <div class="educational-columns">
+                        <div class="educational-column">
+                            <div class="architecture-examples">
+                                <strong>Binary Number Overflow Examples:</strong>
+                                <div class="arch-example">
+                                    <div class="arch-name">8-bit Overflow:</div>
+                                    255 + 1 = 0 (wraps around), Max: 255, Min: 0
+                                </div>
+                                <div class="arch-example">
+                                    <div class="arch-name">16-bit Overflow:</div>
+                                    65535 + 1 = 0, Max: 65,535, Min: 0
+                                </div>
+                                <div class="arch-example">
+                                    <div class="arch-name">32-bit Signed Overflow:</div>
+                                    2,147,483,647 + 1 = -2,147,483,648
+                                </div>
+                                <div class="arch-example">
+                                    <div class="arch-name">32-bit Unsigned Overflow:</div>
+                                    4,294,967,295 + 1 = 0 (4.29 billion max)
+                                </div>
+                            </div>
+                        </div>
+                        <div class="educational-column">
+                            <div class="architecture-examples">
+                                <strong>32-bit System Architecture Examples:</strong>
+                                <div class="arch-example">
+                                    <div class="arch-name">Intel x86 (386/486):</div>
+                                    Data Bus: 32-bit, Address Bus: 32-bit (4GB address space)
+                                </div>
+                                <div class="arch-example">
+                                    <div class="arch-name">ARM Cortex-A:</div>
+                                    Data Bus: 32-bit, Address Bus: 32-bit (smartphones, tablets)
+                                </div>
+                                <div class="arch-example">
+                                    <div class="arch-name">MIPS R3000:</div>
+                                    Data Bus: 32-bit, Address Bus: 32-bit (workstations, consoles)
+                                </div>
+                                <div class="arch-example">
+                                    <div class="arch-name">PowerPC 32-bit:</div>
+                                    Data Bus: 32-bit, Address Bus: 32-bit (Apple PowerMac)
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+            </div>
+            
+            <div class="converter-section">
+                <div class="panel-header">
+                    Storage Unit Converter
+                    <span class="conversion-type">BYTES & STORAGE</span>
+                </div>
+                <div class="panel-content storage-compact">
+                    <div class="input-group">
+                        <label class="input-label">Storage Size</label>
+                        <input type="text" class="number-input" id="storageInput" placeholder="Enter size (e.g., 1024, 1.5)" />
+                        <div class="base-selector">
+                            <button class="base-btn active" onclick="setStorageUnit('bytes')" id="bytesBtn">Bytes</button>
+                            <button class="base-btn" onclick="setStorageUnit('kb')" id="kbBtn">KB</button>
+                            <button class="base-btn" onclick="setStorageUnit('mb')" id="mbBtn">MB</button>
+                            <button class="base-btn" onclick="setStorageUnit('gb')" id="gbBtn">GB</button>
+                        </div>
+                        <div id="storageError" class="error-message" style="display: none;"></div>
+                    </div>
 
-                <div class="section-divider"></div>
+                    <div class="compact-results">
+                        <div class="compact-result storage">
+                            <div class="compact-label">Bytes:</div>
+                            <div class="compact-value" id="storageBytesResult">Enter size above</div>
+                        </div>
+                        <div class="compact-result storage">
+                            <div class="compact-label">Binary:</div>
+                            <div class="compact-value" id="storageBinaryResult">Enter size above</div>
+                        </div>
+                        <div class="compact-result storage">
+                            <div class="compact-label">Decimal:</div>
+                            <div class="compact-value" id="storageDecimalResult">Enter size above</div>
+                        </div>
+                        <div class="compact-result storage">
+                            <div class="compact-label">Bits:</div>
+                            <div class="compact-value" id="storageBitsResult">Enter size above</div>
+                        </div>
+                    </div>
 
-                <div class="architecture-examples">
-                    <strong>32-bit System Architecture Examples:</strong>
-                    <div class="arch-example">
-                        <div class="arch-name">Intel x86 (386/486):</div>
-                        Data Bus: 32-bit, Address Bus: 32-bit (4GB address space)
+                    <div class="quick-actions">
+                        <button class="quick-btn" onclick="loadStorageExample('1073741824')">1 GiB</button>
+                        <button class="quick-btn" onclick="loadStorageExample('4294967296')">4GB RAM</button>
+                        <button class="quick-btn" onclick="loadStorageExample('1000000000000')">1TB HDD</button>
                     </div>
-                    <div class="arch-example">
-                        <div class="arch-name">ARM Cortex-A:</div>
-                        Data Bus: 32-bit, Address Bus: 32-bit (smartphones, tablets)
-                    </div>
-                    <div class="arch-example">
-                        <div class="arch-name">MIPS R3000:</div>
-                        Data Bus: 32-bit, Address Bus: 32-bit (workstations, consoles)
-                    </div>
-                    <div class="arch-example">
-                        <div class="arch-name">PowerPC 32-bit:</div>
-                        Data Bus: 32-bit, Address Bus: 32-bit (Apple PowerMac)
+
+                    <div class="educational-content">
+                        <div class="educational-columns">
+                            <div class="educational-column">
+                                <div class="architecture-examples">
+                                    <strong>Real-World Storage Examples:</strong>
+                                    <div class="arch-example">
+                                        <div class="arch-name">1TB Hard Drive:</div>
+                                        Advertised: 1,000,000,000,000 bytes<br>
+                                        Actual: 931 GiB (OS shows ~931 GB)
+                                    </div>
+                                    <div class="arch-example">
+                                        <div class="arch-name">64GB RAM:</div>
+                                        Exactly: 68,719,476,736 bytes<br>
+                                        Binary: 64 × 1024³ bytes
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="educational-column">
+                                <div class="architecture-examples">
+                                    <strong>Binary vs Decimal Prefixes:</strong>
+                                    <div class="arch-example">
+                                        <div class="arch-name">Kilo vs Kibi:</div>
+                                        1 KB = 1,000 bytes | 1 KiB = 1,024 bytes
+                                    </div>
+                                    <div class="arch-example">
+                                        <div class="arch-name">Giga vs Gibi:</div>
+                                        1 GB = 1,000,000,000 bytes | 1 GiB = 1,073,741,824 bytes
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="results-section">
-                <div class="result-item">
-                    <div class="result-label">Decimal <button class="copy-btn" onclick="copyResult('decimal')">Copy</button></div>
-                    <div class="result-value" id="decimalResult">Enter number above</div>
-                </div>
-                <div class="result-item">
-                    <div class="result-label">Binary <button class="copy-btn" onclick="copyResult('binary')">Copy</button></div>
-                    <div class="result-value" id="binaryResult">Enter number above</div>
-                </div>
-                <div class="result-item">
-                    <div class="result-label">Hexadecimal <button class="copy-btn" onclick="copyResult('hex')">Copy</button></div>
-                    <div class="result-value" id="hexResult">Enter number above</div>
-                </div>
-                <div class="result-item">
-                    <div class="result-label">Octal <button class="copy-btn" onclick="copyResult('octal')">Copy</button></div>
-                    <div class="result-value" id="octalResult">Enter number above</div>
-                </div>
-                <div class="result-item">
-                    <div class="result-label">Signed (2's Complement) <button class="copy-btn" onclick="copyResult('signed')">Copy</button></div>
-                    <div class="result-value" id="signedResult">Enter number above</div>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -671,6 +1025,9 @@
                         <option value="and">&</option>
                         <option value="or">|</option>
                         <option value="xor">^</option>
+                        <option value="shl"><<</option>
+                        <option value="shr">>></option>
+                        <option value="sar">>></option>
                     </select>
                     <input type="text" class="arithmetic-input" id="operandB" placeholder="Second number" value="13">
                     <span>=</span>
@@ -684,6 +1041,9 @@
                     <button class="operation-btn" onclick="setArithmeticOperation('and')">AND (&)</button>
                     <button class="operation-btn" onclick="setArithmeticOperation('or')">OR (|)</button>
                     <button class="operation-btn" onclick="setArithmeticOperation('xor')">XOR (^)</button>
+                    <button class="operation-btn" onclick="setArithmeticOperation('shl')">Left Shift (<<)</button>
+                    <button class="operation-btn" onclick="setArithmeticOperation('shr')">Right Shift (>>>)</button>
+                    <button class="operation-btn" onclick="setArithmeticOperation('sar')">Arith Right (>>)</button>
                 </div>
                 
                 <div class="arithmetic-visual" id="arithmeticVisual">
@@ -731,123 +1091,207 @@
             </div>
         </div>
         
-        <div class="converter-section">
+        <div class="arithmetic-section">
             <div class="panel-header">
-                Storage Unit Converter
-                <span class="conversion-type">BYTES & STORAGE</span>
+                IEEE 754 Float Visualization
+                <span class="conversion-type">32-BIT FLOAT</span>
             </div>
-            <div class="panel-content">
-                <div class="input-group">
-                    <label class="input-label">Storage Size</label>
-                    <input type="text" class="number-input" id="storageInput" placeholder="Enter size (e.g., 1024, 1.5)" />
-                    <div class="base-selector">
-                        <button class="base-btn active" onclick="setStorageUnit('bytes')" id="bytesBtn">Bytes</button>
-                        <button class="base-btn" onclick="setStorageUnit('kb')" id="kbBtn">KB</button>
-                        <button class="base-btn" onclick="setStorageUnit('mb')" id="mbBtn">MB</button>
-                        <button class="base-btn" onclick="setStorageUnit('gb')" id="gbBtn">GB</button>
-                    </div>
-                    <div class="format-examples">
-                        Binary (1024) vs Decimal (1000) base conversions shown
-                    </div>
-                    <div id="storageError" class="error-message" style="display: none;"></div>
+            <div class="arithmetic-calculator">
+                <div class="arithmetic-inputs">
+                    <input type="text" class="arithmetic-input" id="floatInput" placeholder="Float number" value="3.14159">
+                    <span>→</span>
+                    <div class="arithmetic-result" id="floatHexResult">0x40490FDB</div>
                 </div>
-
+                
+                <div class="ieee754-visual" id="ieee754Visual">
+                    <div class="ieee754-breakdown">
+                        <div class="ieee754-section">
+                            <div class="ieee754-label">Sign (1 bit)</div>
+                            <div class="ieee754-bits" id="ieee754Sign">
+                                <div class="ieee754-bit">0</div>
+                            </div>
+                            <div class="ieee754-value" id="signValue">Positive</div>
+                        </div>
+                        <div class="ieee754-section">
+                            <div class="ieee754-label">Exponent (8 bits)</div>
+                            <div class="ieee754-bits" id="ieee754Exponent">
+                                <div class="ieee754-bit">1</div>
+                                <div class="ieee754-bit">0</div>
+                                <div class="ieee754-bit">0</div>
+                                <div class="ieee754-bit">0</div>
+                                <div class="ieee754-bit">0</div>
+                                <div class="ieee754-bit">0</div>
+                                <div class="ieee754-bit">0</div>
+                                <div class="ieee754-bit">1</div>
+                            </div>
+                            <div class="ieee754-value" id="exponentValue">129 (bias: 127, actual: 2)</div>
+                        </div>
+                        <div class="ieee754-section">
+                            <div class="ieee754-label">Mantissa (23 bits)</div>
+                            <div class="ieee754-bits" id="ieee754Mantissa">
+                                <div class="ieee754-bit-group">
+                                    <div class="ieee754-bit">1</div>
+                                    <div class="ieee754-bit">0</div>
+                                    <div class="ieee754-bit">0</div>
+                                    <div class="ieee754-bit">1</div>
+                                    <div class="ieee754-bit">0</div>
+                                    <div class="ieee754-bit">0</div>
+                                    <div class="ieee754-bit">0</div>
+                                    <div class="ieee754-bit">0</div>
+                                </div>
+                                <div class="ieee754-bit-group">
+                                    <div class="ieee754-bit">1</div>
+                                    <div class="ieee754-bit">1</div>
+                                    <div class="ieee754-bit">1</div>
+                                    <div class="ieee754-bit">1</div>
+                                    <div class="ieee754-bit">1</div>
+                                    <div class="ieee754-bit">1</div>
+                                    <div class="ieee754-bit">0</div>
+                                    <div class="ieee754-bit">1</div>
+                                </div>
+                                <div class="ieee754-bit-group">
+                                    <div class="ieee754-bit">1</div>
+                                    <div class="ieee754-bit">0</div>
+                                    <div class="ieee754-bit">1</div>
+                                    <div class="ieee754-bit">1</div>
+                                    <div class="ieee754-bit">0</div>
+                                    <div class="ieee754-bit">1</div>
+                                    <div class="ieee754-bit">1</div>
+                                </div>
+                            </div>
+                            <div class="ieee754-value" id="mantissaValue">1.5707963 (1 + 0.5707963)</div>
+                        </div>
+                    </div>
+                    
+                    <div class="ieee754-formula">
+                        <strong>Value = (-1)^sign × (1 + mantissa) × 2^(exponent - 127)</strong><br>
+                        <span id="formulaBreakdown">= (-1)^0 × 1.5707963 × 2^(129-127) = 1 × 1.5707963 × 4 = 3.14159</span>
+                    </div>
+                </div>
+                
                 <div class="quick-actions">
-                    <button class="quick-btn" onclick="loadStorageExample('1000000000000')">1TB HDD</button>
-                    <button class="quick-btn" onclick="loadStorageExample('1073741824')">1 GiB</button>
-                    <button class="quick-btn" onclick="loadStorageExample('4294967296')">4GB RAM</button>
-                    <button class="quick-btn" onclick="loadStorageExample('8192')">8K Page</button>
+                    <button class="quick-btn" onclick="loadFloatExample('3.14159')">π</button>
+                    <button class="quick-btn" onclick="loadFloatExample('2.71828')">e</button>
+                    <button class="quick-btn" onclick="loadFloatExample('1.41421')">√2</button>
+                    <button class="quick-btn" onclick="loadFloatExample('0.0')">Zero</button>
+                    <button class="quick-btn" onclick="loadFloatExample('1.0')">One</button>
+                    <button class="quick-btn" onclick="loadFloatExample('-1.0')">-One</button>
+                    <button class="quick-btn" onclick="loadFloatExample('Infinity')">∞</button>
+                    <button class="quick-btn" onclick="loadFloatExample('NaN')">NaN</button>
                 </div>
-
-                <div class="section-divider"></div>
-
-                <div class="architecture-examples">
-                    <strong>Real-World Storage Examples:</strong>
-                    <div class="arch-example">
-                        <div class="arch-name">1TB Hard Drive:</div>
-                        Advertised: 1,000,000,000,000 bytes (1 TB)<br>
-                        Actual: 931 GiB (OS shows ~931 GB)
-                    </div>
-                    <div class="arch-example">
-                        <div class="arch-name">500GB SSD:</div>
-                        Advertised: 500,000,000,000 bytes<br>
-                        Actual: 465 GiB usable space
-                    </div>
-                    <div class="arch-example">
-                        <div class="arch-name">64GB RAM:</div>
-                        Exactly: 68,719,476,736 bytes<br>
-                        Binary: 64 × 1024³ bytes
-                    </div>
-                    <div class="arch-example">
-                        <div class="arch-name">8GB USB Flash:</div>
-                        Advertised: ~8,000,000,000 bytes<br>
-                        Actual: ~7.45 GiB after formatting
-                    </div>
-                </div>
-
-                <div class="section-divider"></div>
-
-                <div class="architecture-examples">
-                    <strong>Binary vs Decimal Prefixes:</strong>
-                    <div class="arch-example">
-                        <div class="arch-name">Kilo vs Kibi:</div>
-                        1 KB = 1,000 bytes | 1 KiB = 1,024 bytes
-                    </div>
-                    <div class="arch-example">
-                        <div class="arch-name">Mega vs Mebi:</div>
-                        1 MB = 1,000,000 bytes | 1 MiB = 1,048,576 bytes
-                    </div>
-                    <div class="arch-example">
-                        <div class="arch-name">Giga vs Gibi:</div>
-                        1 GB = 1,000,000,000 bytes | 1 GiB = 1,073,741,824 bytes
-                    </div>
-                </div>
-
-                <div class="section-divider"></div>
-
-                <div class="architecture-examples">
-                    <strong>Advanced Binary Concepts:</strong>
-                    <div class="arch-example">
-                        <div class="arch-name">Endianness:</div>
-                        Big-endian: Most significant byte first (network order)<br>
-                        Little-endian: Least significant byte first (x86)
-                    </div>
-                    <div class="arch-example">
-                        <div class="arch-name">IEEE 754 Float:</div>
-                        32-bit: 1 sign + 8 exponent + 23 mantissa bits<br>
-                        Range: ±3.4 × 10³⁸ (7 decimal digits precision)
-                    </div>
-                    <div class="arch-example">
-                        <div class="arch-name">Memory Alignment:</div>
-                        32-bit systems: 4-byte alignment for performance<br>
-                        Addresses divisible by 4 (0x0, 0x4, 0x8, 0xC...)
-                    </div>
-                </div>
-            </div>
-
-            <div class="results-section">
-                <div class="result-item">
-                    <div class="result-label">Bytes <button class="copy-btn" onclick="copyResult('storageBytes')">Copy</button></div>
-                    <div class="result-value" id="storageBytesResult">Enter size above</div>
-                </div>
-                <div class="result-item">
-                    <div class="result-label">Binary Prefixes (1024) <button class="copy-btn" onclick="copyResult('storageBinary')">Copy</button></div>
-                    <div class="result-value" id="storageBinaryResult">Enter size above</div>
-                </div>
-                <div class="result-item">
-                    <div class="result-label">Decimal Prefixes (1000) <button class="copy-btn" onclick="copyResult('storageDecimal')">Copy</button></div>
-                    <div class="result-value" id="storageDecimalResult">Enter size above</div>
-                </div>
-                <div class="result-item">
-                    <div class="result-label">Bits <button class="copy-btn" onclick="copyResult('storageBits')">Copy</button></div>
-                    <div class="result-value" id="storageBitsResult">Enter size above</div>
-                </div>
-                <div class="result-item">
-                    <div class="result-label">Memory Pages (4KB) <button class="copy-btn" onclick="copyResult('storagePages')">Copy</button></div>
-                    <div class="result-value" id="storagePagesResult">Enter size above</div>
+                
+                <div class="step-by-step" id="floatStepByStep">
+                    Float 3.14159 → Binary: 01000000010010010000111111011011 → Hex: 0x40490FDB
                 </div>
             </div>
         </div>
+        
+        <div class="arithmetic-section">
+            <div class="panel-header">
+                Two's Complement Visualizer
+                <span class="conversion-type">NEGATIVE NUMBERS</span>
+            </div>
+            <div class="arithmetic-calculator">
+                <div class="arithmetic-inputs">
+                    <input type="text" class="arithmetic-input" id="complementInput" placeholder="Enter number" value="42">
+                    <span>→</span>
+                    <div class="arithmetic-result" id="complementResult">-42</div>
+                </div>
+                
+                <div class="complement-steps" id="complementSteps">
+                    <div class="step-section">
+                        <div class="step-label">Step 1: Original (42)</div>
+                        <div class="complement-bits" id="originalBits">
+                            <div class="complement-bit-group">
+                                <div class="complement-bit">0</div>
+                                <div class="complement-bit">0</div>
+                                <div class="complement-bit">0</div>
+                                <div class="complement-bit">0</div>
+                                <div class="complement-bit">0</div>
+                                <div class="complement-bit">0</div>
+                                <div class="complement-bit">0</div>
+                                <div class="complement-bit">0</div>
+                            </div>
+                            <div class="complement-bit-group">
+                                <div class="complement-bit">0</div>
+                                <div class="complement-bit">0</div>
+                                <div class="complement-bit">1</div>
+                                <div class="complement-bit">0</div>
+                                <div class="complement-bit">1</div>
+                                <div class="complement-bit">0</div>
+                                <div class="complement-bit">1</div>
+                                <div class="complement-bit">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="step-section">
+                        <div class="step-label">Step 2: One's Complement (flip all bits)</div>
+                        <div class="complement-bits" id="onesComplementBits">
+                            <div class="complement-bit-group">
+                                <div class="complement-bit ones">1</div>
+                                <div class="complement-bit ones">1</div>
+                                <div class="complement-bit ones">1</div>
+                                <div class="complement-bit ones">1</div>
+                                <div class="complement-bit ones">1</div>
+                                <div class="complement-bit ones">1</div>
+                                <div class="complement-bit ones">1</div>
+                                <div class="complement-bit ones">1</div>
+                            </div>
+                            <div class="complement-bit-group">
+                                <div class="complement-bit ones">1</div>
+                                <div class="complement-bit ones">1</div>
+                                <div class="complement-bit ones">0</div>
+                                <div class="complement-bit ones">1</div>
+                                <div class="complement-bit ones">0</div>
+                                <div class="complement-bit ones">1</div>
+                                <div class="complement-bit ones">0</div>
+                                <div class="complement-bit ones">1</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="step-section">
+                        <div class="step-label">Step 3: Add 1 (Two's Complement)</div>
+                        <div class="complement-bits" id="twosComplementBits">
+                            <div class="complement-bit-group">
+                                <div class="complement-bit twos">1</div>
+                                <div class="complement-bit twos">1</div>
+                                <div class="complement-bit twos">1</div>
+                                <div class="complement-bit twos">1</div>
+                                <div class="complement-bit twos">1</div>
+                                <div class="complement-bit twos">1</div>
+                                <div class="complement-bit twos">1</div>
+                                <div class="complement-bit twos">1</div>
+                            </div>
+                            <div class="complement-bit-group">
+                                <div class="complement-bit twos">1</div>
+                                <div class="complement-bit twos">1</div>
+                                <div class="complement-bit twos">0</div>
+                                <div class="complement-bit twos">1</div>
+                                <div class="complement-bit twos">0</div>
+                                <div class="complement-bit twos">1</div>
+                                <div class="complement-bit twos">1</div>
+                                <div class="complement-bit twos">0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="quick-actions">
+                    <button class="quick-btn" onclick="loadComplementExample('1')">1</button>
+                    <button class="quick-btn" onclick="loadComplementExample('42')">42</button>
+                    <button class="quick-btn" onclick="loadComplementExample('127')">127</button>
+                    <button class="quick-btn" onclick="loadComplementExample('255')">255</button>
+                    <button class="quick-btn" onclick="loadComplementExample('32767')">32K</button>
+                </div>
+                
+                <div class="step-by-step" id="complementExplanation">
+                    42 → One's Complement: 11111111 11010101 → Add 1: 11111111 11010110 = -42
+                </div>
+            </div>
+        </div>
+        
     </div>
 </div>
 
@@ -1074,11 +1518,11 @@
             currentResults.storageBits = (bytes * 8).toLocaleString() + ' bits';
             currentResults.storagePages = (bytes / 4096).toFixed(2) + ' pages';
             
+            // Update storage results
             document.getElementById('storageBytesResult').textContent = currentResults.storageBytes;
             document.getElementById('storageBinaryResult').textContent = currentResults.storageBinary;
             document.getElementById('storageDecimalResult').textContent = currentResults.storageDecimal;
             document.getElementById('storageBitsResult').textContent = currentResults.storageBits;
-            document.getElementById('storagePagesResult').textContent = currentResults.storagePages;
             
         } catch (error) {
             storageError.textContent = error.message;
@@ -1134,7 +1578,6 @@
         document.getElementById('storageBinaryResult').textContent = 'Enter size above';
         document.getElementById('storageDecimalResult').textContent = 'Enter size above';
         document.getElementById('storageBitsResult').textContent = 'Enter size above';
-        document.getElementById('storagePagesResult').textContent = 'Enter size above';
         currentResults.storageBytes = '';
         currentResults.storageBinary = '';
         currentResults.storageDecimal = '';
@@ -1279,44 +1722,96 @@
                 result = (a + b) >>> 0; // Keep as 32-bit unsigned
                 const resultBinary = result.toString(2).padStart(32, '0');
                 const groupedBinary = `${resultBinary.slice(0,8)} ${resultBinary.slice(8,16)} ${resultBinary.slice(16,24)} ${resultBinary.slice(24,32)}`;
-                explanation = `Addition: ${operandA} + ${operandB} = ${result} (binary: ${groupedBinary})`;
+                explanation = `Addition: ${operandA} + ${operandB} = ${result}\\n`;
+                explanation += `Step 1: Convert to binary: ${operandA.toString(2).padStart(32, '0')} + ${operandB.toString(2).padStart(32, '0')}\\n`;
+                explanation += `Step 2: Add bit by bit from right to left with carry propagation\\n`;
+                explanation += `Step 3: Result: ${groupedBinary} = ${result} (decimal)`;
+                if ((a + b) > 0xFFFFFFFF) explanation += `\\nOverflow detected! Result wrapped around.`;
                 showCarry = true;
                 break;
             case 'sub':
                 result = (a - b) >>> 0; // Handle as 32-bit unsigned
                 const subBinary = result.toString(2).padStart(32, '0');
                 const subGrouped = `${subBinary.slice(0,8)} ${subBinary.slice(8,16)} ${subBinary.slice(16,24)} ${subBinary.slice(24,32)}`;
-                explanation = `Subtraction: ${operandA} - ${operandB} = ${result} (binary: ${subGrouped})`;
+                explanation = `Subtraction: ${operandA} - ${operandB} = ${result}\\n`;
+                explanation += `Step 1: Convert ${operandA} to binary: ${operandA.toString(2).padStart(32, '0')}\\n`;
+                explanation += `Step 2: Convert ${operandB} to 2's complement: ${((~operandB + 1) >>> 0).toString(2).padStart(32, '0')}\\n`;
+                explanation += `Step 3: Add: ${operandA} + (-${operandB}) = ${subGrouped} = ${result}`;
                 break;
             case 'mul':
                 result = Math.imul(a, b) >>> 0; // 32-bit multiplication
                 const mulBinary = result.toString(2).padStart(32, '0');
                 const mulGrouped = `${mulBinary.slice(0,8)} ${mulBinary.slice(8,16)} ${mulBinary.slice(16,24)} ${mulBinary.slice(24,32)}`;
-                explanation = `Multiplication: ${operandA} × ${operandB} = ${result} (binary: ${mulGrouped})`;
+                explanation = `Multiplication: ${operandA} × ${operandB} = ${result}\\n`;
+                explanation += `Step 1: Convert to binary: ${operandA.toString(2)} × ${operandB.toString(2)}\\n`;
+                explanation += `Step 2: Use shift and add algorithm or direct multiplication\\n`;
+                explanation += `Step 3: Result (32-bit): ${mulGrouped} = ${result}`;
                 break;
             case 'and':
                 result = (a & b) >>> 0;
                 const andBinary = result.toString(2).padStart(32, '0');
                 const andGrouped = `${andBinary.slice(0,8)} ${andBinary.slice(8,16)} ${andBinary.slice(16,24)} ${andBinary.slice(24,32)}`;
-                explanation = `Bitwise AND: ${operandA} & ${operandB} = ${result} (binary: ${andGrouped})`;
+                explanation = `Bitwise AND: ${operandA} & ${operandB} = ${result}\\n`;
+                explanation += `Step 1: A = ${operandA.toString(2).padStart(32, '0')}\\n`;
+                explanation += `Step 2: B = ${operandB.toString(2).padStart(32, '0')}\\n`;
+                explanation += `Step 3: A & B (1 if both bits are 1): ${andGrouped} = ${result}`;
                 break;
             case 'or':
                 result = (a | b) >>> 0;
                 const orBinary = result.toString(2).padStart(32, '0');
                 const orGrouped = `${orBinary.slice(0,8)} ${orBinary.slice(8,16)} ${orBinary.slice(16,24)} ${orBinary.slice(24,32)}`;
-                explanation = `Bitwise OR: ${operandA} | ${operandB} = ${result} (binary: ${orGrouped})`;
+                explanation = `Bitwise OR: ${operandA} | ${operandB} = ${result}\\n`;
+                explanation += `Step 1: A = ${operandA.toString(2).padStart(32, '0')}\\n`;
+                explanation += `Step 2: B = ${operandB.toString(2).padStart(32, '0')}\\n`;
+                explanation += `Step 3: A | B (1 if either bit is 1): ${orGrouped} = ${result}`;
                 break;
             case 'xor':
                 result = (a ^ b) >>> 0;
                 const xorBinary = result.toString(2).padStart(32, '0');
                 const xorGrouped = `${xorBinary.slice(0,8)} ${xorBinary.slice(8,16)} ${xorBinary.slice(16,24)} ${xorBinary.slice(24,32)}`;
-                explanation = `Bitwise XOR: ${operandA} ^ ${operandB} = ${result} (binary: ${xorGrouped})`;
+                explanation = `Bitwise XOR: ${operandA} ^ ${operandB} = ${result}\\n`;
+                explanation += `Step 1: A = ${operandA.toString(2).padStart(32, '0')}\\n`;
+                explanation += `Step 2: B = ${operandB.toString(2).padStart(32, '0')}\\n`;
+                explanation += `Step 3: A ^ B (1 if bits differ): ${xorGrouped} = ${result}`;
+                break;
+            case 'shl':
+                const shiftAmount = b & 31;
+                result = (a << shiftAmount) >>> 0; // Mask shift amount to 5 bits
+                const shlBinary = result.toString(2).padStart(32, '0');
+                const shlGrouped = `${shlBinary.slice(0,8)} ${shlBinary.slice(8,16)} ${shlBinary.slice(16,24)} ${shlBinary.slice(24,32)}`;
+                explanation = `Left Shift: ${operandA} << ${shiftAmount} = ${result}\\n`;
+                explanation += `Step 1: Original: ${operandA.toString(2).padStart(32, '0')}\\n`;
+                explanation += `Step 2: Shift left by ${shiftAmount} positions (fill with 0s)\\n`;
+                explanation += `Step 3: Result: ${shlGrouped} = ${result}\\n`;
+                explanation += `Note: Each left shift multiplies by 2 (if no overflow)`;
+                break;
+            case 'shr':
+                const shrAmount = b & 31;
+                result = (a >>> shrAmount); // Logical right shift
+                const shrBinary = result.toString(2).padStart(32, '0');
+                const shrGrouped = `${shrBinary.slice(0,8)} ${shrBinary.slice(8,16)} ${shrBinary.slice(16,24)} ${shrBinary.slice(24,32)}`;
+                explanation = `Logical Right Shift: ${operandA} >>> ${shrAmount} = ${result}\\n`;
+                explanation += `Step 1: Original: ${operandA.toString(2).padStart(32, '0')}\\n`;
+                explanation += `Step 2: Shift right by ${shrAmount} positions (fill with 0s)\\n`;
+                explanation += `Step 3: Result: ${shrGrouped} = ${result}\\n`;
+                explanation += `Note: Logical shift treats number as unsigned`;
+                break;
+            case 'sar':
+                const sarAmount = b & 31;
+                result = (operandA >> sarAmount) >>> 0; // Arithmetic right shift, then convert to unsigned
+                const sarBinary = result.toString(2).padStart(32, '0');
+                const sarGrouped = `${sarBinary.slice(0,8)} ${sarBinary.slice(8,16)} ${sarBinary.slice(16,24)} ${sarBinary.slice(24,32)}`;
+                explanation = `Arithmetic Right Shift: ${operandA} >> ${sarAmount} = ${result}\\n`;
+                explanation += `Step 1: Original: ${operandA.toString(2).padStart(32, '0')}\\n`;
+                explanation += `Step 2: Shift right by ${sarAmount} positions (preserve sign bit)\\n`;
+                explanation += `Step 3: Result: ${sarGrouped} = ${result}\\n`;
+                explanation += `Note: Arithmetic shift preserves sign for negative numbers`;
                 break;
         }
         
         // Update result display
         document.getElementById('arithmeticResult').textContent = result;
-        document.getElementById('stepByStep').textContent = explanation;
+        document.getElementById('stepByStep').innerHTML = explanation.replace(/\\n/g, '<br>');
         
         // Show/hide carry row
         document.getElementById('carryRow').style.display = showCarry ? 'block' : 'none';
@@ -1449,9 +1944,275 @@
         setArithmeticOperation(this.value);
     });
     
+    // IEEE 754 Float Functions
+    function loadFloatExample(value) {
+        document.getElementById('floatInput').value = value;
+        convertFloat();
+    }
+    
+    function convertFloat() {
+        const input = document.getElementById('floatInput');
+        const value = input.value.trim();
+        
+        if (!value) {
+            clearFloatResults();
+            return;
+        }
+        
+        try {
+            let floatValue;
+            if (value.toLowerCase() === 'infinity' || value === '∞') {
+                floatValue = Infinity;
+            } else if (value.toLowerCase() === '-infinity') {
+                floatValue = -Infinity;
+            } else if (value.toLowerCase() === 'nan') {
+                floatValue = NaN;
+            } else {
+                floatValue = parseFloat(value);
+                if (isNaN(floatValue)) {
+                    throw new Error('Invalid float number');
+                }
+            }
+            
+            // Convert float to 32-bit representation
+            const buffer = new ArrayBuffer(4);
+            const floatView = new Float32Array(buffer);
+            const intView = new Uint32Array(buffer);
+            
+            floatView[0] = floatValue;
+            const bits = intView[0];
+            
+            // Extract IEEE 754 components
+            const sign = (bits >>> 31) & 1;
+            const exponent = (bits >>> 23) & 0xFF;
+            const mantissa = bits & 0x7FFFFF;
+            
+            // Update hex result
+            document.getElementById('floatHexResult').textContent = '0x' + bits.toString(16).toUpperCase().padStart(8, '0');
+            
+            // Update sign bit
+            const signBit = document.querySelector('#ieee754Sign .ieee754-bit');
+            signBit.textContent = sign;
+            signBit.className = 'ieee754-bit sign-bit';
+            document.getElementById('signValue').textContent = sign ? 'Negative' : 'Positive';
+            
+            // Update exponent bits
+            const exponentBits = document.querySelectorAll('#ieee754Exponent .ieee754-bit');
+            for (let i = 0; i < 8; i++) {
+                const bit = (exponent >>> (7 - i)) & 1;
+                exponentBits[i].textContent = bit;
+                exponentBits[i].className = 'ieee754-bit exponent-bit';
+            }
+            
+            let exponentText = '';
+            if (exponent === 0) {
+                exponentText = '0 (denormalized)';
+            } else if (exponent === 255) {
+                exponentText = '255 (special: Inf/NaN)';
+            } else {
+                const actualExponent = exponent - 127;
+                exponentText = `${exponent} (bias: 127, actual: ${actualExponent})`;
+            }
+            document.getElementById('exponentValue').textContent = exponentText;
+            
+            // Update mantissa bits
+            const mantissaBits = document.querySelectorAll('#ieee754Mantissa .ieee754-bit');
+            for (let i = 0; i < 23; i++) {
+                const bit = (mantissa >>> (22 - i)) & 1;
+                mantissaBits[i].textContent = bit;
+                mantissaBits[i].className = 'ieee754-bit mantissa-bit';
+            }
+            
+            // Calculate mantissa value
+            let mantissaValue = 0;
+            for (let i = 0; i < 23; i++) {
+                if ((mantissa >>> (22 - i)) & 1) {
+                    mantissaValue += Math.pow(2, -(i + 1));
+                }
+            }
+            
+            let mantissaText = '';
+            if (exponent === 0 && mantissa !== 0) {
+                mantissaText = `${mantissaValue.toFixed(7)} (denormalized)`;
+            } else if (exponent === 255) {
+                mantissaText = mantissa === 0 ? 'Infinity' : 'NaN';
+            } else {
+                mantissaText = `${(1 + mantissaValue).toFixed(7)} (1 + ${mantissaValue.toFixed(7)})`;
+            }
+            document.getElementById('mantissaValue').textContent = mantissaText;
+            
+            // Update formula breakdown
+            let formulaText = '';
+            if (isNaN(floatValue)) {
+                formulaText = 'NaN (Not a Number) - special IEEE 754 value';
+            } else if (!isFinite(floatValue)) {
+                formulaText = `${floatValue > 0 ? '+' : '-'}Infinity - special IEEE 754 value`;
+            } else if (exponent === 0) {
+                const denormValue = Math.pow(-1, sign) * mantissaValue * Math.pow(2, -126);
+                formulaText = `= (-1)^${sign} × ${mantissaValue.toFixed(7)} × 2^(-126) = ${denormValue}`;
+            } else {
+                const actualExp = exponent - 127;
+                const significand = 1 + mantissaValue;
+                formulaText = `= (-1)^${sign} × ${significand.toFixed(7)} × 2^(${exponent}-127) = ${sign ? '-' : ''}${significand.toFixed(7)} × 2^${actualExp} = ${floatValue}`;
+            }
+            document.getElementById('formulaBreakdown').textContent = formulaText;
+            
+            // Update step by step
+            const binaryStr = bits.toString(2).padStart(32, '0');
+            const groupedBinary = `${binaryStr.slice(0,1)} ${binaryStr.slice(1,9)} ${binaryStr.slice(9,32)}`;
+            document.getElementById('floatStepByStep').textContent = `Float ${floatValue} → Binary: ${groupedBinary} → Hex: 0x${bits.toString(16).toUpperCase().padStart(8, '0')}`;
+            
+        } catch (error) {
+            clearFloatResults();
+            document.getElementById('floatStepByStep').textContent = 'Invalid float input';
+        }
+    }
+    
+    function clearFloatResults() {
+        document.getElementById('floatHexResult').textContent = '0x00000000';
+        document.getElementById('signValue').textContent = 'Positive';
+        document.getElementById('exponentValue').textContent = '0 (bias: 127, actual: -127)';
+        document.getElementById('mantissaValue').textContent = '0.0000000';
+        document.getElementById('formulaBreakdown').textContent = '= 0';
+        document.getElementById('floatStepByStep').textContent = 'Enter float above';
+    }
+    
+    // Auto-convert float on input change
+    document.getElementById('floatInput').addEventListener('input', function() {
+        clearTimeout(this.convertTimer);
+        this.convertTimer = setTimeout(convertFloat, 300);
+    });
+
+    // Two's Complement Functions
+    function loadComplementExample(value) {
+        document.getElementById('complementInput').value = value;
+        convertTwosComplement();
+    }
+    
+    function convertTwosComplement() {
+        const input = document.getElementById('complementInput');
+        const value = input.value.trim();
+        
+        if (!value) {
+            clearComplementResults();
+            return;
+        }
+        
+        try {
+            const number = parseInt(value);
+            if (isNaN(number) || number < 0 || number > 2147483647) {
+                throw new Error('Enter a positive number between 0 and 2147483647');
+            }
+            
+            // Convert to 16-bit for better visualization (can be changed to 32-bit)
+            const bits = 16;
+            const maxVal = Math.pow(2, bits) - 1;
+            
+            if (number > maxVal) {
+                throw new Error(`Number too large for ${bits}-bit representation`);
+            }
+            
+            // Step 1: Original number in binary
+            const originalBinary = number.toString(2).padStart(bits, '0');
+            
+            // Step 2: One's complement (flip all bits)
+            let onesComplement = '';
+            for (let i = 0; i < bits; i++) {
+                onesComplement += originalBinary[i] === '0' ? '1' : '0';
+            }
+            
+            // Step 3: Two's complement (add 1 to one's complement)
+            let twosComplementValue = parseInt(onesComplement, 2) + 1;
+            if (twosComplementValue > maxVal) {
+                twosComplementValue = twosComplementValue & maxVal; // Handle overflow
+            }
+            const twosComplementBinary = twosComplementValue.toString(2).padStart(bits, '0');
+            
+            // Update result
+            const negativeResult = -(Math.pow(2, bits) - twosComplementValue);
+            document.getElementById('complementResult').textContent = `-${number}`;
+            
+            // Update visual representation
+            updateComplementVisual('originalBits', originalBinary, 'normal');
+            updateComplementVisual('onesComplementBits', onesComplement, 'ones');
+            updateComplementVisual('twosComplementBits', twosComplementBinary, 'twos');
+            
+            // Update step labels
+            document.querySelector('.step-section:nth-child(1) .step-label').textContent = `Step 1: Original (${number})`;
+            document.querySelector('.step-section:nth-child(2) .step-label').textContent = `Step 2: One's Complement (flip all bits)`;
+            document.querySelector('.step-section:nth-child(3) .step-label').textContent = `Step 3: Add 1 (Two's Complement)`;
+            
+            // Update explanation
+            const grouped1 = groupBinary(originalBinary);
+            const grouped2 = groupBinary(onesComplement);
+            const grouped3 = groupBinary(twosComplementBinary);
+            
+            document.getElementById('complementExplanation').innerHTML = 
+                `${number} → One's Complement: ${grouped2} → Add 1: ${grouped3} = -${number}`;
+            
+        } catch (error) {
+            clearComplementResults();
+            document.getElementById('complementExplanation').textContent = 'Invalid input';
+        }
+    }
+    
+    function updateComplementVisual(elementId, binaryString, type) {
+        const container = document.getElementById(elementId);
+        if (!container) return;
+        
+        // Clear existing bits
+        container.innerHTML = '';
+        
+        // Create two groups of 8 bits each
+        const group1 = document.createElement('div');
+        group1.className = 'complement-bit-group';
+        const group2 = document.createElement('div');
+        group2.className = 'complement-bit-group';
+        
+        for (let i = 0; i < 8; i++) {
+            const bit = document.createElement('div');
+            bit.className = `complement-bit ${type}`;
+            bit.textContent = binaryString[i] || '0';
+            group1.appendChild(bit);
+        }
+        
+        for (let i = 8; i < 16; i++) {
+            const bit = document.createElement('div');
+            bit.className = `complement-bit ${type}`;
+            bit.textContent = binaryString[i] || '0';
+            group2.appendChild(bit);
+        }
+        
+        container.appendChild(group1);
+        container.appendChild(group2);
+    }
+    
+    function groupBinary(binary) {
+        return binary.match(/.{1,8}/g).join(' ');
+    }
+    
+    function clearComplementResults() {
+        document.getElementById('complementResult').textContent = 'Enter number';
+        document.getElementById('complementExplanation').textContent = 'Enter a positive number to see its two\'s complement';
+        
+        // Reset visuals to default
+        updateComplementVisual('originalBits', '0000000000000000', 'normal');
+        updateComplementVisual('onesComplementBits', '0000000000000000', 'ones');
+        updateComplementVisual('twosComplementBits', '0000000000000000', 'twos');
+    }
+    
+    // Auto-convert complement on input change
+    document.getElementById('complementInput').addEventListener('input', function() {
+        clearTimeout(this.convertTimer);
+        this.convertTimer = setTimeout(convertTwosComplement, 300);
+    });
+
     // Initialize
     updateBitDisplay(0);
     performArithmeticOperation();
+    convertFloat();
+    clearStorageResults();
+    convertTwosComplement();
 </script>
 </body>
 </html>

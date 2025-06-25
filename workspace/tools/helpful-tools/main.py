@@ -138,6 +138,13 @@ TOOLS = [
         "file": "html_entity_converter.html",
         "has_backend": False
     },
+    {
+        "name": "Binary Calculator & Converter",
+        "description": "Convert between number bases, storage units, and explore 8-bit systems",
+        "path": "/tools/binary-calculator",
+        "file": "binary_calculator.html",
+        "has_backend": False
+    }
 ]
 
 @app.get("/", response_class=HTMLResponse)

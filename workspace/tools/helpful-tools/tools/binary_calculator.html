@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Binary Calculator & Converter - Helpful Tools</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        .header {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 12px 20px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            font-size: 1.5em;
+            color: #333;
+        }
+        .header a {
+            background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+            border: 1px solid #a0a0a0;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 2px;
+            color: #333;
+            text-decoration: none;
+        }
+        .header a:hover {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+        }
+        .toolbar {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .toolbar button {
+            background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+            border: 1px solid #a0a0a0;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 2px;
+            color: #333;
+        }
+        .toolbar button:hover {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+        }
+        .toolbar button:active {
+            background: linear-gradient(to bottom, #e0e0e0, #f0f0f0);
+            box-shadow: inset 1px 1px 2px rgba(0,0,0,0.2);
+        }
+        .separator {
+            width: 1px;
+            height: 20px;
+            background: #c0c0c0;
+            margin: 0 4px;
+        }
+        .bit-display-section {
+            background: linear-gradient(to bottom, #e8f5e8, #d4edd4);
+            border-bottom: 1px solid #4caf50;
+            padding: 12px 20px;
+            text-align: center;
+        }
+        .bit-display {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: bold;
+            color: #2e7d32;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+        .bit {
+            background: #ffffff;
+            border: 1px solid #4caf50;
+            padding: 4px 8px;
+            border-radius: 3px;
+            min-width: 24px;
+            text-align: center;
+        }
+        .bit.active {
+            background: #4caf50;
+            color: white;
+        }
+        .bit-info {
+            font-size: 12px;
+            color: #388e3c;
+        }
+        .main-container {
+            display: flex;
+            height: calc(100vh - 200px);
+        }
+        .left-panel {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #c0c0c0;
+        }
+        .right-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .converter-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .panel-header {
+            background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #555;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .conversion-type {
+            background: #4a90e2;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: normal;
+        }
+        .panel-content {
+            flex: 1;
+            background: #ffffff;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #555;
+        }
+        .number-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #c0c0c0;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            background: #ffffff;
+            border-radius: 3px;
+        }
+        .number-input:focus {
+            border-color: #0066cc;
+            outline: none;
+            box-shadow: 0 0 3px rgba(0,102,204,0.3);
+        }
+        .number-input.error {
+            border-color: #d32f2f;
+            background: #fff5f5;
+        }
+        .number-input.valid {
+            border-color: #388e3c;
+        }
+        .base-selector {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+        .base-btn {
+            background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+            border: 1px solid #a0a0a0;
+            padding: 4px 12px;
+            font-size: 11px;
+            cursor: pointer;
+            border-radius: 2px;
+            color: #333;
+        }
+        .base-btn:hover {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+        }
+        .base-btn.active {
+            background: linear-gradient(to bottom, #0066cc, #004499);
+            color: white;
+            border-color: #004499;
+        }
+        .results-section {
+            background: linear-gradient(to bottom, #f8f8f8, #f0f0f0);
+            border-top: 1px solid #e0e0e0;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .result-item {
+            margin-bottom: 12px;
+            padding: 8px;
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 3px;
+        }
+        .result-label {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 4px;
+            font-weight: bold;
+        }
+        .result-value {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            color: #000;
+            word-break: break-all;
+        }
+        .copy-btn {
+            background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+            border: 1px solid #a0a0a0;
+            padding: 2px 6px;
+            font-size: 10px;
+            cursor: pointer;
+            border-radius: 2px;
+            color: #333;
+            float: right;
+            margin-top: -2px;
+        }
+        .copy-btn:hover {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+        }
+        .status-bar {
+            background: linear-gradient(to bottom, #e8e8e8, #d0d0d0);
+            border-top: 1px solid #c0c0c0;
+            padding: 4px 12px;
+            font-size: 11px;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .quick-actions {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .quick-btn {
+            background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+            border: 1px solid #a0a0a0;
+            padding: 4px 8px;
+            font-size: 11px;
+            cursor: pointer;
+            border-radius: 2px;
+            color: #333;
+        }
+        .quick-btn:hover {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+        }
+        .storage-converter {
+            border-top: 1px solid #e0e0e0;
+            margin-top: 20px;
+            padding-top: 20px;
+        }
+        .architecture-examples {
+            font-size: 11px;
+            color: #666;
+            margin-top: 15px;
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 3px;
+            border: 1px solid #e0e0e0;
+        }
+        .arch-example {
+            margin-bottom: 8px;
+            padding: 4px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .arch-example:last-child {
+            border-bottom: none;
+        }
+        .arch-name {
+            font-weight: bold;
+            color: #333;
+        }
+        .error-message {
+            color: #d32f2f;
+            font-size: 11px;
+            margin-top: 4px;
+        }
+        .format-examples {
+            font-size: 10px;
+            color: #888;
+            margin-top: 4px;
+            line-height: 1.3;
+        }
+        .section-divider {
+            height: 1px;
+            background: #e0e0e0;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <h1>Binary Calculator & Converter</h1>
+    <a href="/">Back to Tools</a>
+</div>
+
+<div class="toolbar">
+    <button onclick="loadExample('255')">Max 8-bit (255)</button>
+    <button onclick="loadExample('128')">High Bit (128)</button>
+    <button onclick="loadExample('42')">Answer (42)</button>
+    <div class="separator"></div>
+    <button onclick="clearAll()">Clear All</button>
+    <button onclick="copyAllResults()">Copy All</button>
+    <div class="separator"></div>
+    <button onclick="toggleBit(7)">Toggle Bit 7</button>
+    <button onclick="toggleBit(0)">Toggle Bit 0</button>
+</div>
+
+<div class="bit-display-section">
+    <div class="bit-display" id="bitDisplay">
+        <div class="bit" onclick="toggleBit(7)" id="bit7">0</div>
+        <div class="bit" onclick="toggleBit(6)" id="bit6">0</div>
+        <div class="bit" onclick="toggleBit(5)" id="bit5">0</div>
+        <div class="bit" onclick="toggleBit(4)" id="bit4">0</div>
+        <div class="bit" onclick="toggleBit(3)" id="bit3">0</div>
+        <div class="bit" onclick="toggleBit(2)" id="bit2">0</div>
+        <div class="bit" onclick="toggleBit(1)" id="bit1">0</div>
+        <div class="bit" onclick="toggleBit(0)" id="bit0">0</div>
+    </div>
+    <div class="bit-info">8-bit Binary Display (Click bits to toggle) | MSB ← → LSB</div>
+</div>
+
+<div class="main-container">
+    <div class="left-panel">
+        <div class="converter-section">
+            <div class="panel-header">
+                Number Base Converter
+                <span class="conversion-type">MULTI-BASE</span>
+            </div>
+            <div class="panel-content">
+                <div class="input-group">
+                    <label class="input-label">Input Number</label>
+                    <input type="text" class="number-input" id="numberInput" placeholder="Enter number (e.g., 255, 0xFF, 0b11111111)" />
+                    <div class="base-selector">
+                        <button class="base-btn active" onclick="setInputBase('decimal')" id="decimalBtn">Decimal (10)</button>
+                        <button class="base-btn" onclick="setInputBase('binary')" id="binaryBtn">Binary (2)</button>
+                        <button class="base-btn" onclick="setInputBase('hex')" id="hexBtn">Hex (16)</button>
+                        <button class="base-btn" onclick="setInputBase('octal')" id="octalBtn">Octal (8)</button>
+                    </div>
+                    <div class="format-examples">
+                        Examples: 255 (decimal), 0xFF (hex), 0b11111111 (binary), 0o377 (octal)
+                    </div>
+                    <div id="numberError" class="error-message" style="display: none;"></div>
+                </div>
+
+                <div class="quick-actions">
+                    <button class="quick-btn" onclick="loadExample('0')">Zero</button>
+                    <button class="quick-btn" onclick="loadExample('1')">One</button>
+                    <button class="quick-btn" onclick="loadExample('127')">Max Signed</button>
+                    <button class="quick-btn" onclick="loadExample('255')">Max Unsigned</button>
+                </div>
+
+                <div class="section-divider"></div>
+
+                <div class="architecture-examples">
+                    <strong>8-bit System Architecture Examples:</strong>
+                    <div class="arch-example">
+                        <div class="arch-name">Intel 8080/8085:</div>
+                        Data Bus: 8-bit, Address Bus: 16-bit (64KB address space)
+                    </div>
+                    <div class="arch-example">
+                        <div class="arch-name">Zilog Z80:</div>
+                        Data Bus: 8-bit, Address Bus: 16-bit (64KB address space)
+                    </div>
+                    <div class="arch-example">
+                        <div class="arch-name">MOS 6502:</div>
+                        Data Bus: 8-bit, Address Bus: 16-bit (Apple II, NES)
+                    </div>
+                    <div class="arch-example">
+                        <div class="arch-name">Motorola 6800:</div>
+                        Data Bus: 8-bit, Address Bus: 16-bit (early microcomputers)
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-section">
+                <div class="result-item">
+                    <div class="result-label">Decimal <button class="copy-btn" onclick="copyResult('decimal')">Copy</button></div>
+                    <div class="result-value" id="decimalResult">Enter number above</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Binary <button class="copy-btn" onclick="copyResult('binary')">Copy</button></div>
+                    <div class="result-value" id="binaryResult">Enter number above</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Hexadecimal <button class="copy-btn" onclick="copyResult('hex')">Copy</button></div>
+                    <div class="result-value" id="hexResult">Enter number above</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Octal <button class="copy-btn" onclick="copyResult('octal')">Copy</button></div>
+                    <div class="result-value" id="octalResult">Enter number above</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Signed (2's Complement) <button class="copy-btn" onclick="copyResult('signed')">Copy</button></div>
+                    <div class="result-value" id="signedResult">Enter number above</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="right-panel">
+        <div class="converter-section">
+            <div class="panel-header">
+                Storage Unit Converter
+                <span class="conversion-type">BYTES & STORAGE</span>
+            </div>
+            <div class="panel-content">
+                <div class="input-group">
+                    <label class="input-label">Storage Size</label>
+                    <input type="text" class="number-input" id="storageInput" placeholder="Enter size (e.g., 1024, 1.5)" />
+                    <div class="base-selector">
+                        <button class="base-btn active" onclick="setStorageUnit('bytes')" id="bytesBtn">Bytes</button>
+                        <button class="base-btn" onclick="setStorageUnit('kb')" id="kbBtn">KB</button>
+                        <button class="base-btn" onclick="setStorageUnit('mb')" id="mbBtn">MB</button>
+                        <button class="base-btn" onclick="setStorageUnit('gb')" id="gbBtn">GB</button>
+                    </div>
+                    <div class="format-examples">
+                        Binary (1024) vs Decimal (1000) base conversions shown
+                    </div>
+                    <div id="storageError" class="error-message" style="display: none;"></div>
+                </div>
+
+                <div class="quick-actions">
+                    <button class="quick-btn" onclick="loadStorageExample('1024')">1 KiB</button>
+                    <button class="quick-btn" onclick="loadStorageExample('1048576')">1 MiB</button>
+                    <button class="quick-btn" onclick="loadStorageExample('1073741824')">1 GiB</button>
+                    <button class="quick-btn" onclick="loadStorageExample('8192')">8K Page</button>
+                </div>
+
+                <div class="section-divider"></div>
+
+                <div class="architecture-examples">
+                    <strong>Binary vs Decimal Prefixes:</strong>
+                    <div class="arch-example">
+                        <div class="arch-name">Kilo vs Kibi:</div>
+                        1 KB = 1,000 bytes | 1 KiB = 1,024 bytes
+                    </div>
+                    <div class="arch-example">
+                        <div class="arch-name">Mega vs Mebi:</div>
+                        1 MB = 1,000,000 bytes | 1 MiB = 1,048,576 bytes
+                    </div>
+                    <div class="arch-example">
+                        <div class="arch-name">Giga vs Gibi:</div>
+                        1 GB = 1,000,000,000 bytes | 1 GiB = 1,073,741,824 bytes
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-section">
+                <div class="result-item">
+                    <div class="result-label">Bytes <button class="copy-btn" onclick="copyResult('storageBytes')">Copy</button></div>
+                    <div class="result-value" id="storageBytesResult">Enter size above</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Binary Prefixes (1024) <button class="copy-btn" onclick="copyResult('storageBinary')">Copy</button></div>
+                    <div class="result-value" id="storageBinaryResult">Enter size above</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Decimal Prefixes (1000) <button class="copy-btn" onclick="copyResult('storageDecimal')">Copy</button></div>
+                    <div class="result-value" id="storageDecimalResult">Enter size above</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Bits <button class="copy-btn" onclick="copyResult('storageBits')">Copy</button></div>
+                    <div class="result-value" id="storageBitsResult">Enter size above</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Memory Pages (4KB) <button class="copy-btn" onclick="copyResult('storagePages')">Copy</button></div>
+                    <div class="result-value" id="storagePagesResult">Enter size above</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="status-bar">
+    <div id="statusText">Ready - Enter a number or click on the bit display</div>
+    <div id="conversionInfo">8-bit focused conversions | Auto-conversion enabled</div>
+</div>
+
+<script>
+    let inputBase = 'decimal';
+    let storageUnit = 'bytes';
+    let currentValue = 0;
+    let currentResults = {
+        decimal: '',
+        binary: '',
+        hex: '',
+        octal: '',
+        signed: '',
+        storageBytes: '',
+        storageBinary: '',
+        storageDecimal: '',
+        storageBits: '',
+        storagePages: ''
+    };
+
+    function setInputBase(base) {
+        inputBase = base;
+        
+        // Update button states
+        document.getElementById('decimalBtn').classList.toggle('active', base === 'decimal');
+        document.getElementById('binaryBtn').classList.toggle('active', base === 'binary');
+        document.getElementById('hexBtn').classList.toggle('active', base === 'hex');
+        document.getElementById('octalBtn').classList.toggle('active', base === 'octal');
+        
+        // Re-convert if there's input
+        convertNumber();
+    }
+
+    function setStorageUnit(unit) {
+        storageUnit = unit;
+        
+        // Update button states
+        document.getElementById('bytesBtn').classList.toggle('active', unit === 'bytes');
+        document.getElementById('kbBtn').classList.toggle('active', unit === 'kb');
+        document.getElementById('mbBtn').classList.toggle('active', unit === 'mb');
+        document.getElementById('gbBtn').classList.toggle('active', unit === 'gb');
+        
+        // Re-convert if there's input
+        convertStorage();
+    }
+
+    function parseNumberInput(value) {
+        value = value.trim();
+        
+        if (!value) return null;
+        
+        // Auto-detect format based on prefix
+        if (value.startsWith('0x') || value.startsWith('0X')) {
+            return parseInt(value, 16);
+        } else if (value.startsWith('0b') || value.startsWith('0B')) {
+            return parseInt(value.slice(2), 2);
+        } else if (value.startsWith('0o') || value.startsWith('0O')) {
+            return parseInt(value.slice(2), 8);
+        } else if (value.startsWith('0') && value.length > 1 && /^[0-7]+$/.test(value.slice(1))) {
+            return parseInt(value, 8);
+        }
+        
+        // Parse based on selected input base
+        switch (inputBase) {
+            case 'binary':
+                return parseInt(value.replace(/[^01]/g, ''), 2);
+            case 'hex':
+                return parseInt(value.replace(/[^0-9a-fA-F]/g, ''), 16);
+            case 'octal':
+                return parseInt(value.replace(/[^0-7]/g, ''), 8);
+            default:
+                return parseInt(value);
+        }
+    }
+
+    function convertNumber() {
+        const input = document.getElementById('numberInput');
+        const numberError = document.getElementById('numberError');
+        const statusText = document.getElementById('statusText');
+        
+        const value = input.value.trim();
+        
+        // Clear previous errors
+        numberError.style.display = 'none';
+        input.className = 'number-input';
+        
+        if (!value) {
+            clearNumberResults();
+            updateBitDisplay(0);
+            return;
+        }
+        
+        try {
+            const number = parseNumberInput(value);
+            
+            if (isNaN(number) || number < 0 || number > 255) {
+                throw new Error('Please enter a number between 0 and 255 for 8-bit operations');
+            }
+            
+            currentValue = number;
+            
+            // Update results
+            currentResults.decimal = number.toString();
+            currentResults.binary = '0b' + number.toString(2).padStart(8, '0');
+            currentResults.hex = '0x' + number.toString(16).toUpperCase().padStart(2, '0');
+            currentResults.octal = '0o' + number.toString(8).padStart(3, '0');
+            
+            // Calculate signed value (2's complement for 8-bit)
+            const signed = number > 127 ? number - 256 : number;
+            currentResults.signed = signed.toString();
+            
+            document.getElementById('decimalResult').textContent = currentResults.decimal;
+            document.getElementById('binaryResult').textContent = currentResults.binary;
+            document.getElementById('hexResult').textContent = currentResults.hex;
+            document.getElementById('octalResult').textContent = currentResults.octal;
+            document.getElementById('signedResult').textContent = currentResults.signed;
+            
+            updateBitDisplay(number);
+            
+            input.className = 'number-input valid';
+            statusText.textContent = `Converted: ${number} (decimal)`;
+            statusText.style.color = '#008000';
+            
+        } catch (error) {
+            input.className = 'number-input error';
+            numberError.textContent = error.message;
+            numberError.style.display = 'block';
+            statusText.textContent = 'Invalid number';
+            statusText.style.color = '#cc0000';
+            clearNumberResults();
+            updateBitDisplay(0);
+        }
+    }
+
+    function convertStorage() {
+        const input = document.getElementById('storageInput');
+        const storageError = document.getElementById('storageError');
+        const statusText = document.getElementById('statusText');
+        
+        const value = input.value.trim();
+        
+        // Clear previous errors
+        storageError.style.display = 'none';
+        
+        if (!value) {
+            clearStorageResults();
+            return;
+        }
+        
+        try {
+            const number = parseFloat(value);
+            
+            if (isNaN(number) || number < 0) {
+                throw new Error('Please enter a positive number');
+            }
+            
+            // Convert to bytes based on input unit
+            let bytes;
+            switch (storageUnit) {
+                case 'kb':
+                    bytes = number * 1024; // Using binary KB
+                    break;
+                case 'mb':
+                    bytes = number * 1024 * 1024;
+                    break;
+                case 'gb':
+                    bytes = number * 1024 * 1024 * 1024;
+                    break;
+                default:
+                    bytes = number;
+            }
+            
+            // Update results
+            currentResults.storageBytes = Math.round(bytes).toLocaleString() + ' bytes';
+            
+            // Binary prefixes (1024-based)
+            const kib = bytes / 1024;
+            const mib = bytes / (1024 * 1024);
+            const gib = bytes / (1024 * 1024 * 1024);
+            
+            let binaryStr = '';
+            if (gib >= 1) {
+                binaryStr = `${gib.toFixed(3)} GiB`;
+            } else if (mib >= 1) {
+                binaryStr = `${mib.toFixed(3)} MiB`;
+            } else if (kib >= 1) {
+                binaryStr = `${kib.toFixed(3)} KiB`;
+            } else {
+                binaryStr = `${Math.round(bytes)} bytes`;
+            }
+            currentResults.storageBinary = binaryStr;
+            
+            // Decimal prefixes (1000-based)
+            const kb = bytes / 1000;
+            const mb = bytes / (1000 * 1000);
+            const gb = bytes / (1000 * 1000 * 1000);
+            
+            let decimalStr = '';
+            if (gb >= 1) {
+                decimalStr = `${gb.toFixed(3)} GB`;
+            } else if (mb >= 1) {
+                decimalStr = `${mb.toFixed(3)} MB`;
+            } else if (kb >= 1) {
+                decimalStr = `${kb.toFixed(3)} KB`;
+            } else {
+                decimalStr = `${Math.round(bytes)} bytes`;
+            }
+            currentResults.storageDecimal = decimalStr;
+            
+            currentResults.storageBits = (bytes * 8).toLocaleString() + ' bits';
+            currentResults.storagePages = (bytes / 4096).toFixed(2) + ' pages';
+            
+            document.getElementById('storageBytesResult').textContent = currentResults.storageBytes;
+            document.getElementById('storageBinaryResult').textContent = currentResults.storageBinary;
+            document.getElementById('storageDecimalResult').textContent = currentResults.storageDecimal;
+            document.getElementById('storageBitsResult').textContent = currentResults.storageBits;
+            document.getElementById('storagePagesResult').textContent = currentResults.storagePages;
+            
+        } catch (error) {
+            storageError.textContent = error.message;
+            storageError.style.display = 'block';
+            clearStorageResults();
+        }
+    }
+
+    function updateBitDisplay(number) {
+        for (let i = 0; i < 8; i++) {
+            const bit = document.getElementById(`bit${i}`);
+            const isSet = (number >> i) & 1;
+            bit.textContent = isSet ? '1' : '0';
+            bit.classList.toggle('active', isSet === 1);
+        }
+    }
+
+    function toggleBit(bitPosition) {
+        currentValue ^= (1 << bitPosition);
+        updateBitDisplay(currentValue);
+        
+        // Update the input field and convert
+        document.getElementById('numberInput').value = currentValue.toString();
+        convertNumber();
+    }
+
+    function clearNumberResults() {
+        document.getElementById('decimalResult').textContent = 'Enter number above';
+        document.getElementById('binaryResult').textContent = 'Enter number above';
+        document.getElementById('hexResult').textContent = 'Enter number above';
+        document.getElementById('octalResult').textContent = 'Enter number above';
+        document.getElementById('signedResult').textContent = 'Enter number above';
+        currentResults.decimal = '';
+        currentResults.binary = '';
+        currentResults.hex = '';
+        currentResults.octal = '';
+        currentResults.signed = '';
+    }
+
+    function clearStorageResults() {
+        document.getElementById('storageBytesResult').textContent = 'Enter size above';
+        document.getElementById('storageBinaryResult').textContent = 'Enter size above';
+        document.getElementById('storageDecimalResult').textContent = 'Enter size above';
+        document.getElementById('storageBitsResult').textContent = 'Enter size above';
+        document.getElementById('storagePagesResult').textContent = 'Enter size above';
+        currentResults.storageBytes = '';
+        currentResults.storageBinary = '';
+        currentResults.storageDecimal = '';
+        currentResults.storageBits = '';
+        currentResults.storagePages = '';
+    }
+
+    function loadExample(value) {
+        document.getElementById('numberInput').value = value;
+        convertNumber();
+    }
+
+    function loadStorageExample(value) {
+        document.getElementById('storageInput').value = value;
+        convertStorage();
+    }
+
+    function copyResult(type) {
+        const value = currentResults[type];
+        if (!value) {
+            document.getElementById('statusText').textContent = 'No result to copy';
+            document.getElementById('statusText').style.color = '#ff8800';
+            return;
+        }
+
+        navigator.clipboard.writeText(value).then(() => {
+            showCopyFeedback(`${type} copied to clipboard`);
+        }).catch(() => {
+            const textArea = document.createElement('textarea');
+            textArea.value = value;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            showCopyFeedback(`${type} copied to clipboard`);
+        });
+    }
+
+    function copyAllResults() {
+        const numberResults = ['decimal', 'binary', 'hex', 'octal', 'signed']
+            .filter(key => currentResults[key] !== '')
+            .map(key => `${key}: ${currentResults[key]}`)
+            .join('\n');
+            
+        const storageResults = ['storageBytes', 'storageBinary', 'storageDecimal', 'storageBits', 'storagePages']
+            .filter(key => currentResults[key] !== '')
+            .map(key => `${key.replace('storage', '').toLowerCase()}: ${currentResults[key]}`)
+            .join('\n');
+
+        const allResults = [numberResults, storageResults].filter(r => r).join('\n\n');
+
+        if (!allResults) {
+            document.getElementById('statusText').textContent = 'No results to copy';
+            document.getElementById('statusText').style.color = '#ff8800';
+            return;
+        }
+
+        navigator.clipboard.writeText(allResults).then(() => {
+            showCopyFeedback('All results copied to clipboard');
+        }).catch(() => {
+            const textArea = document.createElement('textarea');
+            textArea.value = allResults;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            showCopyFeedback('All results copied to clipboard');
+        });
+    }
+
+    function showCopyFeedback(message) {
+        const statusText = document.getElementById('statusText');
+        const originalText = statusText.textContent;
+        const originalColor = statusText.style.color;
+
+        statusText.textContent = message;
+        statusText.style.color = '#008000';
+
+        setTimeout(() => {
+            statusText.textContent = originalText;
+            statusText.style.color = originalColor;
+        }, 2000);
+    }
+
+    function clearAll() {
+        document.getElementById('numberInput').value = '';
+        document.getElementById('storageInput').value = '';
+        document.getElementById('numberError').style.display = 'none';
+        document.getElementById('storageError').style.display = 'none';
+        document.getElementById('numberInput').className = 'number-input';
+        document.getElementById('statusText').textContent = 'Ready - Enter a number or click on the bit display';
+        document.getElementById('statusText').style.color = '#666';
+        currentValue = 0;
+        updateBitDisplay(0);
+        clearNumberResults();
+        clearStorageResults();
+    }
+
+    // Auto-convert on input change
+    document.getElementById('numberInput').addEventListener('input', function() {
+        clearTimeout(this.convertTimer);
+        this.convertTimer = setTimeout(convertNumber, 300);
+    });
+
+    document.getElementById('storageInput').addEventListener('input', function() {
+        clearTimeout(this.convertTimer);
+        this.convertTimer = setTimeout(convertStorage, 300);
+    });
+
+    // Initialize
+    updateBitDisplay(0);
+</script>
+</body>
+</html>

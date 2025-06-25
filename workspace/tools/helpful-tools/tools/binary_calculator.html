@@ -80,22 +80,37 @@
         }
         .bit-display {
             font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
             color: #2e7d32;
             margin-bottom: 8px;
             display: flex;
             justify-content: center;
-            gap: 4px;
+            gap: 2px;
             flex-wrap: wrap;
+        }
+        .bit-group {
+            display: flex;
+            gap: 2px;
+            margin: 0 4px;
+            padding: 4px;
+            border: 1px solid #81c784;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.3);
         }
         .bit {
             background: #ffffff;
             border: 1px solid #4caf50;
-            padding: 4px 8px;
+            padding: 3px 6px;
             border-radius: 3px;
-            min-width: 24px;
+            min-width: 20px;
             text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .bit:hover {
+            background: #e8f5e8;
+            transform: scale(1.1);
         }
         .bit.active {
             background: #4caf50;
@@ -104,6 +119,12 @@
         .bit-info {
             font-size: 12px;
             color: #388e3c;
+            margin-top: 8px;
+        }
+        .bit-labels {
+            font-size: 10px;
+            color: #666;
+            margin-top: 4px;
         }
         .main-container {
             display: flex;
@@ -323,29 +344,62 @@
 </div>
 
 <div class="toolbar">
-    <button onclick="loadExample('255')">Max 8-bit (255)</button>
-    <button onclick="loadExample('128')">High Bit (128)</button>
+    <button onclick="loadExample('2147483647')">Max 32-bit Signed</button>
+    <button onclick="loadExample('-2147483648')">Min 32-bit Signed</button>
     <button onclick="loadExample('42')">Answer (42)</button>
     <div class="separator"></div>
     <button onclick="clearAll()">Clear All</button>
     <button onclick="copyAllResults()">Copy All</button>
     <div class="separator"></div>
-    <button onclick="toggleBit(7)">Toggle Bit 7</button>
+    <button onclick="toggleBit(31)">Toggle Bit 31</button>
     <button onclick="toggleBit(0)">Toggle Bit 0</button>
 </div>
 
 <div class="bit-display-section">
     <div class="bit-display" id="bitDisplay">
-        <div class="bit" onclick="toggleBit(7)" id="bit7">0</div>
-        <div class="bit" onclick="toggleBit(6)" id="bit6">0</div>
-        <div class="bit" onclick="toggleBit(5)" id="bit5">0</div>
-        <div class="bit" onclick="toggleBit(4)" id="bit4">0</div>
-        <div class="bit" onclick="toggleBit(3)" id="bit3">0</div>
-        <div class="bit" onclick="toggleBit(2)" id="bit2">0</div>
-        <div class="bit" onclick="toggleBit(1)" id="bit1">0</div>
-        <div class="bit" onclick="toggleBit(0)" id="bit0">0</div>
+        <div class="bit-group">
+            <div class="bit" onclick="toggleBit(31)" id="bit31">0</div>
+            <div class="bit" onclick="toggleBit(30)" id="bit30">0</div>
+            <div class="bit" onclick="toggleBit(29)" id="bit29">0</div>
+            <div class="bit" onclick="toggleBit(28)" id="bit28">0</div>
+            <div class="bit" onclick="toggleBit(27)" id="bit27">0</div>
+            <div class="bit" onclick="toggleBit(26)" id="bit26">0</div>
+            <div class="bit" onclick="toggleBit(25)" id="bit25">0</div>
+            <div class="bit" onclick="toggleBit(24)" id="bit24">0</div>
+        </div>
+        <div class="bit-group">
+            <div class="bit" onclick="toggleBit(23)" id="bit23">0</div>
+            <div class="bit" onclick="toggleBit(22)" id="bit22">0</div>
+            <div class="bit" onclick="toggleBit(21)" id="bit21">0</div>
+            <div class="bit" onclick="toggleBit(20)" id="bit20">0</div>
+            <div class="bit" onclick="toggleBit(19)" id="bit19">0</div>
+            <div class="bit" onclick="toggleBit(18)" id="bit18">0</div>
+            <div class="bit" onclick="toggleBit(17)" id="bit17">0</div>
+            <div class="bit" onclick="toggleBit(16)" id="bit16">0</div>
+        </div>
+        <div class="bit-group">
+            <div class="bit" onclick="toggleBit(15)" id="bit15">0</div>
+            <div class="bit" onclick="toggleBit(14)" id="bit14">0</div>
+            <div class="bit" onclick="toggleBit(13)" id="bit13">0</div>
+            <div class="bit" onclick="toggleBit(12)" id="bit12">0</div>
+            <div class="bit" onclick="toggleBit(11)" id="bit11">0</div>
+            <div class="bit" onclick="toggleBit(10)" id="bit10">0</div>
+            <div class="bit" onclick="toggleBit(9)" id="bit9">0</div>
+            <div class="bit" onclick="toggleBit(8)" id="bit8">0</div>
+        </div>
+        <div class="bit-group">
+            <div class="bit" onclick="toggleBit(7)" id="bit7">0</div>
+            <div class="bit" onclick="toggleBit(6)" id="bit6">0</div>
+            <div class="bit" onclick="toggleBit(5)" id="bit5">0</div>
+            <div class="bit" onclick="toggleBit(4)" id="bit4">0</div>
+            <div class="bit" onclick="toggleBit(3)" id="bit3">0</div>
+            <div class="bit" onclick="toggleBit(2)" id="bit2">0</div>
+            <div class="bit" onclick="toggleBit(1)" id="bit1">0</div>
+            <div class="bit" onclick="toggleBit(0)" id="bit0">0</div>
+        </div>
     </div>
-    <div class="bit-info">8-bit Binary Display (Click bits to toggle) | MSB ← → LSB</div>
+    <div class="bit-info">32-bit Binary Display (Click bits to toggle) | MSB ← → LSB</div>
+    <div class="bit-labels">Bit 31 (Sign) | Bits 30-24 | Bits 23-16 | Bits 15-8 | Bits 7-0</div>
 </div>
 
 <div class="main-container">
@@ -374,29 +428,51 @@
                 <div class="quick-actions">
                     <button class="quick-btn" onclick="loadExample('0')">Zero</button>
                     <button class="quick-btn" onclick="loadExample('1')">One</button>
-                    <button class="quick-btn" onclick="loadExample('127')">Max Signed</button>
-                    <button class="quick-btn" onclick="loadExample('255')">Max Unsigned</button>
+                    <button class="quick-btn" onclick="loadExample('-1')">Negative One</button>
+                    <button class="quick-btn" onclick="loadExample('2147483647')">Max Int32</button>
                 </div>
 
                 <div class="section-divider"></div>
 
                 <div class="architecture-examples">
-                    <strong>8-bit System Architecture Examples:</strong>
+                    <strong>Binary Number Overflow Examples:</strong>
                     <div class="arch-example">
-                        <div class="arch-name">Intel 8080/8085:</div>
-                        Data Bus: 8-bit, Address Bus: 16-bit (64KB address space)
+                        <div class="arch-name">8-bit Overflow:</div>
+                        255 + 1 = 0 (wraps around), Max: 255, Min: 0
                     </div>
                     <div class="arch-example">
-                        <div class="arch-name">Zilog Z80:</div>
-                        Data Bus: 8-bit, Address Bus: 16-bit (64KB address space)
+                        <div class="arch-name">16-bit Overflow:</div>
+                        65535 + 1 = 0, Max: 65,535, Min: 0
                     </div>
                     <div class="arch-example">
-                        <div class="arch-name">MOS 6502:</div>
-                        Data Bus: 8-bit, Address Bus: 16-bit (Apple II, NES)
+                        <div class="arch-name">32-bit Signed Overflow:</div>
+                        2,147,483,647 + 1 = -2,147,483,648
                     </div>
                     <div class="arch-example">
-                        <div class="arch-name">Motorola 6800:</div>
-                        Data Bus: 8-bit, Address Bus: 16-bit (early microcomputers)
+                        <div class="arch-name">32-bit Unsigned Overflow:</div>
+                        4,294,967,295 + 1 = 0 (4.29 billion max)
+                    </div>
+                </div>
+
+                <div class="section-divider"></div>
+
+                <div class="architecture-examples">
+                    <strong>32-bit System Architecture Examples:</strong>
+                    <div class="arch-example">
+                        <div class="arch-name">Intel x86 (386/486):</div>
+                        Data Bus: 32-bit, Address Bus: 32-bit (4GB address space)
+                    </div>
+                    <div class="arch-example">
+                        <div class="arch-name">ARM Cortex-A:</div>
+                        Data Bus: 32-bit, Address Bus: 32-bit (smartphones, tablets)
+                    </div>
+                    <div class="arch-example">
+                        <div class="arch-name">MIPS R3000:</div>
+                        Data Bus: 32-bit, Address Bus: 32-bit (workstations, consoles)
+                    </div>
+                    <div class="arch-example">
+                        <div class="arch-name">PowerPC 32-bit:</div>
+                        Data Bus: 32-bit, Address Bus: 32-bit (Apple PowerMac)
                     </div>
                 </div>
             </div>
@@ -449,10 +525,36 @@
                 </div>
 
                 <div class="quick-actions">
-                    <button class="quick-btn" onclick="loadStorageExample('1024')">1 KiB</button>
-                    <button class="quick-btn" onclick="loadStorageExample('1048576')">1 MiB</button>
+                    <button class="quick-btn" onclick="loadStorageExample('1000000000000')">1TB HDD</button>
                     <button class="quick-btn" onclick="loadStorageExample('1073741824')">1 GiB</button>
+                    <button class="quick-btn" onclick="loadStorageExample('4294967296')">4GB RAM</button>
                     <button class="quick-btn" onclick="loadStorageExample('8192')">8K Page</button>
+                </div>
+
+                <div class="section-divider"></div>
+
+                <div class="architecture-examples">
+                    <strong>Real-World Storage Examples:</strong>
+                    <div class="arch-example">
+                        <div class="arch-name">1TB Hard Drive:</div>
+                        Advertised: 1,000,000,000,000 bytes (1 TB)<br>
+                        Actual: 931 GiB (OS shows ~931 GB)
+                    </div>
+                    <div class="arch-example">
+                        <div class="arch-name">500GB SSD:</div>
+                        Advertised: 500,000,000,000 bytes<br>
+                        Actual: 465 GiB usable space
+                    </div>
+                    <div class="arch-example">
+                        <div class="arch-name">64GB RAM:</div>
+                        Exactly: 68,719,476,736 bytes<br>
+                        Binary: 64 × 1024³ bytes
+                    </div>
+                    <div class="arch-example">
+                        <div class="arch-name">8GB USB Flash:</div>
+                        Advertised: ~8,000,000,000 bytes<br>
+                        Actual: ~7.45 GiB after formatting
+                    </div>
                 </div>
 
                 <div class="section-divider"></div>
@@ -470,6 +572,27 @@
                     <div class="arch-example">
                         <div class="arch-name">Giga vs Gibi:</div>
                         1 GB = 1,000,000,000 bytes | 1 GiB = 1,073,741,824 bytes
+                    </div>
+                </div>
+
+                <div class="section-divider"></div>
+
+                <div class="architecture-examples">
+                    <strong>Advanced Binary Concepts:</strong>
+                    <div class="arch-example">
+                        <div class="arch-name">Endianness:</div>
+                        Big-endian: Most significant byte first (network order)<br>
+                        Little-endian: Least significant byte first (x86)
+                    </div>
+                    <div class="arch-example">
+                        <div class="arch-name">IEEE 754 Float:</div>
+                        32-bit: 1 sign + 8 exponent + 23 mantissa bits<br>
+                        Range: ±3.4 × 10³⁸ (7 decimal digits precision)
+                    </div>
+                    <div class="arch-example">
+                        <div class="arch-name">Memory Alignment:</div>
+                        32-bit systems: 4-byte alignment for performance<br>
+                        Addresses divisible by 4 (0x0, 0x4, 0x8, 0xC...)
                     </div>
                 </div>
             </div>
@@ -501,8 +624,8 @@
 </div>
 
 <div class="status-bar">
-    <div id="statusText">Ready - Enter a number or click on the bit display</div>
-    <div id="conversionInfo">8-bit focused conversions | Auto-conversion enabled</div>
+    <div id="statusText">Ready - Enter a number (supports negative) or click on the bit display</div>
+    <div id="conversionInfo">32-bit focused conversions | Auto-conversion enabled</div>
 </div>
 
 <script>
@@ -597,20 +720,27 @@
         try {
             const number = parseNumberInput(value);
             
-            if (isNaN(number) || number < 0 || number > 255) {
-                throw new Error('Please enter a number between 0 and 255 for 8-bit operations');
+            if (isNaN(number) || number < -2147483648 || number > 4294967295) {
+                throw new Error('Please enter a number between -2,147,483,648 and 4,294,967,295 for 32-bit operations');
             }
             
             currentValue = number;
             
+            // Handle negative numbers and convert to unsigned for bit operations
+            let unsignedNumber = number;
+            if (number < 0) {
+                // Convert negative to 32-bit unsigned using 2's complement
+                unsignedNumber = (number >>> 0); // JavaScript unsigned right shift
+            }
+            
             // Update results
             currentResults.decimal = number.toString();
-            currentResults.binary = '0b' + number.toString(2).padStart(8, '0');
-            currentResults.hex = '0x' + number.toString(16).toUpperCase().padStart(2, '0');
-            currentResults.octal = '0o' + number.toString(8).padStart(3, '0');
+            currentResults.binary = '0b' + unsignedNumber.toString(2).padStart(32, '0');
+            currentResults.hex = '0x' + unsignedNumber.toString(16).toUpperCase().padStart(8, '0');
+            currentResults.octal = '0o' + unsignedNumber.toString(8).padStart(11, '0');
             
-            // Calculate signed value (2's complement for 8-bit)
-            const signed = number > 127 ? number - 256 : number;
+            // Calculate signed value (2's complement for 32-bit)
+            const signed = unsignedNumber > 2147483647 ? unsignedNumber - 4294967296 : unsignedNumber;
             currentResults.signed = signed.toString();
             
             document.getElementById('decimalResult').textContent = currentResults.decimal;
@@ -619,7 +749,7 @@
             document.getElementById('octalResult').textContent = currentResults.octal;
             document.getElementById('signedResult').textContent = currentResults.signed;
             
-            updateBitDisplay(number);
+            updateBitDisplay(unsignedNumber);
             
             input.className = 'number-input valid';
             statusText.textContent = `Converted: ${number} (decimal)`;
@@ -728,17 +858,28 @@
     }
 
     function updateBitDisplay(number) {
-        for (let i = 0; i < 8; i++) {
+        // Handle negative numbers properly
+        const unsignedNumber = number >>> 0; // Convert to unsigned 32-bit
+        
+        for (let i = 0; i < 32; i++) {
             const bit = document.getElementById(`bit${i}`);
-            const isSet = (number >> i) & 1;
-            bit.textContent = isSet ? '1' : '0';
-            bit.classList.toggle('active', isSet === 1);
+            if (bit) {
+                const isSet = (unsignedNumber >> i) & 1;
+                bit.textContent = isSet ? '1' : '0';
+                bit.classList.toggle('active', isSet === 1);
+            }
         }
     }
 
     function toggleBit(bitPosition) {
-        currentValue ^= (1 << bitPosition);
-        updateBitDisplay(currentValue);
+        // Handle the current value as unsigned for bit operations
+        let unsignedValue = currentValue >>> 0;
+        unsignedValue ^= (1 << bitPosition);
+        
+        // Convert back to signed if needed
+        currentValue = unsignedValue > 2147483647 ? unsignedValue - 4294967296 : unsignedValue;
+        
+        updateBitDisplay(unsignedValue);
         
         // Update the input field and convert
         document.getElementById('numberInput').value = currentValue.toString();

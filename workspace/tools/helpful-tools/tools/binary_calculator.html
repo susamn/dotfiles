@@ -129,6 +129,7 @@
         .main-container {
             display: flex;
             height: calc(100vh - 200px);
+            min-height: 600px;
         }
         .left-panel {
             width: 50%;
@@ -141,10 +142,160 @@
             display: flex;
             flex-direction: column;
         }
+        .arithmetic-section {
+            background: #ffffff;
+            border-bottom: 1px solid #c0c0c0;
+            min-height: 320px;
+            max-height: 320px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        .arithmetic-calculator {
+            padding: 15px;
+        }
+        .arithmetic-inputs {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr auto 1fr;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .arithmetic-input {
+            padding: 6px 8px;
+            border: 1px solid #c0c0c0;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            border-radius: 2px;
+            text-align: center;
+        }
+        .arithmetic-input:focus {
+            border-color: #0066cc;
+            outline: none;
+        }
+        .operation-selector {
+            padding: 4px 8px;
+            border: 1px solid #a0a0a0;
+            background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+            font-size: 11px;
+            border-radius: 2px;
+            cursor: pointer;
+        }
+        .operation-selector:hover {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+        }
+        .arithmetic-visual {
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 3px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .arithmetic-bit-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 11px;
+        }
+        .arithmetic-label {
+            width: 60px;
+            color: #666;
+            font-weight: bold;
+        }
+        .arithmetic-bits {
+            display: flex;
+            gap: 2px;
+        }
+        .arithmetic-bit-group {
+            display: flex;
+            gap: 1px;
+            margin: 0 3px;
+            padding: 2px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            background: rgba(240, 240, 240, 0.3);
+        }
+        .arithmetic-bit {
+            width: 12px;
+            height: 16px;
+            border: 1px solid #ccc;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            transition: all 0.3s ease;
+        }
+        .arithmetic-bit.active {
+            background: #4caf50;
+            color: white;
+        }
+        .arithmetic-bit.carry {
+            background: #ff9800;
+            color: white;
+        }
+        .arithmetic-bit.borrow {
+            background: #f44336;
+            color: white;
+        }
+        .arithmetic-operations {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .operation-btn {
+            background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+            border: 1px solid #a0a0a0;
+            padding: 6px 12px;
+            font-size: 11px;
+            cursor: pointer;
+            border-radius: 2px;
+            color: #333;
+        }
+        .operation-btn:hover {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+        }
+        .operation-btn.active {
+            background: linear-gradient(to bottom, #0066cc, #004499);
+            color: white;
+            border-color: #004499;
+        }
+        .arithmetic-result {
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+            border-radius: 3px;
+            padding: 8px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .step-by-step {
+            font-size: 10px;
+            color: #666;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            background: #f5f5f5;
+            padding: 8px;
+            border-radius: 3px;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+        @keyframes bitFlash {
+            0% { background: #fff; }
+            50% { background: #ffeb3b; }
+            100% { background: #4caf50; color: white; }
+        }
+        .arithmetic-bit.animating {
+            animation: bitFlash 0.6s ease;
+        }
         .converter-section {
             flex: 1;
             display: flex;
             flex-direction: column;
+            min-height: 0;
         }
         .panel-header {
             background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
@@ -348,6 +499,8 @@
     <button onclick="loadExample('-2147483648')">Min 32-bit Signed</button>
     <button onclick="loadExample('42')">Answer (42)</button>
     <div class="separator"></div>
+    <button onclick="loadArithmeticExample()">Load to Arithmetic</button>
+    <div class="separator"></div>
     <button onclick="clearAll()">Clear All</button>
     <button onclick="copyAllResults()">Copy All</button>
     <div class="separator"></div>
@@ -503,6 +656,81 @@
     </div>
 
     <div class="right-panel">
+        <div class="arithmetic-section">
+            <div class="panel-header">
+                Binary Arithmetic Calculator
+                <span class="conversion-type">OPERATIONS</span>
+            </div>
+            <div class="arithmetic-calculator">
+                <div class="arithmetic-inputs">
+                    <input type="text" class="arithmetic-input" id="operandA" placeholder="First number" value="42">
+                    <select class="operation-selector" id="operation">
+                        <option value="add">+</option>
+                        <option value="sub">-</option>
+                        <option value="mul">×</option>
+                        <option value="and">&</option>
+                        <option value="or">|</option>
+                        <option value="xor">^</option>
+                    </select>
+                    <input type="text" class="arithmetic-input" id="operandB" placeholder="Second number" value="13">
+                    <span>=</span>
+                    <div class="arithmetic-result" id="arithmeticResult">55</div>
+                </div>
+                
+                <div class="arithmetic-operations">
+                    <button class="operation-btn active" onclick="setArithmeticOperation('add')">Add (+)</button>
+                    <button class="operation-btn" onclick="setArithmeticOperation('sub')">Subtract (-)</button>
+                    <button class="operation-btn" onclick="setArithmeticOperation('mul')">Multiply (×)</button>
+                    <button class="operation-btn" onclick="setArithmeticOperation('and')">AND (&)</button>
+                    <button class="operation-btn" onclick="setArithmeticOperation('or')">OR (|)</button>
+                    <button class="operation-btn" onclick="setArithmeticOperation('xor')">XOR (^)</button>
+                </div>
+                
+                <div class="arithmetic-visual" id="arithmeticVisual">
+                    <div class="arithmetic-bit-row">
+                        <div class="arithmetic-label">A:</div>
+                        <div class="arithmetic-bits" id="bitsA">
+                            <div class="arithmetic-bit-group" id="bitsA-group3"></div>
+                            <div class="arithmetic-bit-group" id="bitsA-group2"></div>
+                            <div class="arithmetic-bit-group" id="bitsA-group1"></div>
+                            <div class="arithmetic-bit-group" id="bitsA-group0"></div>
+                        </div>
+                    </div>
+                    <div class="arithmetic-bit-row">
+                        <div class="arithmetic-label">B:</div>
+                        <div class="arithmetic-bits" id="bitsB">
+                            <div class="arithmetic-bit-group" id="bitsB-group3"></div>
+                            <div class="arithmetic-bit-group" id="bitsB-group2"></div>
+                            <div class="arithmetic-bit-group" id="bitsB-group1"></div>
+                            <div class="arithmetic-bit-group" id="bitsB-group0"></div>
+                        </div>
+                    </div>
+                    <div class="arithmetic-bit-row">
+                        <div class="arithmetic-label">Result:</div>
+                        <div class="arithmetic-bits" id="bitsResult">
+                            <div class="arithmetic-bit-group" id="bitsResult-group3"></div>
+                            <div class="arithmetic-bit-group" id="bitsResult-group2"></div>
+                            <div class="arithmetic-bit-group" id="bitsResult-group1"></div>
+                            <div class="arithmetic-bit-group" id="bitsResult-group0"></div>
+                        </div>
+                    </div>
+                    <div class="arithmetic-bit-row" id="carryRow" style="display: none;">
+                        <div class="arithmetic-label">Carry:</div>
+                        <div class="arithmetic-bits" id="bitsCarry">
+                            <div class="arithmetic-bit-group" id="bitsCarry-group3"></div>
+                            <div class="arithmetic-bit-group" id="bitsCarry-group2"></div>
+                            <div class="arithmetic-bit-group" id="bitsCarry-group1"></div>
+                            <div class="arithmetic-bit-group" id="bitsCarry-group0"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step-by-step" id="stepByStep">
+                    Addition: 42 + 13 = 55 (binary: 00000000 00000000 00000000 00110111)
+                </div>
+            </div>
+        </div>
+        
         <div class="converter-section">
             <div class="panel-header">
                 Storage Unit Converter
@@ -632,6 +860,7 @@
     let inputBase = 'decimal';
     let storageUnit = 'bytes';
     let currentValue = 0;
+    let currentArithmeticOperation = 'add';
     let currentResults = {
         decimal: '',
         binary: '',
@@ -644,6 +873,7 @@
         storageBits: '',
         storagePages: ''
     };
+    let animationInProgress = false;
 
     function setInputBase(base) {
         inputBase = base;
@@ -1014,8 +1244,214 @@
         this.convertTimer = setTimeout(convertStorage, 300);
     });
 
+    // Arithmetic Calculator Functions
+    function setArithmeticOperation(operation) {
+        currentArithmeticOperation = operation;
+        
+        // Update button states
+        document.querySelectorAll('.operation-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        // Update select dropdown
+        document.getElementById('operation').value = operation;
+        
+        // Recalculate
+        performArithmeticOperation();
+    }
+    
+    function performArithmeticOperation() {
+        if (animationInProgress) return;
+        
+        const operandA = parseInt(document.getElementById('operandA').value) || 0;
+        const operandB = parseInt(document.getElementById('operandB').value) || 0;
+        const operation = currentArithmeticOperation;
+        
+        let result;
+        let explanation = '';
+        let showCarry = false;
+        
+        // Handle 32-bit signed/unsigned operations
+        const a = operandA >>> 0; // Convert to unsigned 32-bit
+        const b = operandB >>> 0; // Convert to unsigned 32-bit
+        
+        switch (operation) {
+            case 'add':
+                result = (a + b) >>> 0; // Keep as 32-bit unsigned
+                const resultBinary = result.toString(2).padStart(32, '0');
+                const groupedBinary = `${resultBinary.slice(0,8)} ${resultBinary.slice(8,16)} ${resultBinary.slice(16,24)} ${resultBinary.slice(24,32)}`;
+                explanation = `Addition: ${operandA} + ${operandB} = ${result} (binary: ${groupedBinary})`;
+                showCarry = true;
+                break;
+            case 'sub':
+                result = (a - b) >>> 0; // Handle as 32-bit unsigned
+                const subBinary = result.toString(2).padStart(32, '0');
+                const subGrouped = `${subBinary.slice(0,8)} ${subBinary.slice(8,16)} ${subBinary.slice(16,24)} ${subBinary.slice(24,32)}`;
+                explanation = `Subtraction: ${operandA} - ${operandB} = ${result} (binary: ${subGrouped})`;
+                break;
+            case 'mul':
+                result = Math.imul(a, b) >>> 0; // 32-bit multiplication
+                const mulBinary = result.toString(2).padStart(32, '0');
+                const mulGrouped = `${mulBinary.slice(0,8)} ${mulBinary.slice(8,16)} ${mulBinary.slice(16,24)} ${mulBinary.slice(24,32)}`;
+                explanation = `Multiplication: ${operandA} × ${operandB} = ${result} (binary: ${mulGrouped})`;
+                break;
+            case 'and':
+                result = (a & b) >>> 0;
+                const andBinary = result.toString(2).padStart(32, '0');
+                const andGrouped = `${andBinary.slice(0,8)} ${andBinary.slice(8,16)} ${andBinary.slice(16,24)} ${andBinary.slice(24,32)}`;
+                explanation = `Bitwise AND: ${operandA} & ${operandB} = ${result} (binary: ${andGrouped})`;
+                break;
+            case 'or':
+                result = (a | b) >>> 0;
+                const orBinary = result.toString(2).padStart(32, '0');
+                const orGrouped = `${orBinary.slice(0,8)} ${orBinary.slice(8,16)} ${orBinary.slice(16,24)} ${orBinary.slice(24,32)}`;
+                explanation = `Bitwise OR: ${operandA} | ${operandB} = ${result} (binary: ${orGrouped})`;
+                break;
+            case 'xor':
+                result = (a ^ b) >>> 0;
+                const xorBinary = result.toString(2).padStart(32, '0');
+                const xorGrouped = `${xorBinary.slice(0,8)} ${xorBinary.slice(8,16)} ${xorBinary.slice(16,24)} ${xorBinary.slice(24,32)}`;
+                explanation = `Bitwise XOR: ${operandA} ^ ${operandB} = ${result} (binary: ${xorGrouped})`;
+                break;
+        }
+        
+        // Update result display
+        document.getElementById('arithmeticResult').textContent = result;
+        document.getElementById('stepByStep').textContent = explanation;
+        
+        // Show/hide carry row
+        document.getElementById('carryRow').style.display = showCarry ? 'block' : 'none';
+        
+        // Update visual representation
+        updateArithmeticVisual(a, b, result, operation);
+    }
+    
+    function updateArithmeticVisual(a, b, result, operation) {
+        // Clear all bit groups
+        for (let groupIdx = 0; groupIdx < 4; groupIdx++) {
+            ['bitsA', 'bitsB', 'bitsResult', 'bitsCarry'].forEach(prefix => {
+                const group = document.getElementById(`${prefix}-group${groupIdx}`);
+                if (group) group.innerHTML = '';
+            });
+        }
+        
+        // Create 32-bit visual representation (4 groups of 8 bits)
+        for (let groupIdx = 3; groupIdx >= 0; groupIdx--) {
+            const groupStartBit = groupIdx * 8;
+            
+            for (let bitIdx = 7; bitIdx >= 0; bitIdx--) {
+                const absoluteBitPos = groupStartBit + bitIdx;
+                
+                // Operand A bits
+                const bitA = document.createElement('div');
+                bitA.className = 'arithmetic-bit';
+                const aValue = (a >>> absoluteBitPos) & 1;
+                bitA.textContent = aValue;
+                if (aValue) bitA.classList.add('active');
+                document.getElementById(`bitsA-group${groupIdx}`).appendChild(bitA);
+                
+                // Operand B bits
+                const bitB = document.createElement('div');
+                bitB.className = 'arithmetic-bit';
+                const bValue = (b >>> absoluteBitPos) & 1;
+                bitB.textContent = bValue;
+                if (bValue) bitB.classList.add('active');
+                document.getElementById(`bitsB-group${groupIdx}`).appendChild(bitB);
+                
+                // Result bits
+                const bitResult = document.createElement('div');
+                bitResult.className = 'arithmetic-bit';
+                const resultValue = (result >>> absoluteBitPos) & 1;
+                bitResult.textContent = resultValue;
+                if (resultValue) bitResult.classList.add('active');
+                document.getElementById(`bitsResult-group${groupIdx}`).appendChild(bitResult);
+                
+                // Carry bits (for addition)
+                if (operation === 'add') {
+                    const bitCarry = document.createElement('div');
+                    bitCarry.className = 'arithmetic-bit';
+                    
+                    // Calculate carry for this position
+                    let carry = 0;
+                    for (let j = 0; j <= absoluteBitPos; j++) {
+                        const aBit = (a >>> j) & 1;
+                        const bBit = (b >>> j) & 1;
+                        const sum = aBit + bBit + carry;
+                        carry = sum > 1 ? 1 : 0;
+                    }
+                    
+                    if (absoluteBitPos < 31) {
+                        // Calculate carry out for next position
+                        let nextCarry = 0;
+                        for (let j = 0; j <= absoluteBitPos + 1; j++) {
+                            const aBit = (a >>> j) & 1;
+                            const bBit = (b >>> j) & 1;
+                            const sum = aBit + bBit + nextCarry;
+                            nextCarry = sum > 1 ? 1 : 0;
+                        }
+                        const carryOut = nextCarry && (absoluteBitPos < 30);
+                        bitCarry.textContent = carryOut ? '1' : '0';
+                        if (carryOut) bitCarry.classList.add('carry');
+                    } else {
+                        // For MSB, show overflow carry
+                        const overflowCarry = (a + b) > 0xFFFFFFFF ? 1 : 0;
+                        bitCarry.textContent = overflowCarry;
+                        if (overflowCarry) bitCarry.classList.add('carry');
+                    }
+                    
+                    document.getElementById(`bitsCarry-group${groupIdx}`).appendChild(bitCarry);
+                }
+            }
+        }
+        
+        // Animate the result bits
+        animateArithmeticResult();
+    }
+    
+    function animateArithmeticResult() {
+        animationInProgress = true;
+        const resultBits = document.querySelectorAll('#bitsResult .arithmetic-bit');
+        
+        resultBits.forEach((bit, index) => {
+            setTimeout(() => {
+                bit.classList.add('animating');
+                setTimeout(() => {
+                    bit.classList.remove('animating');
+                    if (index === resultBits.length - 1) {
+                        animationInProgress = false;
+                    }
+                }, 600);
+            }, index * 100);
+        });
+    }
+    
+    function loadArithmeticExample() {
+        const currentNumber = currentValue;
+        if (currentNumber !== undefined && currentNumber !== null) {
+            document.getElementById('operandA').value = currentNumber;
+            document.getElementById('operandB').value = (currentNumber >>> 8) || 1; // Use upper bits or 1
+            performArithmeticOperation();
+        }
+    }
+    
+    // Event listeners for arithmetic calculator
+    document.getElementById('operandA').addEventListener('input', function() {
+        clearTimeout(this.calcTimer);
+        this.calcTimer = setTimeout(performArithmeticOperation, 300);
+    });
+    
+    document.getElementById('operandB').addEventListener('input', function() {
+        clearTimeout(this.calcTimer);
+        this.calcTimer = setTimeout(performArithmeticOperation, 300);
+    });
+    
+    document.getElementById('operation').addEventListener('change', function() {
+        currentArithmeticOperation = this.value;
+        setArithmeticOperation(this.value);
+    });
+    
     // Initialize
     updateBitDisplay(0);
+    performArithmeticOperation();
 </script>
 </body>
 </html>

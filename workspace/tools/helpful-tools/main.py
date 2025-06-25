@@ -140,7 +140,7 @@ TOOLS = [
     },
     {
         "name": "Binary Calculator & Converter",
-        "description": "Convert between number bases, storage units, and explore 8-bit systems",
+        "description": "Convert between number bases, storage units, and explore 32-bit systems with negative number support",
         "path": "/tools/binary-calculator",
         "file": "binary_calculator.html",
         "has_backend": False

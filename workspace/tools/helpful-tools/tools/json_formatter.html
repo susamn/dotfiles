@@ -286,13 +286,82 @@
     let lastFormattedJson = '';
     let showMarkup = true;
 
-    function isJsonlContent(text) {
-        const lines = text.trim().split('\n').filter(line => line.trim());
-        if (lines.length <= 1) return false;
+    function parseJsonlDocuments(text) {
+        const documents = [];
+        let currentJson = '';
+        let braceCount = 0;
+        let inString = false;
+        let escaped = false;
+        
+        for (let i = 0; i < text.length; i++) {
+            const char = text[i];
+            
+            if (escaped) {
+                escaped = false;
+                currentJson += char;
+                continue;
+            }
+            
+            if (char === '\\' && inString) {
+                escaped = true;
+                currentJson += char;
+                continue;
+            }
+            
+            if (char === '"') {
+                inString = !inString;
+                currentJson += char;
+                continue;
+            }
+            
+            if (!inString) {
+                if (char === '{') {
+                    braceCount++;
+                    currentJson += char;
+                } else if (char === '}') {
+                    braceCount--;
+                    currentJson += char;
+                    
+                    // If we've closed all braces, we have a complete JSON document
+                    if (braceCount === 0) {
+                        const trimmed = currentJson.trim();
+                        if (trimmed) {
+                            documents.push(trimmed);
+                        }
+                        currentJson = '';
+                    }
+                } else if (braceCount > 0) {
+                    // Inside a JSON object
+                    currentJson += char;
+                } else if (char.trim() === '') {
+                    // Whitespace outside of JSON objects - ignore
+                    continue;
+                } else {
+                    // Non-whitespace character outside of JSON objects
+                    currentJson += char;
+                }
+            } else {
+                // Inside a string
+                currentJson += char;
+            }
+        }
+        
+        // Handle any remaining content
+        const trimmed = currentJson.trim();
+        if (trimmed && braceCount === 0) {
+            documents.push(trimmed);
+        }
+        
+        return documents;
+    }
 
-        return lines.every(line => {
+    function isJsonlContent(text) {
+        const documents = parseJsonlDocuments(text);
+        if (documents.length <= 1) return false;
+
+        return documents.every(doc => {
             try {
-                JSON.parse(line.trim());
+                JSON.parse(doc);
                 return true;
             } catch {
                 return false;
@@ -315,15 +384,15 @@
         }
 
         try {
-            const lines = input.split('\n').filter(line => line.trim());
+            const documents = parseJsonlDocuments(input);
             const parsedLines = [];
 
-            for (let i = 0; i < lines.length; i++) {
+            for (let i = 0; i < documents.length; i++) {
                 try {
-                    const parsed = JSON.parse(lines[i].trim());
+                    const parsed = JSON.parse(documents[i]);
                     parsedLines.push(parsed);
                 } catch (error) {
-                    throw new Error(`Line ${i + 1}: ${error.message}`);
+                    throw new Error(`Document ${i + 1}: ${error.message}`);
                 }
             }
 

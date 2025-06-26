@@ -203,6 +203,14 @@ TOOLS = [
         "file": "network_calculator.html",
         "has_backend": False,
         "tags": ["calculator", "network", "cidr"]
+    },
+    {
+        "name": "Markdown Preview",
+        "description": "Live markdown preview with syntax reference and examples",
+        "path": "/tools/markdown-preview",
+        "file": "markdown_preview.html",
+        "has_backend": False,
+        "tags": ["preview", "markdown", "editor", "text"]
     }
 ]
 
@@ -477,6 +485,9 @@ async def landing_page():
             .tag-diagrams {{ background: #fafafa; color: #424242; border-color: #e0e0e0; }}
             .tag-uml {{ background: #fafafa; color: #424242; border-color: #e0e0e0; }}
             .tag-qr-code {{ background: #f1f8e9; color: #558b2f; border-color: #c5e1a5; }}
+            .tag-preview {{ background: #e8f5e8; color: #2e7d32; border-color: #a5d6a7; }}
+            .tag-editor {{ background: #f3e5f5; color: #7b1fa2; border-color: #ce93d8; }}
+            .tag-markdown {{ background: #fff8e1; color: #f57f17; border-color: #fff176; }}
             .no-results {{
                 text-align: center;
                 padding: 40px 20px;

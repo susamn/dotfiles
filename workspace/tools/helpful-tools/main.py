@@ -173,6 +173,13 @@ TOOLS = [
         "file": "protobuf_decoder.html",
         "has_backend": True
     },
+    {
+        "name": "Network Calculator",
+        "description": "CIDR, subnetting and IP address calculations",
+        "path": "/tools/network-calculator",
+        "file": "network_calculator.html",
+        "has_backend": False
+    }
 ]
 
 @app.get("/", response_class=HTMLResponse)

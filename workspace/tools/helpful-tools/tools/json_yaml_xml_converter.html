@@ -234,7 +234,8 @@
     <div class="toolbar-group">
         <button onclick="clearAll()">Clear All</button>
         <button onclick="copyOutput()">Copy Output</button>
-        <button class="examples-btn" onclick="showExamples()">Examples</button>
+        <button class="examples-btn" onclick="loadJsonExample()">JSON Example</button>
+        <button class="examples-btn" onclick="loadYamlExample()">YAML Example</button>
     </div>
     <div class="separator"></div>
     <div class="conversion-controls">
@@ -359,31 +360,21 @@ metadata:
 </root>`
     };
 
-    function showExamples() {
-        const example = prompt(
-            "Choose an example to load:\n\n" +
-            "1 - JSON Example\n" +
-            "2 - YAML Example\n" +
-            "3 - XML Example\n\n" +
-            "Enter 1, 2, or 3:"
-        );
-
-        if (example === '1') {
-            document.getElementById('inputContent').value = examples.json;
-            currentInputFormat = 'json';
-        } else if (example === '2') {
-            document.getElementById('inputContent').value = examples.yaml;
-            currentInputFormat = 'yaml';
-        } else if (example === '3') {
-            document.getElementById('inputContent').value = examples.xml;
-            currentInputFormat = 'xml';
-        } else {
-            return;
-        }
-
+    function loadJsonExample() {
+        document.getElementById('inputContent').value = examples.json;
+        currentInputFormat = 'json';
         updateFormatIndicators();
         updateCharCount();
-        document.getElementById('statusText').textContent = 'Example loaded - try converting to other formats';
+        document.getElementById('statusText').textContent = 'JSON example loaded - try converting to other formats';
+        document.getElementById('statusText').style.color = '#008000';
+    }
+
+    function loadYamlExample() {
+        document.getElementById('inputContent').value = examples.yaml;
+        currentInputFormat = 'yaml';
+        updateFormatIndicators();
+        updateCharCount();
+        document.getElementById('statusText').textContent = 'YAML example loaded - try converting to other formats';
         document.getElementById('statusText').style.color = '#008000';
     }
 

@@ -187,15 +187,12 @@ async def landing_page():
     tools_html = ""
     for tool in TOOLS:
         tools_html += f"""
-        <div class="tool-card">
+        <div class="tool-card" data-href="{tool['path']}">
             <div class="tool-header">
                 <h3>{tool['name']}</h3>
             </div>
             <div class="tool-description">
                 {tool['description']}
-            </div>
-            <div class="tool-footer">
-                <a href="{tool['path']}" class="tool-button">Open Tool</a>
             </div>
         </div>
         """
@@ -215,86 +212,99 @@ async def landing_page():
             }}
             body {{
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                background-color: #f0f0f0;
+                background-color: #f8f9fa;
                 color: #333;
                 padding: 20px;
             }}
             .header {{
                 text-align: center;
-                margin-bottom: 40px;
+                margin-bottom: 30px;
                 padding: 20px;
-                background: linear-gradient(to bottom, #ffffff, #e8e8e8);
-                border: 1px solid #c0c0c0;
-                border-radius: 4px;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                color: white;
             }}
             .header h1 {{
-                font-size: 2.5em;
-                margin-bottom: 10px;
-                color: #333;
+                font-size: 2.2em;
+                margin-bottom: 8px;
+                font-weight: 600;
             }}
             .header p {{
-                font-size: 1.1em;
-                color: #666;
+                font-size: 1em;
+                opacity: 0.9;
+            }}
+            .search-container {{
+                max-width: 1200px;
+                margin: 0 auto 25px auto;
+                position: relative;
+            }}
+            .search-box {{
+                width: 100%;
+                padding: 12px 16px;
+                font-size: 16px;
+                border: 2px solid #e1e5e9;
+                border-radius: 8px;
+                background: white;
+                transition: border-color 0.2s;
+                outline: none;
+            }}
+            .search-box:focus {{
+                border-color: #667eea;
+                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
             }}
             .tools-grid {{
                 display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                gap: 20px;
+                grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+                gap: 14px;
                 max-width: 1200px;
                 margin: 0 auto;
             }}
             .tool-card {{
-                background: linear-gradient(to bottom, #ffffff, #f8f8f8);
-                border: 1px solid #c0c0c0;
-                border-radius: 4px;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                background: white;
+                border: 1px solid #e1e5e9;
+                border-radius: 8px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
                 overflow: hidden;
-                transition: box-shadow 0.2s;
+                transition: all 0.2s ease;
+                cursor: pointer;
+                position: relative;
+                display: flex;
+                flex-direction: column;
             }}
             .tool-card:hover {{
-                box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+                transform: translateY(-2px);
+                box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+                border-color: #667eea;
+            }}
+            .tool-card.hidden {{
+                display: none;
             }}
             .tool-header {{
-                padding: 15px 20px 10px 20px;
-                border-bottom: 1px solid #e0e0e0;
+                padding: 12px 14px 6px 14px;
             }}
             .tool-header h3 {{
-                font-size: 1.3em;
-                color: #333;
+                font-size: 1.05em;
+                color: #2d3748;
                 margin: 0;
+                font-weight: 600;
+                line-height: 1.3;
             }}
             .tool-description {{
-                padding: 15px 20px;
-                color: #666;
-                line-height: 1.5;
+                padding: 0 14px 12px 14px;
+                color: #718096;
+                line-height: 1.3;
+                font-size: 0.85em;
+                flex-grow: 1;
             }}
-            .tool-footer {{
-                padding: 15px 20px;
-                background: linear-gradient(to bottom, #f0f0f0, #e8e8e8);
-                border-top: 1px solid #e0e0e0;
-                text-align: right;
+            .no-results {{
+                text-align: center;
+                padding: 40px 20px;
+                color: #718096;
+                display: none;
             }}
-            .tool-button {{
-                background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
-                border: 1px solid #a0a0a0;
-                padding: 8px 16px;
-                font-size: 12px;
-                cursor: pointer;
-                border-radius: 2px;
-                color: #333;
-                text-decoration: none;
-                display: inline-block;
-                transition: background 0.2s;
-            }}
-            .tool-button:hover {{
-                background: linear-gradient(to bottom, #ffffff, #e8e8e8);
-                text-decoration: none;
-                color: #333;
-            }}
-            .tool-button:active {{
-                background: linear-gradient(to bottom, #e0e0e0, #f0f0f0);
-                box-shadow: inset 1px 1px 2px rgba(0,0,0,0.2);
+            .no-results.visible {{
+                display: block;
             }}
         </style>
     </head>
@@ -303,9 +313,51 @@ async def landing_page():
             <h1>Helpful-Tools</h1>
             <p>Collection of useful web development and text processing tools</p>
         </div>
-        <div class="tools-grid">
+        <div class="search-container">
+            <input type="text" class="search-box" placeholder="Search tools..." id="searchInput">
+        </div>
+        <div class="tools-grid" id="toolsGrid">
             {tools_html}
         </div>
+        <div class="no-results" id="noResults">
+            <h3>No tools found</h3>
+            <p>Try adjusting your search terms</p>
+        </div>
+        <script>
+            document.getElementById('searchInput').addEventListener('input', function(e) {{
+                const searchTerm = e.target.value.toLowerCase();
+                const toolCards = document.querySelectorAll('.tool-card');
+                const noResults = document.getElementById('noResults');
+                let visibleCount = 0;
+                
+                toolCards.forEach(card => {{
+                    const title = card.querySelector('h3').textContent.toLowerCase();
+                    const description = card.querySelector('.tool-description').textContent.toLowerCase();
+                    
+                    if (title.includes(searchTerm) || description.includes(searchTerm)) {{
+                        card.classList.remove('hidden');
+                        visibleCount++;
+                    }} else {{
+                        card.classList.add('hidden');
+                    }}
+                }});
+                
+                if (visibleCount === 0 && searchTerm.trim() !== '') {{
+                    noResults.classList.add('visible');
+                }} else {{
+                    noResults.classList.remove('visible');
+                }}
+            }});
+            
+            document.querySelectorAll('.tool-card').forEach(card => {{
+                card.addEventListener('click', function() {{
+                    const href = this.getAttribute('data-href');
+                    if (href) {{
+                        window.location.href = href;
+                    }}
+                }});
+            }});
+        </script>
     </body>
     </html>
     """

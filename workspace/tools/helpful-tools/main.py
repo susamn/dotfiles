@@ -211,6 +211,14 @@ TOOLS = [
         "file": "markdown_preview.html",
         "has_backend": False,
         "tags": ["preview", "markdown", "editor", "text"]
+    },
+    {
+        "name": "XML & XSLT Processor",
+        "description": "Transform XML with XSLT stylesheets, validate and format XML/XSLT",
+        "path": "/tools/xml-xslt-processor",
+        "file": "xml_xslt_processor.html",
+        "has_backend": False,
+        "tags": ["processor", "xml", "xslt", "transformer"]
     }
 ]
 
@@ -488,6 +496,9 @@ async def landing_page():
             .tag-preview {{ background: #e8f5e8; color: #2e7d32; border-color: #a5d6a7; }}
             .tag-editor {{ background: #f3e5f5; color: #7b1fa2; border-color: #ce93d8; }}
             .tag-markdown {{ background: #fff8e1; color: #f57f17; border-color: #fff176; }}
+            .tag-processor {{ background: #f3e5f5; color: #7b1fa2; border-color: #ce93d8; }}
+            .tag-xslt {{ background: #e8eaf6; color: #3f51b5; border-color: #c5cae9; }}
+            .tag-transformer {{ background: #e0f2f1; color: #00695c; border-color: #80cbc4; }}
             .no-results {{
                 text-align: center;
                 padding: 40px 20px;

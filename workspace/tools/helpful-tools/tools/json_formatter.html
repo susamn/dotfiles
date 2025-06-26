@@ -487,26 +487,233 @@
         if (!path || path.trim() === '') {
             return { matches: [], filteredData: obj };
         }
-        const results = [];
+        
+        try {
+            const results = evaluateJsonPath(obj, path);
+            
+            if (results.length > 0) {
+                // For filter expressions, return the actual matched values directly
+                if (results.length === 1 && path.includes('[?(@.')) {
+                    return { matches: results, filteredData: results[0].value };
+                }
+                
+                // For multiple results or non-filter expressions, build the structure
+                const filteredData = buildFilteredStructure(results);
+                return { matches: results, filteredData: filteredData };
+            }
+            return { matches: [], filteredData: null };
+        } catch (error) {
+            console.error('JSONPath evaluation error:', error);
+            return { matches: [], filteredData: null };
+        }
+    }
+
+    function buildFilteredStructure(results) {
+        if (results.length === 1) {
+            // Single result - return the value directly
+            return results[0].value;
+        }
+        
+        // Multiple results - build a structure
         const filteredData = {};
-
-        if (path.startsWith('$.')) {
-            const pathParts = path.substring(2).split(/[\.\[\]]/).filter(p => p !== '');
-            findByPath(obj, pathParts, [], results);
-        } else if (path.startsWith('//')) {
-            const searchKey = path.substring(2);
-            findByKey(obj, searchKey, [], results);
-        } else {
-            findByKey(obj, path, [], results);
-        }
-
-        if (results.length > 0) {
-            results.forEach(result => {
-                setNestedValue(filteredData, result.path, result.value);
+        
+        // Group results by their parent path to handle arrays properly
+        const groupedResults = new Map();
+        
+        results.forEach(result => {
+            const parentPath = result.path.slice(0, -1);
+            const parentKey = parentPath.join('.');
+            const lastKey = result.path[result.path.length - 1];
+            
+            if (!groupedResults.has(parentKey)) {
+                groupedResults.set(parentKey, []);
+            }
+            
+            groupedResults.get(parentKey).push({
+                key: lastKey,
+                value: result.value,
+                fullPath: result.path
             });
-            return { matches: results, filteredData: filteredData };
+        });
+        
+        // Build the structure avoiding undefined array elements
+        groupedResults.forEach((items, parentKey) => {
+            if (parentKey === '') {
+                // Root level
+                if (items.length === 1) {
+                    Object.assign(filteredData, { [items[0].key]: items[0].value });
+                } else {
+                    // Multiple root level items
+                    items.forEach(item => {
+                        filteredData[item.key] = item.value;
+                    });
+                }
+            } else {
+                // Check if this should be an array or object
+                const isArrayContext = items.some(item => typeof item.key === 'number');
+                
+                if (isArrayContext && items.length > 1) {
+                    // Create array with only the matched items
+                    const array = items.map(item => item.value);
+                    setNestedValue(filteredData, parentKey.split('.').concat(['matches']), array);
+                } else {
+                    // Set individual values
+                    items.forEach(item => {
+                        setNestedValue(filteredData, item.fullPath, item.value);
+                    });
+                }
+            }
+        });
+        
+        return filteredData;
+    }
+
+    function evaluateJsonPath(obj, path) {
+        if (!path.startsWith('$')) {
+            // If it doesn't start with $, treat it as a simple key search
+            const results = [];
+            findByKey(obj, path, [], results);
+            return results;
         }
-        return { matches: [], filteredData: null };
+
+        const tokens = parseJsonPath(path);
+        return traverseJsonPath(obj, tokens, []);
+    }
+
+    function parseJsonPath(path) {
+        const tokens = [];
+        let i = 0;
+        
+        if (path[0] === '$') {
+            tokens.push({ type: 'root' });
+            i = 1;
+        }
+        
+        while (i < path.length) {
+            if (path[i] === '.') {
+                i++; // Skip the dot
+                if (i >= path.length) break;
+                
+                if (path[i] === '.') {
+                    // Recursive descent (..)
+                    tokens.push({ type: 'recursive' });
+                    i++;
+                } else {
+                    // Property name
+                    let prop = '';
+                    while (i < path.length && path[i] !== '.' && path[i] !== '[') {
+                        prop += path[i];
+                        i++;
+                    }
+                    if (prop) {
+                        tokens.push({ type: 'property', name: prop });
+                    }
+                }
+            } else if (path[i] === '[') {
+                i++; // Skip opening bracket
+                let bracketContent = '';
+                let depth = 1;
+                
+                while (i < path.length && depth > 0) {
+                    if (path[i] === '[') depth++;
+                    else if (path[i] === ']') depth--;
+                    
+                    if (depth > 0) {
+                        bracketContent += path[i];
+                    }
+                    i++;
+                }
+                
+                // Parse bracket content
+                if (bracketContent === '*') {
+                    tokens.push({ type: 'wildcard' });
+                } else if (bracketContent.startsWith('?')) {
+                    tokens.push({ type: 'filter', expression: bracketContent });
+                } else if (!isNaN(bracketContent)) {
+                    tokens.push({ type: 'index', value: parseInt(bracketContent) });
+                } else {
+                    // Quoted property name
+                    const unquoted = bracketContent.replace(/^['"]|['"]$/g, '');
+                    tokens.push({ type: 'property', name: unquoted });
+                }
+            } else {
+                // Property name without dot
+                let prop = '';
+                while (i < path.length && path[i] !== '.' && path[i] !== '[') {
+                    prop += path[i];
+                    i++;
+                }
+                if (prop) {
+                    tokens.push({ type: 'property', name: prop });
+                }
+            }
+        }
+        
+        return tokens;
+    }
+
+    function traverseJsonPath(obj, tokens, currentPath) {
+        if (tokens.length === 0) {
+            return [{
+                path: currentPath.slice(),
+                value: obj,
+                fullPath: '$.' + currentPath.join('.')
+            }];
+        }
+        
+        const [currentToken, ...remainingTokens] = tokens;
+        const results = [];
+        
+        switch (currentToken.type) {
+            case 'root':
+                return traverseJsonPath(obj, remainingTokens, currentPath);
+                
+            case 'property':
+                if (typeof obj === 'object' && obj !== null && obj.hasOwnProperty(currentToken.name)) {
+                    const newPath = [...currentPath, currentToken.name];
+                    return traverseJsonPath(obj[currentToken.name], remainingTokens, newPath);
+                }
+                break;
+                
+            case 'wildcard':
+                if (Array.isArray(obj)) {
+                    obj.forEach((item, index) => {
+                        const newPath = [...currentPath, index];
+                        results.push(...traverseJsonPath(item, remainingTokens, newPath));
+                    });
+                } else if (typeof obj === 'object' && obj !== null) {
+                    Object.keys(obj).forEach(key => {
+                        const newPath = [...currentPath, key];
+                        results.push(...traverseJsonPath(obj[key], remainingTokens, newPath));
+                    });
+                }
+                break;
+                
+            case 'index':
+                if (Array.isArray(obj) && currentToken.value >= 0 && currentToken.value < obj.length) {
+                    const newPath = [...currentPath, currentToken.value];
+                    return traverseJsonPath(obj[currentToken.value], remainingTokens, newPath);
+                }
+                break;
+                
+            case 'filter':
+                if (Array.isArray(obj)) {
+                    obj.forEach((item, index) => {
+                        if (evaluateFilterExpression(item, currentToken.expression)) {
+                            const newPath = [...currentPath, index];
+                            results.push(...traverseJsonPath(item, remainingTokens, newPath));
+                        }
+                    });
+                }
+                break;
+                
+            case 'recursive':
+                // Deep search - find all matching nodes recursively
+                results.push(...findRecursive(obj, remainingTokens, currentPath));
+                break;
+        }
+        
+        return results;
     }
 
     function findByPath(obj, pathParts, currentPath, results) {
@@ -518,7 +725,41 @@
             });
             return;
         }
+        
         const [currentPart, ...remainingParts] = pathParts;
+        
+        // Handle filter expressions [?(@.property == "value")]
+        if (currentPart.startsWith('?(@.')) {
+            if (Array.isArray(obj)) {
+                obj.forEach((item, index) => {
+                    if (evaluateFilter(item, currentPart)) {
+                        currentPath.push(index);
+                        findByPath(item, remainingParts, currentPath, results);
+                        currentPath.pop();
+                    }
+                });
+            }
+            return;
+        }
+        
+        // Handle wildcard '*' - match all elements/properties
+        if (currentPart === '*') {
+            if (Array.isArray(obj)) {
+                obj.forEach((item, index) => {
+                    currentPath.push(index);
+                    findByPath(item, remainingParts, currentPath, results);
+                    currentPath.pop();
+                });
+            } else if (typeof obj === 'object' && obj !== null) {
+                Object.keys(obj).forEach(key => {
+                    currentPath.push(key);
+                    findByPath(obj[key], remainingParts, currentPath, results);
+                    currentPath.pop();
+                });
+            }
+            return;
+        }
+        
         if (Array.isArray(obj)) {
             const index = parseInt(currentPart);
             if (!isNaN(index) && index >= 0 && index < obj.length) {
@@ -533,6 +774,96 @@
                 currentPath.pop();
             }
         }
+    }
+
+    function evaluateFilterExpression(item, filterExpression) {
+        // Handle different filter expression formats
+        // ?(@.property == "value") or ?(@ == "value") or ?(@.property)
+        
+        try {
+            // Remove the leading ? and parse the expression
+            const expr = filterExpression.substring(1);
+            
+            // Match patterns like (@.property == "value")
+            const comparisonMatch = expr.match(/\(@\.?([^=!<>\s]*)\s*(==|!=|<=|>=|<|>)\s*(.+)\)/);
+            if (comparisonMatch) {
+                const [, property, operator, valueStr] = comparisonMatch;
+                const actualValue = property ? getNestedProperty(item, property) : item;
+                let expectedValue = valueStr.trim();
+                
+                // Remove quotes if present
+                if ((expectedValue.startsWith('"') && expectedValue.endsWith('"')) ||
+                    (expectedValue.startsWith("'") && expectedValue.endsWith("'"))) {
+                    expectedValue = expectedValue.slice(1, -1);
+                }
+                
+                // Type conversion for numbers
+                if (!isNaN(expectedValue) && expectedValue !== '' && !isNaN(parseFloat(expectedValue))) {
+                    expectedValue = parseFloat(expectedValue);
+                } else if (expectedValue === 'true') {
+                    expectedValue = true;
+                } else if (expectedValue === 'false') {
+                    expectedValue = false;
+                } else if (expectedValue === 'null') {
+                    expectedValue = null;
+                }
+                
+                // Evaluate the condition
+                switch (operator) {
+                    case '==': return actualValue == expectedValue;
+                    case '!=': return actualValue != expectedValue;
+                    case '<': return actualValue < expectedValue;
+                    case '<=': return actualValue <= expectedValue;
+                    case '>': return actualValue > expectedValue;
+                    case '>=': return actualValue >= expectedValue;
+                    default: return false;
+                }
+            }
+            
+            // Match simple existence check like (@.property)
+            const existenceMatch = expr.match(/\(@\.([^)]+)\)/);
+            if (existenceMatch) {
+                const [, property] = existenceMatch;
+                const value = getNestedProperty(item, property);
+                return value !== undefined && value !== null;
+            }
+            
+            return false;
+        } catch (error) {
+            console.error('Filter evaluation error:', error);
+            return false;
+        }
+    }
+
+    function findRecursive(obj, tokens, currentPath) {
+        const results = [];
+        
+        // Try to match at current level
+        const matches = traverseJsonPath(obj, tokens, currentPath);
+        results.push(...matches);
+        
+        // Recurse into children
+        if (typeof obj === 'object' && obj !== null) {
+            if (Array.isArray(obj)) {
+                obj.forEach((item, index) => {
+                    const newPath = [...currentPath, index];
+                    results.push(...findRecursive(item, tokens, newPath));
+                });
+            } else {
+                Object.keys(obj).forEach(key => {
+                    const newPath = [...currentPath, key];
+                    results.push(...findRecursive(obj[key], tokens, newPath));
+                });
+            }
+        }
+        
+        return results;
+    }
+
+    function getNestedProperty(obj, path) {
+        return path.split('.').reduce((current, key) => {
+            return current && current[key] !== undefined ? current[key] : undefined;
+        }, obj);
     }
 
     function findByKey(obj, searchKey, currentPath, results) {

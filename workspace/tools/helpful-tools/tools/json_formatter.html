@@ -254,7 +254,7 @@
     <div class="separator"></div>
     <div class="search-controls">
         <label>Search:</label>
-        <input type="text" id="searchInput" placeholder="e.g., $.users[0].name or //name" style="width: 200px; padding: 3px 6px; font-size: 11px; border: 1px solid #a0a0a0;">
+        <input type="text" id="searchInput" placeholder="e.g., $.users[0].name or //name" style="width: 300px; padding: 6px 8px; font-size: 12px; border: 2px solid #a0a0a0;">
         <button onclick="clearSearch()">Clear</button>
     </div>
 </div>
@@ -436,6 +436,7 @@
 
     function performJsonlSearch() {
         const searchQuery = document.getElementById('searchInput').value.trim();
+        const searchInput = document.getElementById('searchInput');
         const statusText = document.getElementById('statusText');
 
         if (!isJsonlMode || !jsonlData) {
@@ -444,6 +445,7 @@
 
         if (!searchQuery) {
             formatJsonl();
+            searchInput.style.borderColor = '#a0a0a0';
             return;
         }
 
@@ -466,14 +468,17 @@
                 document.getElementById('outputJson').innerHTML = htmlOutput;
                 statusText.textContent = `Found ${totalMatches} matches across ${htmlOutput.split('Line ').length - 1} lines`;
                 statusText.style.color = '#008000';
+                searchInput.style.borderColor = '#388e3c';
             } else {
                 document.getElementById('outputJson').innerHTML = '<div style="padding: 12px; color: #888; font-style: italic;">No matches found in JSONL</div>';
                 statusText.textContent = 'No matches found';
                 statusText.style.color = '#ff8800';
+                searchInput.style.borderColor = '#d32f2f';
             }
         } catch (error) {
             statusText.textContent = 'Search error: ' + error.message;
             statusText.style.color = '#cc0000';
+            searchInput.style.borderColor = '#d32f2f';
         }
     }
 
@@ -912,6 +917,7 @@
         }
 
         const searchQuery = document.getElementById('searchInput').value.trim();
+        const searchInput = document.getElementById('searchInput');
         const statusText = document.getElementById('statusText');
         if (!originalParsedData) {
             return;
@@ -921,6 +927,7 @@
             document.getElementById('outputJson').innerHTML = collapsibleHtml;
             statusText.textContent = 'JSON formatted successfully';
             statusText.style.color = '#008000';
+            searchInput.style.borderColor = '#a0a0a0';
             return;
         }
         try {
@@ -930,14 +937,17 @@
                 document.getElementById('outputJson').innerHTML = collapsibleHtml;
                 statusText.textContent = `Found ${searchResult.matches.length} matches`;
                 statusText.style.color = '#008000';
+                searchInput.style.borderColor = '#388e3c';
             } else {
                 document.getElementById('outputJson').innerHTML = '<div style="padding: 12px; color: #888; font-style: italic;">No matches found</div>';
                 statusText.textContent = 'No matches found';
                 statusText.style.color = '#ff8800';
+                searchInput.style.borderColor = '#d32f2f';
             }
         } catch (error) {
             statusText.textContent = 'Search error: ' + error.message;
             statusText.style.color = '#cc0000';
+            searchInput.style.borderColor = '#d32f2f';
         }
     }
 

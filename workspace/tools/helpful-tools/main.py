@@ -227,6 +227,14 @@ TOOLS = [
         "file": "backslash_escape.html",
         "has_backend": False,
         "tags": ["escape", "unescape", "backslash", "text"]
+    },
+    {
+        "name": "X.509 Certificate Decoder",
+        "description": "Decode and analyze X.509 certificates in PEM format",
+        "path": "/tools/certificate-decoder",
+        "file": "certificate_decoder.html",
+        "has_backend": False,
+        "tags": ["decoder", "certificate", "x509", "security", "pem"]
     }
 ]
 

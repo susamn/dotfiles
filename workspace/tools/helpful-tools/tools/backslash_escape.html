@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backslash Escape/Unescape - Helpful Tools</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        .header {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 12px 20px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            font-size: 1.5em;
+            color: #333;
+        }
+        .header a {
+            background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+            border: 1px solid #a0a0a0;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 2px;
+            color: #333;
+            text-decoration: none;
+        }
+        .header a:hover {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+        }
+        .toolbar {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .toolbar button {
+            background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+            border: 1px solid #a0a0a0;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 2px;
+            color: #333;
+        }
+        .toolbar button:hover {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+        }
+        .toolbar button:active {
+            background: linear-gradient(to bottom, #e0e0e0, #f0f0f0);
+            box-shadow: inset 1px 1px 2px rgba(0,0,0,0.2);
+        }
+        .separator {
+            width: 1px;
+            height: 20px;
+            background: #c0c0c0;
+            margin: 0 4px;
+        }
+        .main-container {
+            display: flex;
+            height: calc(100vh - 175px);
+        }
+        .panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #c0c0c0;
+        }
+        .panel:last-child {
+            border-right: none;
+        }
+        .panel-header {
+            background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #555;
+        }
+        .panel-content {
+            flex: 1;
+            position: relative;
+            background: #ffffff;
+        }
+        .text-area {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            padding: 16px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            background: #ffffff;
+            color: #000000;
+            resize: none;
+            overflow: auto;
+        }
+        .text-area:focus {
+            background: #fffef8;
+        }
+        .status-bar {
+            background: linear-gradient(to bottom, #e8e8e8, #d0d0d0);
+            border-top: 1px solid #c0c0c0;
+            padding: 4px 12px;
+            font-size: 11px;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .escape-info {
+            background: #f8f8f8;
+            border: 1px solid #e0e0e0;
+            padding: 12px;
+            margin: 12px;
+            border-radius: 4px;
+        }
+        .escape-info h3 {
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        .escape-examples {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            color: #555;
+            line-height: 1.4;
+        }
+        .example-row {
+            display: flex;
+            margin-bottom: 4px;
+        }
+        .example-char {
+            width: 120px;
+            color: #333;
+            font-weight: bold;
+        }
+        .example-desc {
+            color: #666;
+        }
+        .character-count {
+            font-size: 10px;
+            color: #999;
+        }
+        .examples-section {
+            background: linear-gradient(to bottom, #f8f8f8, #f0f0f0);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+        .example-btn {
+            background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+            border: 1px solid #a0a0a0;
+            padding: 4px 8px;
+            margin: 2px;
+            font-size: 11px;
+            cursor: pointer;
+            border-radius: 2px;
+            color: #333;
+        }
+        .example-btn:hover {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+        }
+        .info-section {
+            background: #f8f8f8;
+            border-top: 1px solid #e0e0e0;
+            padding: 12px;
+        }
+        .info-section h3 {
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        .escape-examples {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            color: #555;
+            line-height: 1.4;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 4px;
+        }
+        .example-row {
+            display: flex;
+        }
+        .example-char {
+            width: 60px;
+            color: #333;
+            font-weight: bold;
+        }
+        .example-desc {
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <h1>Backslash Escape/Unescape</h1>
+    <a href="/">Back to Tools</a>
+</div>
+
+<div class="toolbar">
+    <button onclick="escapeText()">Escape →</button>
+    <button onclick="unescapeText()">← Unescape</button>
+    <div class="separator"></div>
+    <button onclick="clearAll()">Clear All</button>
+    <button onclick="swapPanels()">Swap ⇄</button>
+    <div class="separator"></div>
+    <button onclick="copyLeft()">Copy Left</button>
+    <button onclick="copyRight()">Copy Right</button>
+</div>
+
+<div class="examples-section">
+    <strong>Quick Examples:</strong>
+    <button class="example-btn" onclick="loadExample('Hello\\nWorld\\t!')">Newline & Tab</button>
+    <button class="example-btn" onclick="loadExample('Say \\"Hello\\" to the world')">Quotes</button>
+    <button class="example-btn" onclick="loadExample('Path: C:\\\\Users\\\\Name\\\\file.txt')">File Path</button>
+    <button class="example-btn" onclick="loadExample('JSON: {\\"name\\": \\"John\\", \\"age\\": 30}')">JSON String</button>
+    <button class="example-btn" onclick="loadExample('Regex: \\\\d+\\\\.\\\\d+')">Regex Pattern</button>
+</div>
+
+<div class="main-container">
+    <div class="panel">
+        <div class="panel-header">Input Text (Unescaped)</div>
+        <div class="panel-content">
+            <textarea class="text-area" id="inputText" placeholder="Enter text to escape..."></textarea>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header">Output Text (Escaped)</div>
+        <div class="panel-content">
+            <textarea class="text-area" id="outputText" placeholder="Escaped text will appear here..."></textarea>
+        </div>
+        <div class="info-section">
+            <h3>Common Escape Sequences</h3>
+            <div class="escape-examples">
+                <div class="example-row">
+                    <span class="example-char">\\n</span>
+                    <span class="example-desc">New line</span>
+                </div>
+                <div class="example-row">
+                    <span class="example-char">\\t</span>
+                    <span class="example-desc">Tab</span>
+                </div>
+                <div class="example-row">
+                    <span class="example-char">\\r</span>
+                    <span class="example-desc">Carriage return</span>
+                </div>
+                <div class="example-row">
+                    <span class="example-char">\\\\</span>
+                    <span class="example-desc">Backslash</span>
+                </div>
+                <div class="example-row">
+                    <span class="example-char">\\"</span>
+                    <span class="example-desc">Double quote</span>
+                </div>
+                <div class="example-row">
+                    <span class="example-char">\\'</span>
+                    <span class="example-desc">Single quote</span>
+                </div>
+                <div class="example-row">
+                    <span class="example-char">\\0</span>
+                    <span class="example-desc">Null character</span>
+                </div>
+                <div class="example-row">
+                    <span class="example-char">\\b</span>
+                    <span class="example-desc">Backspace</span>
+                </div>
+                <div class="example-row">
+                    <span class="example-char">\\f</span>
+                    <span class="example-desc">Form feed</span>
+                </div>
+                <div class="example-row">
+                    <span class="example-char">\\v</span>
+                    <span class="example-desc">Vertical tab</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="status-bar">
+    <div id="statusText">Ready - Enter text to escape or unescape</div>
+    <div>
+        <span class="character-count">Input: <span id="inputCount">0</span> chars</span>
+        <span class="character-count" style="margin-left: 15px;">Output: <span id="outputCount">0</span> chars</span>
+    </div>
+</div>
+
+<script>
+    function escapeText() {
+        const input = document.getElementById('inputText').value;
+        const output = escapeString(input);
+        document.getElementById('outputText').value = output;
+        updateStatus('Text escaped');
+        updateCharCounts();
+    }
+
+    function unescapeText() {
+        const input = document.getElementById('outputText').value;
+        try {
+            const output = unescapeString(input);
+            document.getElementById('inputText').value = output;
+            updateStatus('Text unescaped');
+        } catch (error) {
+            updateStatus('Error unescaping: ' + error.message, true);
+        }
+        updateCharCounts();
+    }
+
+    function escapeString(str) {
+        return str
+            .replace(/\\/g, '\\\\')  // Escape backslashes first
+            .replace(/\n/g, '\\n')   // Newlines
+            .replace(/\t/g, '\\t')   // Tabs
+            .replace(/\r/g, '\\r')   // Carriage returns
+            .replace(/"/g, '\\"')    // Double quotes
+            .replace(/'/g, "\\'")    // Single quotes
+            .replace(/\0/g, '\\0')   // Null characters
+            .replace(/\b/g, '\\b')   // Backspace
+            .replace(/\f/g, '\\f')   // Form feed
+            .replace(/\v/g, '\\v');  // Vertical tab
+    }
+
+    function unescapeString(str) {
+        return str
+            .replace(/\\n/g, '\n')   // Newlines
+            .replace(/\\t/g, '\t')   // Tabs
+            .replace(/\\r/g, '\r')   // Carriage returns
+            .replace(/\\"/g, '"')    // Double quotes
+            .replace(/\\'/g, "'")    // Single quotes
+            .replace(/\\0/g, '\0')   // Null characters
+            .replace(/\\b/g, '\b')   // Backspace
+            .replace(/\\f/g, '\f')   // Form feed
+            .replace(/\\v/g, '\v')   // Vertical tab
+            .replace(/\\\\/g, '\\'); // Backslashes last
+    }
+
+    function clearAll() {
+        document.getElementById('inputText').value = '';
+        document.getElementById('outputText').value = '';
+        updateStatus('Cleared all text');
+        updateCharCounts();
+    }
+
+    function swapPanels() {
+        const inputText = document.getElementById('inputText').value;
+        const outputText = document.getElementById('outputText').value;
+        
+        document.getElementById('inputText').value = outputText;
+        document.getElementById('outputText').value = inputText;
+        updateStatus('Panels swapped');
+        updateCharCounts();
+    }
+
+    function copyLeft() {
+        const text = document.getElementById('inputText').value;
+        copyToClipboard(text, 'Input text copied to clipboard');
+    }
+
+    function copyRight() {
+        const text = document.getElementById('outputText').value;
+        copyToClipboard(text, 'Output text copied to clipboard');
+    }
+
+    function copyToClipboard(text, message) {
+        if (!text) {
+            updateStatus('Nothing to copy', true);
+            return;
+        }
+
+        navigator.clipboard.writeText(text).then(() => {
+            updateStatus(message);
+        }).catch(() => {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            updateStatus(message);
+        });
+    }
+
+    function loadExample(exampleText) {
+        document.getElementById('inputText').value = exampleText;
+        escapeText();
+        updateStatus('Example loaded');
+    }
+
+    function updateStatus(message, isError = false) {
+        const statusText = document.getElementById('statusText');
+        statusText.textContent = message;
+        statusText.style.color = isError ? '#cc0000' : '#008000';
+        
+        // Reset to default after 3 seconds
+        setTimeout(() => {
+            statusText.textContent = 'Ready - Enter text to escape or unescape';
+            statusText.style.color = '#666';
+        }, 3000);
+    }
+
+    function updateCharCounts() {
+        const inputCount = document.getElementById('inputText').value.length;
+        const outputCount = document.getElementById('outputText').value.length;
+        
+        document.getElementById('inputCount').textContent = inputCount;
+        document.getElementById('outputCount').textContent = outputCount;
+    }
+
+    // Auto-escape on input
+    document.getElementById('inputText').addEventListener('input', function() {
+        if (this.value) {
+            const output = escapeString(this.value);
+            document.getElementById('outputText').value = output;
+        } else {
+            document.getElementById('outputText').value = '';
+        }
+        updateCharCounts();
+    });
+
+    // Auto-unescape on output input
+    document.getElementById('outputText').addEventListener('input', function() {
+        updateCharCounts();
+    });
+
+    // Initialize character counts
+    updateCharCounts();
+</script>
+</body>
+</html>

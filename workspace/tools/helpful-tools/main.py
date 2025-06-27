@@ -219,6 +219,14 @@ TOOLS = [
         "file": "xml_xslt_processor.html",
         "has_backend": False,
         "tags": ["processor", "xml", "xslt", "transformer"]
+    },
+    {
+        "name": "Backslash Escape/Unescape",
+        "description": "Escape and unescape backslash sequences in text",
+        "path": "/tools/backslash-escape",
+        "file": "backslash_escape.html",
+        "has_backend": False,
+        "tags": ["escape", "unescape", "backslash", "text"]
     }
 ]
 

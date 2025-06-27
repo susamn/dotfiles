@@ -228,6 +228,7 @@
     <button onclick="formatJson()">Format JSON</button>
     <button onclick="formatJsonl()">Format JSONL</button>
     <button onclick="minifyJson()">Minify</button>
+    <button onclick="stringifyJson()">Stringify</button>
     <div class="separator"></div>
     <button onclick="clearAll()">Clear</button>
     <button onclick="copyFormatted()">Copy Formatted</button>
@@ -1182,6 +1183,35 @@
                 output.innerHTML = `<pre style="margin: 0; white-space: pre-wrap; font-family: inherit;">${minified.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`;
             }
             statusText.textContent = 'JSON minified successfully';
+            statusText.style.color = '#008000';
+        } catch (error) {
+            output.innerHTML = `<div class="error-display">Error: ${error.message}</div>`;
+            statusText.textContent = 'JSON parsing error';
+            statusText.style.color = '#cc0000';
+            lastFormattedJson = '';
+        }
+    }
+
+    function stringifyJson() {
+        const input = document.getElementById('inputJson').value.trim();
+        const output = document.getElementById('outputJson');
+        const statusText = document.getElementById('statusText');
+        if (!input) {
+            return;
+        }
+        try {
+            // Parse as JSON first to validate
+            const parsed = JSON.parse(input);
+            // Convert back to escaped string
+            const stringified = JSON.stringify(JSON.stringify(parsed));
+            lastFormattedJson = stringified;
+            if (showMarkup) {
+                const highlighted = syntaxHighlight(stringified);
+                output.innerHTML = highlighted;
+            } else {
+                output.innerHTML = `<pre style="margin: 0; white-space: pre-wrap; font-family: inherit;">${stringified.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`;
+            }
+            statusText.textContent = 'JSON stringified successfully';
             statusText.style.color = '#008000';
         } catch (error) {
             output.innerHTML = `<div class="error-display">Error: ${error.message}</div>`;

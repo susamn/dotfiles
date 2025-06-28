@@ -235,6 +235,30 @@ TOOLS = [
         "file": "certificate_decoder.html",
         "has_backend": False,
         "tags": ["decoder", "certificate", "x509", "security", "pem"]
+    },
+    {
+        "name": "CSS ↔ SVG Converter",
+        "description": "Convert between CSS styles and SVG elements bidirectionally",
+        "path": "/tools/css-svg-converter",
+        "file": "css_svg_converter.html",
+        "has_backend": False,
+        "tags": ["converter", "css", "svg", "graphics", "design"]
+    },
+    {
+        "name": "Code Playground",
+        "description": "CodePen-like HTML/CSS/JavaScript editor with live preview and syntax highlighting",
+        "path": "/tools/code-playground",
+        "file": "codepen_clone.html",
+        "has_backend": False,
+        "tags": ["editor", "playground", "html", "css", "javascript", "preview"]
+    },
+    {
+        "name": "Image Converter",
+        "description": "Convert images between different formats (PNG, SVG, JPEG, WebP, GIF, BMP, ICO)",
+        "path": "/tools/image-converter",
+        "file": "image_converter.html",
+        "has_backend": False,
+        "tags": ["converter", "imaging", "graphics", "design"]
     }
 ]
 

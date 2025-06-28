@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XML & XSLT Processor - Helpful Tools</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        .header {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 12px 20px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            font-size: 1.5em;
+            color: #333;
+        }
+        .header a {
+            background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+            border: 1px solid #a0a0a0;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 2px;
+            color: #333;
+            text-decoration: none;
+        }
+        .header a:hover {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+        }
+        .toolbar {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            flex-wrap: wrap;
+        }
+        .toolbar button {
+            background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+            border: 1px solid #a0a0a0;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 2px;
+            color: #333;
+        }
+        .toolbar button:hover {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+        }
+        .toolbar button:active {
+            background: linear-gradient(to bottom, #e0e0e0, #f0f0f0);
+            box-shadow: inset 1px 1px 2px rgba(0,0,0,0.2);
+        }
+        .separator {
+            width: 1px;
+            height: 20px;
+            background: #c0c0c0;
+            margin: 0 4px;
+        }
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            height: calc(100vh - 175px);
+            gap: 1px;
+            background: #c0c0c0;
+        }
+        .panel {
+            display: flex;
+            flex-direction: column;
+            background: #ffffff;
+        }
+        .panel-header {
+            background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #555;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .format-indicator {
+            background: #28a745;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: normal;
+        }
+        .xslt-indicator {
+            background: #6f42c1;
+        }
+        .output-indicator {
+            background: #17a2b8;
+        }
+        .panel-content {
+            flex: 1;
+            position: relative;
+            background: #ffffff;
+        }
+        .text-area {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            padding: 12px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            background: #ffffff;
+            color: #000000;
+            resize: none;
+            white-space: pre;
+            overflow: auto;
+        }
+        .output-area {
+            width: 100%;
+            height: 100%;
+            padding: 12px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            background: #ffffff;
+            color: #000000;
+            overflow: auto;
+            white-space: pre;
+            border: none;
+        }
+        .error-display {
+            background: #fff0f0;
+            color: #cc0000;
+            padding: 12px;
+            border-left: 4px solid #cc0000;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        .status-bar {
+            background: linear-gradient(to bottom, #e8e8e8, #d0d0d0);
+            border-top: 1px solid #c0c0c0;
+            padding: 4px 12px;
+            font-size: 11px;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .examples-btn {
+            background: linear-gradient(to bottom, #e8f4fd, #b8d4f0) !important;
+            border-color: #7fb3d3 !important;
+        }
+        .examples-btn:hover {
+            background: linear-gradient(to bottom, #f0f8ff, #d0e4f7) !important;
+        }
+        .process-btn {
+            background: linear-gradient(to bottom, #e8f5e8, #a5d6a7) !important;
+            border-color: #28a745 !important;
+            color: #1b5e20 !important;
+            font-weight: bold;
+        }
+        .process-btn:hover {
+            background: linear-gradient(to bottom, #f1f8e9, #c8e6c9) !important;
+        }
+        .toggle-layout {
+            background: linear-gradient(to bottom, #fff3e0, #ffcc95) !important;
+            border-color: #ff6b35 !important;
+            color: #d84315 !important;
+        }
+        .toggle-layout:hover {
+            background: linear-gradient(to bottom, #fff8f0, #ffd6b8) !important;
+        }
+        .two-panel {
+            grid-template-columns: 1fr 1fr;
+        }
+        .xml-tag { color: #800000; font-weight: bold; }
+        .xml-attribute { color: #ff8000; }
+        .xml-value { color: #0000ff; }
+        .xml-text { color: #000000; }
+        .xml-comment { color: #888888; font-style: italic; }
+        .xml-declaration { color: #800080; }
+    </style>
+</head>
+<body>
+<div class="header">
+    <h1>XML & XSLT Processor</h1>
+    <a href="/">Back to Tools</a>
+</div>
+<div class="toolbar">
+    <button class="process-btn" onclick="processXslt()">Transform XML</button>
+    <div class="separator"></div>
+    <button onclick="validateXml()">Validate XML</button>
+    <button onclick="formatXml()">Format XML</button>
+    <button onclick="formatXslt()">Format XSLT</button>
+    <div class="separator"></div>
+    <button onclick="clearAll()">Clear All</button>
+    <button onclick="copyOutput()">Copy Output</button>
+    <div class="separator"></div>
+    <button class="examples-btn" onclick="loadBookExample()">Book Example</button>
+    <button class="examples-btn" onclick="loadTableExample()">Table Example</button>
+    <div class="separator"></div>
+    <button class="toggle-layout" onclick="toggleLayout()">2-Panel View</button>
+</div>
+<div class="main-container" id="mainContainer">
+    <div class="panel">
+        <div class="panel-header">
+            XML Input
+            <span class="format-indicator" id="xmlFormat">XML</span>
+        </div>
+        <div class="panel-content">
+            <textarea class="text-area" id="xmlInput" placeholder="Paste your XML here..."></textarea>
+        </div>
+    </div>
+    <div class="panel">
+        <div class="panel-header">
+            XSLT Stylesheet
+            <span class="format-indicator xslt-indicator" id="xsltFormat">XSLT</span>
+        </div>
+        <div class="panel-content">
+            <textarea class="text-area" id="xsltInput" placeholder="Paste your XSLT stylesheet here..."></textarea>
+        </div>
+    </div>
+    <div class="panel" id="outputPanel">
+        <div class="panel-header">
+            Transformed Output
+            <span class="format-indicator output-indicator" id="outputFormat">RESULT</span>
+        </div>
+        <div class="panel-content">
+            <div class="output-area" id="outputContent"></div>
+        </div>
+    </div>
+</div>
+<div class="status-bar">
+    <div id="statusText">Ready - Load XML and XSLT to transform</div>
+    <div id="charCount">XML: 0 chars | XSLT: 0 chars</div>
+</div>
+
+<script>
+    let isThreePanel = true;
+
+    const examples = {
+        bookXml: `<?xml version="1.0" encoding="UTF-8"?>
+<library>
+    <book id="1" year="2020">
+        <title>XML Processing Guide</title>
+        <author>John Smith</author>
+        <author>Jane Doe</author>
+        <genre>Technical</genre>
+        <price currency="USD">29.99</price>
+        <description>A comprehensive guide to XML processing and XSLT transformations.</description>
+    </book>
+    <book id="2" year="2019">
+        <title>Web Development Basics</title>
+        <author>Alice Johnson</author>
+        <genre>Web Development</genre>
+        <price currency="USD">24.99</price>
+        <description>Learn the fundamentals of modern web development.</description>
+    </book>
+    <book id="3" year="2021">
+        <title>Advanced JavaScript</title>
+        <author>Bob Wilson</author>
+        <author>Carol Brown</author>
+        <genre>Programming</genre>
+        <price currency="USD">34.99</price>
+        <description>Master advanced JavaScript concepts and patterns.</description>
+    </book>
+</library>`,
+
+        bookXslt: `<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+    <xsl:output method="html" indent="yes"/>
+    
+    <xsl:template match="/">
+        <html>
+            <head>
+                <title>Library Catalog</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 20px; }
+                    .book { border: 1px solid #ccc; margin: 10px 0; padding: 15px; border-radius: 5px; }
+                    .title { font-size: 18px; font-weight: bold; color: #2c5aa0; }
+                    .authors { color: #666; margin: 5px 0; }
+                    .price { color: #28a745; font-weight: bold; }
+                    .genre { background: #f8f9fa; padding: 2px 8px; border-radius: 3px; font-size: 12px; }
+                </style>
+            </head>
+            <body>
+                <h1>Library Catalog</h1>
+                <xsl:for-each select="library/book">
+                    <xsl:sort select="@year" order="descending"/>
+                    <div class="book">
+                        <div class="title"><xsl:value-of select="title"/></div>
+                        <div class="authors">
+                            Authors: 
+                            <xsl:for-each select="author">
+                                <xsl:value-of select="."/>
+                                <xsl:if test="position() != last()">, </xsl:if>
+                            </xsl:for-each>
+                        </div>
+                        <div>
+                            <span class="genre"><xsl:value-of select="genre"/></span>
+                            | Year: <xsl:value-of select="@year"/>
+                        </div>
+                        <div class="price">Price: $<xsl:value-of select="price"/></div>
+                        <p><xsl:value-of select="description"/></p>
+                    </div>
+                </xsl:for-each>
+            </body>
+        </html>
+    </xsl:template>
+</xsl:stylesheet>`,
+
+        tableXml: `<?xml version="1.0" encoding="UTF-8"?>
+<employees>
+    <employee id="101">
+        <name>John Smith</name>
+        <department>Engineering</department>
+        <position>Senior Developer</position>
+        <salary>75000</salary>
+        <location>New York</location>
+    </employee>
+    <employee id="102">
+        <name>Sarah Johnson</name>
+        <department>Marketing</department>
+        <position>Marketing Manager</position>
+        <salary>65000</salary>
+        <location>Los Angeles</location>
+    </employee>
+    <employee id="103">
+        <name>Mike Wilson</name>
+        <department>Engineering</department>
+        <position>DevOps Engineer</position>
+        <salary>70000</salary>
+        <location>Seattle</location>
+    </employee>
+    <employee id="104">
+        <name>Lisa Brown</name>
+        <department>Design</department>
+        <position>UX Designer</position>
+        <salary>68000</salary>
+        <location>San Francisco</location>
+    </employee>
+</employees>`,
+
+        tableXslt: `<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+    <xsl:output method="html" indent="yes"/>
+    
+    <xsl:template match="/">
+        <html>
+            <head>
+                <title>Employee Directory</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 20px; }
+                    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                    th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+                    th { background-color: #f2f2f2; font-weight: bold; }
+                    tr:nth-child(even) { background-color: #f9f9f9; }
+                    .salary { color: #28a745; font-weight: bold; }
+                    .department { font-weight: bold; }
+                    .summary { background: #e9ecef; padding: 15px; border-radius: 5px; margin: 20px 0; }
+                </style>
+            </head>
+            <body>
+                <h1>Employee Directory</h1>
+                
+                <div class="summary">
+                    <h3>Summary</h3>
+                    <p>Total Employees: <xsl:value-of select="count(employees/employee)"/></p>
+                    <p>Average Salary: $<xsl:value-of select="format-number(sum(employees/employee/salary) div count(employees/employee), '#,##0')"/></p>
+                </div>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Department</th>
+                            <th>Position</th>
+                            <th>Salary</th>
+                            <th>Location</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <xsl:for-each select="employees/employee">
+                            <xsl:sort select="department"/>
+                            <xsl:sort select="name"/>
+                            <tr>
+                                <td><xsl:value-of select="@id"/></td>
+                                <td><xsl:value-of select="name"/></td>
+                                <td class="department"><xsl:value-of select="department"/></td>
+                                <td><xsl:value-of select="position"/></td>
+                                <td class="salary">$<xsl:value-of select="format-number(salary, '#,##0')"/></td>
+                                <td><xsl:value-of select="location"/></td>
+                            </tr>
+                        </xsl:for-each>
+                    </tbody>
+                </table>
+            </body>
+        </html>
+    </xsl:template>
+</xsl:stylesheet>`
+    };
+
+    function processXslt() {
+        const xmlText = document.getElementById('xmlInput').value.trim();
+        const xsltText = document.getElementById('xsltInput').value.trim();
+        const output = document.getElementById('outputContent');
+        const statusText = document.getElementById('statusText');
+
+        if (!xmlText || !xsltText) {
+            statusText.textContent = 'Please provide both XML and XSLT content';
+            statusText.style.color = '#ff8800';
+            return;
+        }
+
+        try {
+            // Parse XML
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+            
+            // Check for XML parsing errors
+            const xmlError = xmlDoc.querySelector('parsererror');
+            if (xmlError) {
+                throw new Error('XML parsing error: ' + xmlError.textContent);
+            }
+
+            // Parse XSLT
+            const xsltDoc = parser.parseFromString(xsltText, 'text/xml');
+            
+            // Check for XSLT parsing errors
+            const xsltError = xsltDoc.querySelector('parsererror');
+            if (xsltError) {
+                throw new Error('XSLT parsing error: ' + xsltError.textContent);
+            }
+
+            // Create XSLT processor
+            const xsltProcessor = new XSLTProcessor();
+            xsltProcessor.importStylesheet(xsltDoc);
+
+            // Transform XML
+            const resultDoc = xsltProcessor.transformToDocument(xmlDoc);
+            
+            // Serialize result
+            const serializer = new XMLSerializer();
+            let result = serializer.serializeToString(resultDoc);
+
+            // Format output based on type
+            if (result.includes('<html') || result.includes('<!DOCTYPE html')) {
+                // HTML output - display as formatted HTML
+                output.innerHTML = `<iframe srcdoc="${escapeHtml(result)}" style="width:100%;height:100%;border:none;"></iframe>`;
+                document.getElementById('outputFormat').textContent = 'HTML';
+            } else {
+                // XML/Text output - display as formatted text
+                output.innerHTML = syntaxHighlightXml(formatXmlString(result));
+                document.getElementById('outputFormat').textContent = 'XML';
+            }
+
+            statusText.textContent = 'XSLT transformation completed successfully';
+            statusText.style.color = '#008000';
+
+        } catch (error) {
+            output.innerHTML = `<div class="error-display">Error: ${error.message}</div>`;
+            statusText.textContent = 'XSLT transformation failed';
+            statusText.style.color = '#cc0000';
+        }
+    }
+
+    function validateXml() {
+        const xmlText = document.getElementById('xmlInput').value.trim();
+        const statusText = document.getElementById('statusText');
+
+        if (!xmlText) {
+            statusText.textContent = 'Please provide XML content to validate';
+            statusText.style.color = '#ff8800';
+            return;
+        }
+
+        try {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+            
+            const error = xmlDoc.querySelector('parsererror');
+            if (error) {
+                statusText.textContent = 'XML validation failed: ' + error.textContent;
+                statusText.style.color = '#cc0000';
+            } else {
+                statusText.textContent = 'XML is valid and well-formed';
+                statusText.style.color = '#008000';
+            }
+        } catch (error) {
+            statusText.textContent = 'XML validation error: ' + error.message;
+            statusText.style.color = '#cc0000';
+        }
+    }
+
+    function formatXml() {
+        const xmlInput = document.getElementById('xmlInput');
+        const xmlText = xmlInput.value.trim();
+
+        if (!xmlText) return;
+
+        try {
+            const formatted = formatXmlString(xmlText);
+            xmlInput.value = formatted;
+            document.getElementById('statusText').textContent = 'XML formatted successfully';
+            document.getElementById('statusText').style.color = '#008000';
+        } catch (error) {
+            document.getElementById('statusText').textContent = 'XML formatting error: ' + error.message;
+            document.getElementById('statusText').style.color = '#cc0000';
+        }
+    }
+
+    function formatXslt() {
+        const xsltInput = document.getElementById('xsltInput');
+        const xsltText = xsltInput.value.trim();
+
+        if (!xsltText) return;
+
+        try {
+            const formatted = formatXmlString(xsltText);
+            xsltInput.value = formatted;
+            document.getElementById('statusText').textContent = 'XSLT formatted successfully';
+            document.getElementById('statusText').style.color = '#008000';
+        } catch (error) {
+            document.getElementById('statusText').textContent = 'XSLT formatting error: ' + error.message;
+            document.getElementById('statusText').style.color = '#cc0000';
+        }
+    }
+
+    function formatXmlString(xmlString) {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xmlString, 'text/xml');
+        
+        const error = xmlDoc.querySelector('parsererror');
+        if (error) {
+            throw new Error('Invalid XML: ' + error.textContent);
+        }
+
+        const serializer = new XMLSerializer();
+        let formatted = serializer.serializeToString(xmlDoc);
+        
+        // Basic formatting
+        formatted = formatted.replace(/></g, '>\n<');
+        
+        // Indent properly
+        const lines = formatted.split('\n');
+        let indent = 0;
+        const indentString = '  ';
+        
+        return lines.map(line => {
+            line = line.trim();
+            if (line.match(/^<\/\w/)) {
+                indent--;
+            }
+            
+            const indentedLine = indentString.repeat(Math.max(0, indent)) + line;
+            
+            if (line.match(/^<\w[^>]*[^\/]>$/)) {
+                indent++;
+            }
+            
+            return indentedLine;
+        }).join('\n');
+    }
+
+    function syntaxHighlightXml(xml) {
+        xml = xml.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+        // Highlight XML declaration
+        xml = xml.replace(/(&lt;\?xml[^&gt;]*\?&gt;)/g, '<span class="xml-declaration">$1</span>');
+
+        // Highlight comments
+        xml = xml.replace(/(&lt;!--[\s\S]*?--&gt;)/g, '<span class="xml-comment">$1</span>');
+
+        // Highlight tags with attributes
+        xml = xml.replace(/(&lt;\/?)([a-zA-Z_][\w\-:]*)((?:\s+[a-zA-Z_][\w\-:]*\s*=\s*"[^"]*")*)\s*(\/?&gt;)/g, function(match, openBracket, tagName, attributes, closeBracket) {
+            let result = '<span class="xml-tag">' + openBracket + tagName;
+
+            if (attributes) {
+                result += attributes.replace(/([a-zA-Z_][\w\-:]*)\s*=\s*("[^"]*")/g, function(attrMatch, attrName, attrValue) {
+                    return ' <span class="xml-attribute">' + attrName + '</span>=<span class="xml-value">' + attrValue + '</span>';
+                });
+            }
+
+            result += closeBracket + '</span>';
+            return result;
+        });
+
+        return xml;
+    }
+
+    function escapeHtml(text) {
+        return text.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function clearAll() {
+        document.getElementById('xmlInput').value = '';
+        document.getElementById('xsltInput').value = '';
+        document.getElementById('outputContent').innerHTML = '';
+        document.getElementById('statusText').textContent = 'Ready - Load XML and XSLT to transform';
+        document.getElementById('statusText').style.color = '#666';
+        updateCharCount();
+    }
+
+    function copyOutput() {
+        const output = document.getElementById('outputContent');
+        let text = output.textContent || output.innerText || '';
+        
+        if (!text.trim()) {
+            return;
+        }
+
+        navigator.clipboard.writeText(text).then(() => {
+            const statusText = document.getElementById('statusText');
+            const originalText = statusText.textContent;
+            const originalColor = statusText.style.color;
+            statusText.textContent = 'Output copied to clipboard';
+            statusText.style.color = '#008000';
+            setTimeout(() => {
+                statusText.textContent = originalText;
+                statusText.style.color = originalColor;
+            }, 2000);
+        }).catch(() => {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+        });
+    }
+
+    function loadBookExample() {
+        document.getElementById('xmlInput').value = examples.bookXml;
+        document.getElementById('xsltInput').value = examples.bookXslt;
+        updateCharCount();
+        document.getElementById('statusText').textContent = 'Book catalog example loaded';
+        document.getElementById('statusText').style.color = '#008000';
+    }
+
+    function loadTableExample() {
+        document.getElementById('xmlInput').value = examples.tableXml;
+        document.getElementById('xsltInput').value = examples.tableXslt;
+        updateCharCount();
+        document.getElementById('statusText').textContent = 'Employee table example loaded';
+        document.getElementById('statusText').style.color = '#008000';
+    }
+
+    function toggleLayout() {
+        const container = document.getElementById('mainContainer');
+        const outputPanel = document.getElementById('outputPanel');
+        
+        isThreePanel = !isThreePanel;
+        
+        if (isThreePanel) {
+            container.className = 'main-container';
+            outputPanel.style.display = 'flex';
+            document.querySelector('.toggle-layout').textContent = '2-Panel View';
+        } else {
+            container.className = 'main-container two-panel';
+            outputPanel.style.display = 'none';
+            document.querySelector('.toggle-layout').textContent = '3-Panel View';
+        }
+        
+        document.getElementById('statusText').textContent = isThreePanel ? 
+            'Switched to 3-panel view' : 'Switched to 2-panel view';
+    }
+
+    function updateCharCount() {
+        const xmlLength = document.getElementById('xmlInput').value.length;
+        const xsltLength = document.getElementById('xsltInput').value.length;
+        document.getElementById('charCount').textContent = `XML: ${xmlLength} chars | XSLT: ${xsltLength} chars`;
+    }
+
+    // Event listeners
+    document.getElementById('xmlInput').addEventListener('input', updateCharCount);
+    document.getElementById('xsltInput').addEventListener('input', updateCharCount);
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        updateCharCount();
+    });
+</script>
+</body>
+</html>

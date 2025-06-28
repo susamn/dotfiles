@@ -203,6 +203,36 @@
         .examples-btn:hover {
             background: linear-gradient(to bottom, #f0f8ff, #d0e4f7) !important;
         }
+        
+        /* JSON conversion buttons - Blue theme */
+        .json-convert {
+            background: linear-gradient(to bottom, #e3f2fd, #bbdefb) !important;
+            border-color: #4a90e2 !important;
+            color: #1565c0 !important;
+        }
+        .json-convert:hover {
+            background: linear-gradient(to bottom, #f0f8ff, #d1e7ff) !important;
+        }
+        
+        /* YAML conversion buttons - Orange theme */
+        .yaml-convert {
+            background: linear-gradient(to bottom, #fff3e0, #ffcc95) !important;
+            border-color: #ff6b35 !important;
+            color: #d84315 !important;
+        }
+        .yaml-convert:hover {
+            background: linear-gradient(to bottom, #fff8f0, #ffd6b8) !important;
+        }
+        
+        /* XML conversion buttons - Green theme */
+        .xml-convert {
+            background: linear-gradient(to bottom, #e8f5e8, #a5d6a7) !important;
+            border-color: #28a745 !important;
+            color: #1b5e20 !important;
+        }
+        .xml-convert:hover {
+            background: linear-gradient(to bottom, #f1f8e9, #c8e6c9) !important;
+        }
     </style>
 </head>
 <body>
@@ -212,18 +242,9 @@
 </div>
 <div class="toolbar">
     <div class="toolbar-group">
-        <button onclick="convertToYaml()">JSON → YAML</button>
-        <button onclick="convertToJson()">YAML → JSON</button>
-    </div>
-    <div class="separator"></div>
-    <div class="toolbar-group">
-        <button onclick="convertJsonToXml()">JSON → XML</button>
-        <button onclick="convertXmlToJson()">XML → JSON</button>
-    </div>
-    <div class="separator"></div>
-    <div class="toolbar-group">
-        <button onclick="convertYamlToXml()">YAML → XML</button>
-        <button onclick="convertXmlToYaml()">XML → YAML</button>
+        <button class="json-convert" onclick="convertTo('json')">JSON</button>
+        <button class="yaml-convert" onclick="convertTo('yaml')">YAML</button>
+        <button class="xml-convert" onclick="convertTo('xml')">XML</button>
     </div>
     <div class="separator"></div>
     <div class="toolbar-group">
@@ -234,7 +255,8 @@
     <div class="toolbar-group">
         <button onclick="clearAll()">Clear All</button>
         <button onclick="copyOutput()">Copy Output</button>
-        <button class="examples-btn" onclick="showExamples()">Examples</button>
+        <button class="examples-btn" onclick="loadJsonExample()">JSON Example</button>
+        <button class="examples-btn" onclick="loadYamlExample()">YAML Example</button>
     </div>
     <div class="separator"></div>
     <div class="conversion-controls">
@@ -359,32 +381,102 @@ metadata:
 </root>`
     };
 
-    function showExamples() {
-        const example = prompt(
-            "Choose an example to load:\n\n" +
-            "1 - JSON Example\n" +
-            "2 - YAML Example\n" +
-            "3 - XML Example\n\n" +
-            "Enter 1, 2, or 3:"
-        );
+    function loadJsonExample() {
+        document.getElementById('inputContent').value = examples.json;
+        currentInputFormat = 'json';
+        updateFormatIndicators();
+        updateCharCount();
+        document.getElementById('statusText').textContent = 'JSON example loaded - try converting to other formats';
+        document.getElementById('statusText').style.color = '#008000';
+    }
 
-        if (example === '1') {
-            document.getElementById('inputContent').value = examples.json;
-            currentInputFormat = 'json';
-        } else if (example === '2') {
-            document.getElementById('inputContent').value = examples.yaml;
-            currentInputFormat = 'yaml';
-        } else if (example === '3') {
-            document.getElementById('inputContent').value = examples.xml;
-            currentInputFormat = 'xml';
-        } else {
+    function loadYamlExample() {
+        document.getElementById('inputContent').value = examples.yaml;
+        currentInputFormat = 'yaml';
+        updateFormatIndicators();
+        updateCharCount();
+        document.getElementById('statusText').textContent = 'YAML example loaded - try converting to other formats';
+        document.getElementById('statusText').style.color = '#008000';
+    }
+
+    function convertTo(targetFormat) {
+        const input = document.getElementById('inputContent').value.trim();
+        const output = document.getElementById('outputContent');
+        const statusText = document.getElementById('statusText');
+        
+        if (!input) {
+            statusText.textContent = 'Please enter some content to convert';
+            statusText.style.color = '#ff8800';
             return;
         }
 
-        updateFormatIndicators();
-        updateCharCount();
-        document.getElementById('statusText').textContent = 'Example loaded - try converting to other formats';
-        document.getElementById('statusText').style.color = '#008000';
+        try {
+            const inputFormat = detectFormat(input);
+            
+            if (inputFormat === 'unknown') {
+                statusText.textContent = 'Could not detect input format';
+                statusText.style.color = '#cc0000';
+                return;
+            }
+
+            let result = '';
+            let highlightedResult = '';
+
+            // If same format, just format it nicely
+            if (inputFormat === targetFormat) {
+                if (targetFormat === 'json') {
+                    const parsed = JSON.parse(input);
+                    result = JSON.stringify(parsed, null, 2);
+                    highlightedResult = syntaxHighlightJson(result);
+                } else if (targetFormat === 'yaml') {
+                    // For YAML, convert to JSON and back to ensure proper formatting
+                    const jsonResult = yamlToJson(input);
+                    const parsed = JSON.parse(jsonResult);
+                    result = objectToYaml(parsed, 0);
+                    highlightedResult = syntaxHighlightYaml(result);
+                } else if (targetFormat === 'xml') {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(input, 'text/xml');
+                    const serializer = new XMLSerializer();
+                    result = formatXml(serializer.serializeToString(doc));
+                    highlightedResult = syntaxHighlightXml(result);
+                }
+                statusText.textContent = `${targetFormat.toUpperCase()} formatted`;
+            } else {
+                // Convert between formats
+                if (inputFormat === 'json' && targetFormat === 'yaml') {
+                    result = jsonToYaml(input);
+                    highlightedResult = syntaxHighlightYaml(result);
+                } else if (inputFormat === 'yaml' && targetFormat === 'json') {
+                    result = yamlToJson(input);
+                    highlightedResult = syntaxHighlightJson(result);
+                } else if (inputFormat === 'json' && targetFormat === 'xml') {
+                    result = jsonToXml(input);
+                    highlightedResult = syntaxHighlightXml(result);
+                } else if (inputFormat === 'xml' && targetFormat === 'json') {
+                    result = xmlToJson(input);
+                    highlightedResult = syntaxHighlightJson(result);
+                } else if (inputFormat === 'yaml' && targetFormat === 'xml') {
+                    result = yamlToXml(input);
+                    highlightedResult = syntaxHighlightXml(result);
+                } else if (inputFormat === 'xml' && targetFormat === 'yaml') {
+                    result = xmlToYaml(input);
+                    highlightedResult = syntaxHighlightYaml(result);
+                }
+                statusText.textContent = `Converted ${inputFormat.toUpperCase()} to ${targetFormat.toUpperCase()}`;
+            }
+
+            output.innerHTML = highlightedResult;
+            statusText.style.color = '#008000';
+            currentInputFormat = inputFormat;
+            currentOutputFormat = targetFormat;
+            updateFormatIndicators();
+
+        } catch (error) {
+            output.innerHTML = `<div class="error-display">Error: ${error.message}</div>`;
+            statusText.textContent = `Conversion error`;
+            statusText.style.color = '#cc0000';
+        }
     }
 
     function updateYamlPreference() {
@@ -482,52 +574,89 @@ metadata:
     }
 
     function parseYamlLines(lines) {
-        const stack = [{}];
-        const indentStack = [-1];
-        let currentObj = stack[0];
-        for (let line of lines) {
-            line = line.replace(/\r$/, '');
+        const root = {};
+        const stack = [{obj: root, indent: -1, isArray: false}];
+        let currentArrayKey = null;
+        
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i].replace(/\r$/, '');
             if (!line.trim() || line.trim().startsWith('#')) continue;
+            
             const indent = line.search(/\S/);
             const content = line.trim();
-            while (indentStack.length > 1 && indent <= indentStack[indentStack.length - 1]) {
+            
+            // Pop stack for decreasing indentation
+            while (stack.length > 1 && indent <= stack[stack.length - 1].indent) {
                 stack.pop();
-                indentStack.pop();
             }
-            currentObj = stack[stack.length - 1];
+            
+            const current = stack[stack.length - 1];
+            
             if (content.startsWith('- ')) {
                 const value = content.substring(2).trim();
-                if (!Array.isArray(currentObj)) {
-                    const keys = Object.keys(currentObj);
-                    if (keys.length === 0) {
-                        Object.setPrototypeOf(currentObj, Array.prototype);
-                        currentObj.length = 0;
-                    }
+                
+                // Create array if it doesn't exist
+                if (currentArrayKey && !Array.isArray(current.obj[currentArrayKey])) {
+                    current.obj[currentArrayKey] = [];
                 }
-                if (!Array.isArray(currentObj)) {
-                    currentObj = [];
-                    stack[stack.length - 1] = currentObj;
-                }
-                const parsedValue = parseYamlValue(value);
-                currentObj.push(parsedValue);
-                if (typeof parsedValue === 'object' && parsedValue !== null) {
-                    stack.push(parsedValue);
-                    indentStack.push(indent);
+                
+                let targetArray = current.isArray ? current.obj : current.obj[currentArrayKey];
+                
+                if (value === '') {
+                    // Array item that will have nested properties
+                    const newObj = {};
+                    targetArray.push(newObj);
+                    stack.push({obj: newObj, indent: indent, isArray: false});
+                } else if (value.includes(':')) {
+                    // Array item with inline key-value
+                    const colonIndex = value.indexOf(':');
+                    const key = value.substring(0, colonIndex).trim();
+                    const val = value.substring(colonIndex + 1).trim();
+                    const newObj = {};
+                    newObj[key] = parseYamlValue(val);
+                    targetArray.push(newObj);
+                    stack.push({obj: newObj, indent: indent, isArray: false});
+                } else {
+                    // Simple array item
+                    targetArray.push(parseYamlValue(value));
                 }
             } else if (content.includes(':')) {
                 const colonIndex = content.indexOf(':');
-                const key = content.substring(0, colonIndex).trim();
+                let key = content.substring(0, colonIndex).trim();
                 const value = content.substring(colonIndex + 1).trim();
+                
                 if (value === '') {
-                    currentObj[key] = {};
-                    stack.push(currentObj[key]);
-                    indentStack.push(indent);
+                    // Check if next lines are array items
+                    let isNextArray = false;
+                    for (let j = i + 1; j < lines.length; j++) {
+                        const nextLine = lines[j].trim();
+                        if (!nextLine || nextLine.startsWith('#')) continue;
+                        const nextIndent = lines[j].search(/\S/);
+                        if (nextIndent <= indent) break;
+                        if (nextLine.startsWith('- ')) {
+                            isNextArray = true;
+                            break;
+                        }
+                        if (nextLine.includes(':')) break;
+                    }
+                    
+                    if (isNextArray) {
+                        current.obj[key] = [];
+                        currentArrayKey = key;
+                        stack.push({obj: current.obj[key], indent: indent, isArray: true});
+                    } else {
+                        current.obj[key] = {};
+                        currentArrayKey = null;
+                        stack.push({obj: current.obj[key], indent: indent, isArray: false});
+                    }
                 } else {
-                    currentObj[key] = parseYamlValue(value);
+                    // Key with immediate value
+                    current.obj[key] = parseYamlValue(value);
                 }
             }
         }
-        return stack[0];
+        
+        return root;
     }
 
     function parseYamlValue(value) {
@@ -1062,18 +1191,13 @@ metadata:
         const input = document.getElementById('inputContent').value.trim();
         if (!input) return;
         const detectedFormat = detectFormat(input);
-        if (detectedFormat === 'json' && currentInputFormat !== 'json') {
-            currentInputFormat = 'json';
+        if (detectedFormat !== 'unknown' && detectedFormat !== currentInputFormat) {
+            currentInputFormat = detectedFormat;
             updateFormatIndicators();
-            convertToYaml();
-        } else if (detectedFormat === 'yaml' && currentInputFormat !== 'yaml') {
-            currentInputFormat = 'yaml';
-            updateFormatIndicators();
-            convertToJson();
-        } else if (detectedFormat === 'xml' && currentInputFormat !== 'xml') {
-            currentInputFormat = 'xml';
-            updateFormatIndicators();
-            convertXmlToJson();
+            // Auto-convert to JSON as default when format is detected
+            if (detectedFormat !== 'json') {
+                convertTo('json');
+            }
         }
     }
 

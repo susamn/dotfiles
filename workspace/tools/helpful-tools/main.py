@@ -245,20 +245,20 @@ TOOLS = [
         "tags": ["converter", "css", "svg", "graphics", "design"]
     },
     {
-        "name": "Code Playground",
-        "description": "CodePen-like HTML/CSS/JavaScript editor with live preview and syntax highlighting",
-        "path": "/tools/code-playground",
-        "file": "codepen_clone.html",
-        "has_backend": False,
-        "tags": ["editor", "playground", "html", "css", "javascript", "preview"]
-    },
-    {
         "name": "Image Converter",
         "description": "Convert images between different formats (PNG, SVG, JPEG, WebP, GIF, BMP, ICO)",
         "path": "/tools/image-converter",
         "file": "image_converter.html",
         "has_backend": False,
         "tags": ["converter", "imaging", "graphics", "design"]
+    },
+    {
+        "name": "CSS Practice Tool",
+        "description": "Learn and practice CSS with interactive examples, tricks, and live playground",
+        "path": "/tools/css-practice",
+        "file": "css_practice.html",
+        "has_backend": False,
+        "tags": ["css", "practice", "playground", "tutorial", "web", "design"]
     }
 ]
 

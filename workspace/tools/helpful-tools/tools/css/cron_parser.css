@@ -1,0 +1,229 @@
+/* Cron Parser Tool Specific Styles */
+.cron-input-section {
+    background: linear-gradient(to bottom, #ffffff, #f8f8f8);
+    border-bottom: 1px solid #c0c0c0;
+    padding: 15px 20px;
+}
+
+.cron-input-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.cron-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 2px solid #c0c0c0;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 16px;
+    background: #ffffff;
+    border-radius: 3px;
+}
+
+.cron-input:focus {
+    border-color: #0066cc;
+    outline: none;
+    box-shadow: 0 0 3px rgba(0,102,204,0.3);
+}
+
+.cron-input.error {
+    border-color: #d32f2f;
+    background: #fff5f5;
+}
+
+.cron-input.valid {
+    border-color: #388e3c;
+}
+
+.cron-format-hint {
+    font-size: 11px;
+    color: #666;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    margin-bottom: 8px;
+}
+
+.quick-examples {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    flex-wrap: wrap;
+}
+
+.example-btn {
+    background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+    border: 1px solid #a0a0a0;
+    padding: 3px 8px;
+    font-size: 10px;
+    cursor: pointer;
+    border-radius: 2px;
+    color: #333;
+}
+
+.example-btn:hover {
+    background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+}
+
+.main-container {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 220px);
+    padding: 0;
+}
+
+.fields-section {
+    background: linear-gradient(to bottom, #f8f8f8, #f0f0f0);
+    border-bottom: 1px solid #c0c0c0;
+    padding: 12px 20px;
+}
+
+.fields-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+}
+
+.field-card {
+    background: linear-gradient(to bottom, #ffffff, #f8f8f8);
+    border: 1px solid #c0c0c0;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.field-header {
+    background: linear-gradient(to bottom, #e0e0e0, #d0d0d0);
+    border-bottom: 1px solid #c0c0c0;
+    padding: 6px 8px;
+    font-size: 11px;
+    font-weight: bold;
+    color: #555;
+    text-align: center;
+}
+
+.field-content {
+    padding: 8px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 12px;
+    min-height: 40px;
+    background: #ffffff;
+    text-align: center;
+}
+
+.field-value {
+    font-weight: bold;
+    color: #0066cc;
+}
+
+.field-description {
+    font-size: 10px;
+    color: #666;
+    margin-top: 4px;
+    line-height: 1.3;
+}
+
+.results-section {
+    flex: 1;
+    display: flex;
+}
+
+.left-results {
+    width: 50%;
+    border-right: 1px solid #c0c0c0;
+    display: flex;
+    flex-direction: column;
+}
+
+.right-results {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.cron-indicator {
+    background: #4a90e2;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: normal;
+}
+
+.cron-indicator.valid {
+    background: #388e3c;
+}
+
+.cron-indicator.invalid {
+    background: #d32f2f;
+}
+
+.panel-content {
+    flex: 1;
+    overflow-y: auto;
+    background: #ffffff;
+    padding: 12px;
+}
+
+.description-box {
+    background: linear-gradient(to bottom, #e3f2fd, #bbdefb);
+    border: 1px solid #2196f3;
+    border-radius: 4px;
+    padding: 12px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.next-runs-list {
+    list-style: none;
+    padding: 0;
+}
+
+.next-run-item {
+    padding: 6px 8px;
+    border-bottom: 1px solid #f0f0f0;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.next-run-item:hover {
+    background: #f8f8f8;
+}
+
+.run-datetime {
+    color: #0066cc;
+}
+
+.run-relative {
+    color: #666;
+    font-size: 10px;
+}
+
+.cron-error {
+    color: #d32f2f;
+    font-size: 12px;
+    margin-top: 8px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    background: #fff5f5;
+    padding: 8px;
+    border-left: 3px solid #d32f2f;
+    border-radius: 2px;
+}
+
+.empty-state {
+    color: #999;
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+}

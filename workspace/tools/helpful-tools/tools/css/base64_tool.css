@@ -1,0 +1,11 @@
+/* Base64 Tool Specific Styles - Uses common.css for most styling */
+/* Only minor adjustments needed for this tool */
+
+.error-display {
+    background: #fff0f0;
+    color: #cc0000;
+    padding: 12px;
+    border-left: 4px solid #cc0000;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 12px;
+}

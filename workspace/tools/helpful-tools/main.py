@@ -14,6 +14,10 @@ if os.path.exists("static"):
 if os.path.exists("tools/js"):
     app.mount("/js", StaticFiles(directory="tools/js"), name="js")
 
+# Mount CSS files
+if os.path.exists("tools/css"):
+    app.mount("/css", StaticFiles(directory="tools/css"), name="css")
+
 # Tool configurations
 TOOLS = [
     {

@@ -10,6 +10,10 @@ app = FastAPI(title="Helpful-Tools", description="Collection of useful web tools
 if os.path.exists("static"):
     app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# Mount JavaScript files
+if os.path.exists("tools/js"):
+    app.mount("/js", StaticFiles(directory="tools/js"), name="js")
+
 # Tool configurations
 TOOLS = [
     {
@@ -259,7 +263,16 @@ TOOLS = [
         "file": "css_practice.html",
         "has_backend": False,
         "tags": ["css", "practice", "playground", "tutorial", "web", "design"]
+    },
+    {
+        "name": "World time zone converter",
+        "description": "Convert between different time zones, view current times globally",
+        "path": "/tools/world-time-zone-converter",
+        "file": "world_time_converter.html",
+        "has_backend": False,
+        "tags": ["converter", "time", "date", "world", "timezone"]
     }
+
 ]
 
 @app.get("/", response_class=HTMLResponse)

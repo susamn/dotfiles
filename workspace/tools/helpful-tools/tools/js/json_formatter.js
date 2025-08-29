@@ -660,7 +660,7 @@ function createCollapsibleJson(obj, indent = 0, searchMatches = []) {
         if (obj.length === 0) {
             return '<span class="json-punctuation">[]</span>';
         }
-        const id = 'array_' + Math.random().toString(36).substr(2, 9);
+        const id = 'array_' + Math.random().toString(36).substring(2, 11);
         let result = `<span class="expand-collapse-btn" onclick="toggleCollapse('${id}')">-</span><span class="json-punctuation">[</span>\n`;
         result += `<div id="${id}" class="collapsible-content">`;
         for (let i = 0; i < obj.length; i++) {
@@ -680,7 +680,7 @@ function createCollapsibleJson(obj, indent = 0, searchMatches = []) {
         if (keys.length === 0) {
             return '<span class="json-punctuation">{}</span>';
         }
-        const id = 'object_' + Math.random().toString(36).substr(2, 9);
+        const id = 'object_' + Math.random().toString(36).substring(2, 11);
         let result = `<span class="expand-collapse-btn" onclick="toggleCollapse('${id}')">-</span><span class="json-punctuation">{</span>\n`;
         result += `<div id="${id}" class="collapsible-content">`;
         for (let i = 0; i < keys.length; i++) {
@@ -865,6 +865,43 @@ function minifyJson() {
     if (!input) {
         return;
     }
+
+    // Check if input is JSONL
+    if (isJsonlContent(input)) {
+        try {
+            const documents = parseJsonlDocuments(input);
+            const minifiedLines = [];
+
+            for (let i = 0; i < documents.length; i++) {
+                try {
+                    const parsed = JSON.parse(documents[i]);
+                    minifiedLines.push(JSON.stringify(parsed));
+                } catch (error) {
+                    throw new Error(`Document ${i + 1}: ${error.message}`);
+                }
+            }
+
+            const minified = minifiedLines.join('\n');
+            lastFormattedJson = minified;
+            
+            if (showMarkup) {
+                const highlighted = syntaxHighlight(minified);
+                output.innerHTML = highlighted;
+            } else {
+                output.innerHTML = `<pre style="margin: 0; white-space: pre-wrap; font-family: inherit;">${minified.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`;
+            }
+            statusText.textContent = `JSONL minified successfully (${minifiedLines.length} lines)`;
+            statusText.style.color = '#008000';
+        } catch (error) {
+            output.innerHTML = `<div class="error-display">JSONL Error: ${error.message}</div>`;
+            statusText.textContent = 'JSONL parsing error';
+            statusText.style.color = '#cc0000';
+            lastFormattedJson = '';
+        }
+        return;
+    }
+
+    // Handle single JSON object
     try {
         const parsed = JSON.parse(input);
         const minified = JSON.stringify(parsed);
@@ -942,20 +979,12 @@ function copyFormatted() {
             statusText.style.color = originalColor;
         }, 2000);
     }).catch(() => {
-        const textArea = document.createElement('textarea');
-        textArea.value = lastFormattedJson;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
         const statusText = document.getElementById('statusText');
-        const originalText = statusText.textContent;
-        const originalColor = statusText.style.color;
-        statusText.textContent = 'Copied to clipboard';
-        statusText.style.color = '#008000';
+        statusText.textContent = 'Failed to copy to clipboard';
+        statusText.style.color = '#cc0000';
         setTimeout(() => {
-            statusText.textContent = originalText;
-            statusText.style.color = originalColor;
+            statusText.textContent = 'JSON formatted successfully';
+            statusText.style.color = '#008000';
         }, 2000);
     });
 }

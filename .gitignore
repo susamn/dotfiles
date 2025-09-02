@@ -18,3 +18,6 @@ configuration.el
 .ssh/known_hosts*
 workspace/tools/helpful-tools/helpful-tools.log
 workspace/tools/helpful-tools/helpful-tools.pid
+workspace/tools/helpful-tools/__pycache__
+workspace/tools/helpful-tools/tools/__pycache__
+workspace/tools/.claude

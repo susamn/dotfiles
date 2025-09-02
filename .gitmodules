@@ -4,3 +4,6 @@
 [submodule "workspace/tests/test_helper/bats-assert"]
 	path = workspace/tests/test_helper/bats-assert
 	url = https://github.com/bats-core/bats-assert.git
+[submodule "workspace/tools/helpful-tools-v2"]
+	path = workspace/tools/helpful-tools-v2
+	url = git@github.com:susamn/helpful-tools-v2.git

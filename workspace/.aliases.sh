@@ -4,6 +4,7 @@ alias pkgs="$SCRIPTS_PATH/pkg-listing.sh"
 alias o="$SCRIPTS_PATH/open.sh"
 alias gsk="$SCRIPTS_PATH/generate-ssh-keys.sh"
 alias ht="$TOOLS_PATH/helpful-tools/quick-start.sh"
+alias ht2="$TOOLS_PATH/helpful-tools-v2/quick-start.sh"
 alias mt="$TOOLS_PATH/media-trimmer/quick-start.sh"
 alias att="$TOOLS_PATH/api-testing-tool/quick-start.sh"
 

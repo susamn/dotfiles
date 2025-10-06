@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Practice Tool - Helpful Tools</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/material.min.css">
+    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="/css/css_practice.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/htmlmixed/htmlmixed.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closetag.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closebrackets.min.js"></script>
+</head>
+<body>
+<div class="header">
+    <h1>CSS Practice Tool</h1>
+    <a href="/">Back to Tools</a>
+</div>
+
+<div class="toolbar">
+    <button onclick="runCode()" id="runBtn">Run Code</button>
+    <button onclick="clearCode()">Clear</button>
+    <div class="separator"></div>
+    <button onclick="loadExample('flexbox')">Flexbox Example</button>
+    <button onclick="loadExample('grid')">Grid Example</button>
+    <button onclick="loadExample('animation')">Animation Example</button>
+    <div class="separator"></div>
+    <button onclick="toggleAutoRun()" id="autoRunBtn">Auto Run: OFF</button>
+</div>
+
+<div class="main-container">
+    <div class="left-panel">
+        <div class="panel-tabs">
+            <div class="panel-tab active" onclick="switchLeftTab('tricks')">CSS Tricks</div>
+            <div class="panel-tab" onclick="switchLeftTab('examples')">Examples</div>
+        </div>
+        
+        <div class="panel-content">
+            <div class="tab-content active" id="tricksTab">
+                <div class="tricks-container" id="tricksContainer">
+                    <!-- Tricks will be populated by JavaScript -->
+                </div>
+            </div>
+            
+            <div class="tab-content" id="examplesTab">
+                <div class="tricks-container" id="examplesContainer">
+                    <!-- Examples will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="middle-panel">
+        <div class="code-section">
+            <div class="panel-header">
+                HTML Editor
+            </div>
+            <div class="editor-container">
+                <textarea id="htmlEditor" style="display: none;"><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Practice</title>
+</head>
+<body>
+    <div class="container">
+        <h1>CSS Practice Playground</h1>
+        <p>Start practicing CSS here!</p>
+        <div class="box">Sample Box</div>
+    </div>
+</body>
+</html></textarea>
+            </div>
+        </div>
+
+        <div class="code-section">
+            <div class="panel-header">
+                CSS Editor
+            </div>
+            <div class="editor-container">
+                <textarea id="cssEditor" style="display: none;">body {
+    margin: 0;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.box {
+    width: 200px;
+    height: 100px;
+    background: rgba(255,255,255,0.2);
+    margin: 20px auto;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid rgba(255,255,255,0.3);
+}</textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="right-panel">
+        <div class="panel-header">
+            Live Preview
+        </div>
+        <div class="editor-container">
+            <iframe class="preview-container" id="preview"></iframe>
+        </div>
+    </div>
+</div>
+
+<div class="status-bar">
+    <div id="statusText">Ready - Start coding!</div>
+    <div id="editorInfo">HTML: 15 lines | CSS: 20 lines</div>
+</div>
+
+<script src="/js/css_practice.js"></script>
+</body>
+</html>

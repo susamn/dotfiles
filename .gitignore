@@ -13,3 +13,11 @@ irony/
 transient/
 /.lsp-session-v1
 configuration.el
+.ssh/id_ed25519
+.ssh/id_ed25519.pub
+.ssh/known_hosts*
+workspace/tools/helpful-tools/helpful-tools.log
+workspace/tools/helpful-tools/helpful-tools.pid
+workspace/tools/helpful-tools/__pycache__
+workspace/tools/helpful-tools/tools/__pycache__
+workspace/tools/.claude

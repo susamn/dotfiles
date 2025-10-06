@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Converter - Helpful Tools</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        .header {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 12px 20px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            font-size: 1.5em;
+            color: #333;
+        }
+        .header a {
+            background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+            border: 1px solid #a0a0a0;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 2px;
+            color: #333;
+            text-decoration: none;
+        }
+        .header a:hover {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+        }
+        .toolbar {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .toolbar button {
+            background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+            border: 1px solid #a0a0a0;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 2px;
+            color: #333;
+        }
+        .toolbar button:hover {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+        }
+        .toolbar button:active {
+            background: linear-gradient(to bottom, #e0e0e0, #f0f0f0);
+            box-shadow: inset 1px 1px 2px rgba(0,0,0,0.2);
+        }
+        .toolbar button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .separator {
+            width: 1px;
+            height: 20px;
+            background: #c0c0c0;
+            margin: 0 4px;
+        }
+        .main-container {
+            display: flex;
+            height: calc(100vh - 175px);
+        }
+        .left-panel {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #c0c0c0;
+        }
+        .right-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .panel-header {
+            background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #555;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .panel-content {
+            flex: 1;
+            background: #ffffff;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .file-upload-section {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .file-upload-area {
+            border: 2px dashed #c0c0c0;
+            border-radius: 4px;
+            padding: 40px 20px;
+            background: #fafafa;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+        .file-upload-area:hover {
+            border-color: #0066cc;
+            background: #f0f8ff;
+        }
+        .file-upload-area.dragover {
+            border-color: #0066cc;
+            background: #e6f3ff;
+        }
+        .file-upload-area input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .upload-text {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        .upload-hint {
+            font-size: 12px;
+            color: #888;
+        }
+        .format-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #555;
+        }
+        .format-select {
+            padding: 6px 8px;
+            border: 1px solid #a0a0a0;
+            border-radius: 2px;
+            background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+            font-size: 12px;
+            color: #333;
+            min-width: 80px;
+        }
+        .format-select:focus {
+            border-color: #0066cc;
+            outline: none;
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+        }
+        .format-select:hover {
+            background: linear-gradient(to bottom, #ffffff, #e8e8e8);
+        }
+        .image-preview {
+            border: 1px solid #c0c0c0;
+            border-radius: 4px;
+            background: #ffffff;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+        .preview-header {
+            background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
+            border-bottom: 1px solid #c0c0c0;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #555;
+        }
+        .preview-content {
+            padding: 15px;
+            text-align: center;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .preview-image {
+            max-width: 100%;
+            max-height: 300px;
+            border: 1px solid #e0e0e0;
+            border-radius: 2px;
+            margin-bottom: 10px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill-opacity=".05"><rect width="10" height="10"/><rect x="10" y="10" width="10" height="10"/></svg>') repeat;
+        }
+        .preview-placeholder {
+            color: #999;
+            font-size: 14px;
+            font-style: italic;
+        }
+        .metadata-section {
+            background: linear-gradient(to bottom, #f8f8f8, #f0f0f0);
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 12px;
+            margin-top: 15px;
+        }
+        .metadata-title {
+            font-size: 12px;
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 8px;
+        }
+        .metadata-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 4px 0;
+            font-size: 11px;
+        }
+        .metadata-label {
+            color: #666;
+        }
+        .metadata-value {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            color: #000;
+        }
+        .conversion-progress {
+            background: #f0f8ff;
+            border: 1px solid #c0d4e8;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+            display: none;
+        }
+        .progress-text {
+            font-size: 14px;
+            color: #0066cc;
+            margin-bottom: 8px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(to right, #0066cc, #4d94ff);
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .error-message {
+            background: #ffe6e6;
+            border: 1px solid #ffb3b3;
+            border-radius: 4px;
+            padding: 12px;
+            margin: 15px 0;
+            color: #d32f2f;
+            font-size: 14px;
+            display: none;
+        }
+        .status-bar {
+            background: linear-gradient(to bottom, #e8e8e8, #d0d0d0);
+            border-top: 1px solid #c0c0c0;
+            padding: 4px 12px;
+            font-size: 11px;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <h1>Image Converter</h1>
+    <a href="/">Back to Tools</a>
+</div>
+
+<div class="toolbar">
+    <label class="format-label">Convert to:</label>
+    <select class="format-select" id="outputFormat">
+        <option value="svg">SVG</option>
+        <option value="png">PNG</option>
+        <option value="jpg">JPEG</option>
+        <option value="webp">WebP</option>
+        <option value="gif">GIF</option>
+        <option value="bmp">BMP</option>
+        <option value="ico">ICO</option>
+    </select>
+    <div class="separator"></div>
+    <button onclick="clearAll()" id="clearBtn" disabled>Clear</button>
+    <button onclick="convertImage()" id="convertBtn" disabled>Convert</button>
+    <button onclick="downloadImage()" id="downloadBtn" disabled>Download</button>
+</div>
+
+<div class="main-container">
+    <div class="left-panel">
+        <div class="panel-header">
+            Original Image
+        </div>
+        <div class="panel-content">
+            <div class="file-upload-section">
+                <div class="file-upload-area" id="uploadArea">
+                    <input type="file" id="imageInput" accept="image/*" />
+                    <div class="upload-text">Drop an image here or click to browse</div>
+                    <div class="upload-hint">Supports PNG, JPEG, SVG, WebP, GIF, BMP</div>
+                </div>
+            </div>
+
+            <div class="image-preview" id="originalPreview" style="display: none;">
+                <div class="preview-header">Preview</div>
+                <div class="preview-content">
+                    <img class="preview-image" id="originalImage" />
+                </div>
+                <div class="metadata-section">
+                    <div class="metadata-title">Image Information</div>
+                    <div class="metadata-item">
+                        <span class="metadata-label">Filename:</span>
+                        <span class="metadata-value" id="originalFilename">-</span>
+                    </div>
+                    <div class="metadata-item">
+                        <span class="metadata-label">Format:</span>
+                        <span class="metadata-value" id="originalFormat">-</span>
+                    </div>
+                    <div class="metadata-item">
+                        <span class="metadata-label">Dimensions:</span>
+                        <span class="metadata-value" id="originalDimensions">-</span>
+                    </div>
+                    <div class="metadata-item">
+                        <span class="metadata-label">File Size:</span>
+                        <span class="metadata-value" id="originalSize">-</span>
+                    </div>
+                    <div class="metadata-item">
+                        <span class="metadata-label">Last Modified:</span>
+                        <span class="metadata-value" id="originalModified">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="error-message" id="errorMessage"></div>
+        </div>
+    </div>
+
+    <div class="right-panel">
+        <div class="panel-header">
+            Converted Image
+        </div>
+        <div class="panel-content">
+            <div class="preview-placeholder" id="conversionPlaceholder">
+                Select an image and click Convert to see the result
+            </div>
+
+            <div class="conversion-progress" id="conversionProgress">
+                <div class="progress-text">Converting image...</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+
+            <div class="image-preview" id="convertedPreview" style="display: none;">
+                <div class="preview-header">Converted Preview</div>
+                <div class="preview-content">
+                    <img class="preview-image" id="convertedImage" />
+                </div>
+                <div class="metadata-section">
+                    <div class="metadata-title">Converted Image Information</div>
+                    <div class="metadata-item">
+                        <span class="metadata-label">Format:</span>
+                        <span class="metadata-value" id="convertedFormat">-</span>
+                    </div>
+                    <div class="metadata-item">
+                        <span class="metadata-label">Dimensions:</span>
+                        <span class="metadata-value" id="convertedDimensions">-</span>
+                    </div>
+                    <div class="metadata-item">
+                        <span class="metadata-label">File Size:</span>
+                        <span class="metadata-value" id="convertedSize">-</span>
+                    </div>
+                    <div class="metadata-item">
+                        <span class="metadata-label">Quality:</span>
+                        <span class="metadata-value" id="conversionQuality">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="status-bar">
+    <div id="statusText">Ready - Select an image to convert</div>
+    <div id="conversionInfo">No conversion in progress</div>
+</div>
+
+<script src="/js/image_converter.js"></script>
+</body>
+</html>

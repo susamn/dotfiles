@@ -10,6 +10,14 @@ app = FastAPI(title="Helpful-Tools", description="Collection of useful web tools
 if os.path.exists("static"):
     app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# Mount JavaScript files
+if os.path.exists("tools/js"):
+    app.mount("/js", StaticFiles(directory="tools/js"), name="js")
+
+# Mount CSS files
+if os.path.exists("tools/css"):
+    app.mount("/css", StaticFiles(directory="tools/css"), name="css")
+
 # Tool configurations
 TOOLS = [
     {
@@ -227,7 +235,48 @@ TOOLS = [
         "file": "backslash_escape.html",
         "has_backend": False,
         "tags": ["escape", "unescape", "backslash", "text"]
+    },
+    {
+        "name": "X.509 Certificate Decoder",
+        "description": "Decode and analyze X.509 certificates in PEM format",
+        "path": "/tools/certificate-decoder",
+        "file": "certificate_decoder.html",
+        "has_backend": False,
+        "tags": ["decoder", "certificate", "x509", "security", "pem"]
+    },
+    {
+        "name": "CSS ↔ SVG Converter",
+        "description": "Convert between CSS styles and SVG elements bidirectionally",
+        "path": "/tools/css-svg-converter",
+        "file": "css_svg_converter.html",
+        "has_backend": False,
+        "tags": ["converter", "css", "svg", "graphics", "design"]
+    },
+    {
+        "name": "Image Converter",
+        "description": "Convert images between different formats (PNG, SVG, JPEG, WebP, GIF, BMP, ICO)",
+        "path": "/tools/image-converter",
+        "file": "image_converter.html",
+        "has_backend": False,
+        "tags": ["converter", "imaging", "graphics", "design"]
+    },
+    {
+        "name": "CSS Practice Tool",
+        "description": "Learn and practice CSS with interactive examples, tricks, and live playground",
+        "path": "/tools/css-practice",
+        "file": "css_practice.html",
+        "has_backend": False,
+        "tags": ["css", "practice", "playground", "tutorial", "web", "design"]
+    },
+    {
+        "name": "World time zone converter",
+        "description": "Convert between different time zones, view current times globally",
+        "path": "/tools/world-time-zone-converter",
+        "file": "world_time_converter.html",
+        "has_backend": False,
+        "tags": ["converter", "time", "date", "world", "timezone"]
     }
+
 ]
 
 @app.get("/", response_class=HTMLResponse)

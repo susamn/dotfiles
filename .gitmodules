@@ -7,3 +7,6 @@
 [submodule "workspace/tools/helpful-tools-v2"]
 	path = workspace/tools/helpful-tools-v2
 	url = git@github.com:susamn/helpful-tools-v2.git
+[submodule "workspace/tools/performance-manager"]
+	path = workspace/tools/performance-manager
+	url = git@github.com:susamn/performance-manager.git

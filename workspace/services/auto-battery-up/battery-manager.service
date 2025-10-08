@@ -1,0 +1,21 @@
+[Unit]
+Description=Battery Manager - Auto control battery charger
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/workspace/services/auto-battery-up/battery-manager.sh
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=battery-manager
+
+# Don't restart on failure - timer will trigger next run
+RemainAfterExit=no
+
+# Resource limits
+Nice=19
+IOSchedulingClass=idle
+
+[Install]
+WantedBy=default.target

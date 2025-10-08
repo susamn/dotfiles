@@ -1,0 +1,12 @@
+[Unit]
+Description=Battery Manager Timer - Check battery every 2 minutes
+Requires=battery-manager.service
+
+[Timer]
+# Run every 2 minutes
+OnBootSec=1min
+OnUnitActiveSec=2min
+Unit=battery-manager.service
+
+[Install]
+WantedBy=timers.target

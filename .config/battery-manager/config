@@ -1,0 +1,19 @@
+# Battery Manager Configuration
+# Edit this file to customize your setup
+
+# Home Assistant URL
+HA_URL="http://192.168.1.111:8123"
+
+# Home Assistant Long-Lived Access Token
+# Create one at: Home Assistant -> Profile -> Long-Lived Access Tokens
+HA_TOKEN=""
+
+# Switch entity ID in Home Assistant
+HA_SWITCH_ENTITY="switch.lenovo_slim_pro_charger"
+
+# Battery thresholds (percentage)
+BATTERY_LOW_THRESHOLD=20
+BATTERY_HIGH_THRESHOLD=80
+
+# Log file location
+LOG_FILE="$HOME/.local/log/battery-manager.log"

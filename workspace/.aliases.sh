@@ -103,6 +103,9 @@ if [ -x "$(command -v git)" ]; then
     alias gitb="$SCRIPTS_PATH/gitb.sh"
     alias ghr="$SCRIPTS_PATH/git-hard-reset.sh"
     alias gch="$SCRIPTS_PATH/gch.sh"
+    alias gassume='git update-index --assume-unchanged'
+    alias gunassume='git update-index --no-assume-unchanged'
+    alias gassumed="git ls-files -v | grep '^[a-z]'"
 fi
 
 # kubernates aliases

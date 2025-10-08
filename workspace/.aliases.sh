@@ -74,6 +74,7 @@ if [ -x "$(command -v git)" ]; then
     alias ga='git add'
     alias gaa='git add .'
     alias gs='git status -sb'
+    alias gsa="$SCRIPTS_PATH/git-assumed-status.sh"
     alias gd='git diff'
     alias gco='git checkout'
     alias gc='git commit'

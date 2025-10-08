@@ -1,0 +1,13 @@
+[Unit]
+Description=Conky System Monitor
+After=graphical-session.target
+
+[Service]
+Type=forking
+ExecStart=/usr/bin/conky -c %h/.config/conky/conky.conf
+ExecStartPost=/usr/bin/sleep 2
+ExecStartPost=/usr/bin/conky -c %h/.config/conky/conky-processes.conf
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

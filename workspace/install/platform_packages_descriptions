@@ -20,3 +20,4 @@ tig=A ncurses-based Git repository browser
 ncdu=A disk usage analyzer with a fast and simple TUI
 chezmoi=A dotfile manager that syncs and manages configuration files
 openssl=Secure Sockets Layer toolkit - cryptographic utility
+tlp=TLP helps extend battery lifespan in linux

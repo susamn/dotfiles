@@ -10,7 +10,7 @@ alias att="$TOOLS_PATH/api-testing-tool/quick-start.sh"
 
 alias pnv="$TOOLS_PATH/pyenv-sync/pyenv-sync.sh"
 
-if grep -qi "arch" /etc/os-release; then
+if [ -f /etc/os-release ] && grep -qi "arch" /etc/os-release; then
   alias abm="$SCRIPTS_PATH/arch-boot-manager.sh"
 fi
 

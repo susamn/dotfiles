@@ -51,6 +51,7 @@ One command, no memorization needed:
 - System validation with auto-fix
 - Backup/restore
 - Guided upgrade workflow
+- Package timeline viewer
 - GRUB config viewer
 - Timeshift snapshot viewer
 - Built-in boot process help
@@ -175,6 +176,56 @@ Runs validation checks without modifying anything (read-only mode).
 
 Installed at: `/etc/pacman.d/hooks/99-boot-safety-check.hook`
 
+### 📦 arch-package-timeline.sh
+**Track every package installation, upgrade, and removal with a beautiful timeline view!**
+
+Automatically logs **every** package operation (install, upgrade, remove) and creates a searchable timeline.
+
+**Features:**
+- ✅ **Automatic logging** - Tracks all pacman operations via hook
+- 📅 **Beautiful timeline** - Color-coded, organized by date
+- ⏰ **Precise timestamps** - Know exactly when you installed/upgraded something
+- 🔍 **Easy navigation** - Use `less` to search, scroll, and find what you need
+- 📦 **Version tracking** - See old version → new version for upgrades
+- 💾 **Persistent history** - Keeps last 10,000 operations
+
+**Usage:**
+```bash
+# View timeline (via boot manager)
+./arch-boot-manager.sh
+# → Press 'P' for Package Timeline
+
+# View timeline (directly)
+arch-package-timeline.sh --view
+```
+
+**Timeline Format:**
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅  Monday, January 08, 2024
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ⏰ 14:32:15  📦 INSTALLED    package-name  (1.2.3-1)
+  ⏰ 15:45:22  ⬆️  UPGRADED     linux
+     └─ 6.6.10.arch1-1 → 6.6.11.arch1-1
+  ⏰ 16:20:30  🗑️  REMOVED      old-package
+```
+
+**Installed at:** `~/.local/state/arch-package-state/timeline.log`
+
+### 🔧 99-package-timeline.hook
+**Automatic package tracking after all operations**
+
+Triggers automatically on **ALL** package operations:
+- `pacman -S package` (install)
+- `pacman -Syu` (full system upgrade)
+- `pacman -U package.tar.zst` (local install)
+- `pacman -R package` (remove)
+
+Logs package name, version, operation type, and timestamp after every transaction.
+
+Installed at: `/etc/pacman.d/hooks/99-package-timeline.hook`
+
 ---
 
 ## 🛡️ The Problem This Solves
@@ -270,6 +321,12 @@ reboot
 - Shows BTRFS snapshots (if applicable)
 - Displays disk usage
 
+**P) 📦 View Package Timeline**
+- Shows complete installation history
+- Tracks install/upgrade/remove operations
+- Search through past package changes
+- Color-coded by operation type
+
 **H) 📖 Boot Process Help**
 - Explains how boot works (BIOS → GRUB → kernel → initramfs)
 - Explains important files (vmlinuz, initramfs, grub.cfg)
@@ -312,7 +369,7 @@ reboot
 
 **7) Install Tools**
 - Installs scripts system-wide
-- Installs pacman hook
+- Installs pacman hooks (boot safety + timeline)
 - Installs dependencies
 - Optionally installs linux-lts kernel
 
@@ -515,10 +572,13 @@ sudo pacman -S pacman-contrib smartmontools
 | arch-pre-upgrade.sh | Your scripts directory | N/A |
 | arch-boot-backup.sh | Your scripts directory | N/A |
 | arch-boot-check.sh | Your scripts directory | `/usr/local/bin/` |
+| arch-package-timeline.sh | Your scripts directory | `/usr/local/bin/` |
 | 99-boot-safety-check.hook | Your scripts directory | `/etc/pacman.d/hooks/` |
+| 99-package-timeline.hook | Your scripts directory | `/etc/pacman.d/hooks/` |
 | Backups | N/A | `~/.boot-backups/` |
+| Package Timeline | N/A | `~/.local/state/arch-package-state/` |
 
-**Note:** Only `arch-boot-check.sh` needs system-wide installation (for the hook to work).
+**Note:** Only `arch-boot-check.sh` and `arch-package-timeline.sh` need system-wide installation (for the hooks to work).
 
 ---
 
@@ -743,10 +803,12 @@ No surprises. No destructive operations. No data loss risk.
 | `arch-pre-upgrade.sh` | Preview pending updates | ~6 KB | Yes |
 | `arch-boot-check.sh` | System validation (14 checks) | ~28 KB | Yes |
 | `arch-boot-backup.sh` | Backup/restore tool | ~14 KB | Yes |
+| `arch-package-timeline.sh` | Package timeline logger/viewer | ~7 KB | Yes |
 | `99-boot-safety-check.hook` | Auto-run validation hook | ~1 KB | No |
-| `README.md` | This comprehensive guide | ~30 KB | No |
+| `99-package-timeline.hook` | Auto-run timeline logging | ~1 KB | No |
+| `arch-boot-manager.md` | This comprehensive guide | ~35 KB | No |
 
-**Total: ~120 KB of protection**
+**Total: ~132 KB of protection**
 
 ---
 

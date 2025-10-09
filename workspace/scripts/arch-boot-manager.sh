@@ -10,6 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PRE_UPGRADE_SCRIPT="${SCRIPT_DIR}/arch-pre-upgrade.sh"
 BOOT_CHECK_SCRIPT="${SCRIPT_DIR}/arch-boot-check.sh"
 BACKUP_SCRIPT="${SCRIPT_DIR}/arch-boot-backup.sh"
+TIMELINE_SCRIPT="${SCRIPT_DIR}/arch-package-timeline.sh"
 
 # --- Colors ---
 RED='\033[0;31m'
@@ -68,6 +69,7 @@ show_main_menu() {
     echo -e "  ${MAGENTA}Q${NC}) ${YELLOW}⚡ Quick Check - Is it safe to reboot?${NC}"
     echo -e "  ${MAGENTA}G${NC}) ${YELLOW}📋 View GRUB Config & Menu Entries${NC}"
     echo -e "  ${MAGENTA}T${NC}) ${YELLOW}📸 List Timeshift Snapshots${NC}"
+    echo -e "  ${MAGENTA}P${NC}) ${YELLOW}📦 View Package Timeline - Installation history${NC}"
     echo -e "  ${MAGENTA}H${NC}) ${YELLOW}📖 Boot Process Help - Understand how boot works${NC}"
     echo ""
     echo -e "  ${GREEN}1${NC}) ${BLUE}Pre-Upgrade Preview${NC} - See what will be updated"
@@ -593,6 +595,16 @@ action_list_timeshift() {
     pause
 }
 
+action_view_package_timeline() {
+    if [[ ! -x "$TIMELINE_SCRIPT" ]]; then
+        echo -e "${RED}✗ Script not found or not executable: $TIMELINE_SCRIPT${NC}"
+        pause
+        return 1
+    fi
+
+    "$TIMELINE_SCRIPT" --view
+}
+
 action_view_grub() {
     print_header
     echo -e "${CYAN}═══ GRUB Configuration & Menu Entries ═══${NC}"
@@ -1007,7 +1019,9 @@ action_install_tools() {
     echo ""
     echo -e "${CYAN}What will be modified:${NC}"
     echo -e "  ${BLUE}•${NC} Copies arch-boot-check.sh → /usr/local/bin/"
+    echo -e "  ${BLUE}•${NC} Copies arch-package-timeline.sh → /usr/local/bin/"
     echo -e "  ${BLUE}•${NC} Copies 99-boot-safety-check.hook → /etc/pacman.d/hooks/"
+    echo -e "  ${BLUE}•${NC} Copies 99-package-timeline.hook → /etc/pacman.d/hooks/"
     echo -e "  ${BLUE}•${NC} Installs dependencies (pacman-contrib, smartmontools)"
     echo -e "  ${BLUE}•${NC} Optionally installs linux-lts kernel"
     echo ""
@@ -1021,9 +1035,10 @@ action_install_tools() {
     echo ""
     echo -e "${CYAN}What gets installed:${NC}"
     echo -e "  ${BLUE}1.${NC} Boot check script (for hook to use)"
-    echo -e "  ${BLUE}2.${NC} Pacman hook (auto-triggers on critical updates)"
-    echo -e "  ${BLUE}3.${NC} Dependencies (for full functionality)"
-    echo -e "  ${BLUE}4.${NC} Fallback kernel (recommended safety measure)"
+    echo -e "  ${BLUE}2.${NC} Package timeline script (tracks all installations)"
+    echo -e "  ${BLUE}3.${NC} Pacman hooks (auto-trigger on updates)"
+    echo -e "  ${BLUE}4.${NC} Dependencies (for full functionality)"
+    echo -e "  ${BLUE}5.${NC} Fallback kernel (recommended safety measure)"
     echo ""
     echo -e "${YELLOW}════════════════════════════════════════════════════════════════${NC}"
     echo ""
@@ -1075,18 +1090,39 @@ action_install_tools() {
         echo -e "${RED}✗ Script not found: $BOOT_CHECK_SCRIPT${NC}"
     fi
 
-    # Install pacman hook
+    # Install package timeline script
     echo ""
-    echo -e "${BLUE}Installing pacman hook...${NC}"
+    echo -e "${BLUE}Installing arch-package-timeline.sh...${NC}"
 
-    local hook_file="${SCRIPT_DIR}/99-boot-safety-check.hook"
+    if [[ -f "$TIMELINE_SCRIPT" ]]; then
+        sudo cp "$TIMELINE_SCRIPT" /usr/local/bin/
+        sudo chmod +x /usr/local/bin/arch-package-timeline.sh
+        echo -e "${GREEN}✓ Installed to /usr/local/bin/arch-package-timeline.sh${NC}"
+    else
+        echo -e "${RED}✗ Script not found: $TIMELINE_SCRIPT${NC}"
+    fi
 
-    if [[ -f "$hook_file" ]]; then
-        sudo mkdir -p /etc/pacman.d/hooks
-        sudo cp "$hook_file" /etc/pacman.d/hooks/
+    # Install pacman hooks
+    echo ""
+    echo -e "${BLUE}Installing pacman hooks...${NC}"
+
+    local boot_hook_file="${SCRIPT_DIR}/99-boot-safety-check.hook"
+    local timeline_hook_file="${SCRIPT_DIR}/99-package-timeline.hook"
+
+    sudo mkdir -p /etc/pacman.d/hooks
+
+    if [[ -f "$boot_hook_file" ]]; then
+        sudo cp "$boot_hook_file" /etc/pacman.d/hooks/
         echo -e "${GREEN}✓ Installed to /etc/pacman.d/hooks/99-boot-safety-check.hook${NC}"
     else
-        echo -e "${RED}✗ Hook file not found: $hook_file${NC}"
+        echo -e "${RED}✗ Hook file not found: $boot_hook_file${NC}"
+    fi
+
+    if [[ -f "$timeline_hook_file" ]]; then
+        sudo cp "$timeline_hook_file" /etc/pacman.d/hooks/
+        echo -e "${GREEN}✓ Installed to /etc/pacman.d/hooks/99-package-timeline.hook${NC}"
+    else
+        echo -e "${RED}✗ Hook file not found: $timeline_hook_file${NC}"
     fi
 
     # Install fallback kernel
@@ -1104,6 +1140,9 @@ action_install_tools() {
     echo -e "${GREEN}═══════════════════════════════════════════════${NC}"
     echo ""
     echo "The boot check will now run automatically after kernel/GRUB upgrades."
+    echo "Package timeline tracking is now active for all package operations."
+    echo ""
+    echo "View timeline anytime with option P from the main menu."
 
     pause
 }
@@ -1136,6 +1175,7 @@ main() {
             q|Q) action_quick_check ;;
             g|G) action_view_grub ;;
             t|T) action_list_timeshift ;;
+            p|P) action_view_package_timeline ;;
             h|H) action_boot_help ;;
             1) action_pre_upgrade ;;
             2) action_boot_check_autofix ;;

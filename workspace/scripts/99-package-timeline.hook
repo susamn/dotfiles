@@ -1,0 +1,12 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Operation = Remove
+Type = Package
+Target = *
+
+[Action]
+Description = Recording package operation to timeline...
+When = PostTransaction
+NeedsTargets
+Exec = /usr/local/bin/arch-package-timeline.sh

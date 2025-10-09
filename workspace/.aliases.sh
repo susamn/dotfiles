@@ -10,6 +10,10 @@ alias att="$TOOLS_PATH/api-testing-tool/quick-start.sh"
 
 alias pnv="$TOOLS_PATH/pyenv-sync/pyenv-sync.sh"
 
+if grep -qi "arch" /etc/os-release; then
+  alias abm="$SCRIPTS_PATH/arch-boot-manager.sh"
+fi
+
 if [ -x "$(command -v yt-dlp)" ]; then
   alias ytd="$SCRIPTS_PATH/ytd.sh"
 fi
@@ -59,7 +63,7 @@ if [ -x "$(command -v fzf)" ]; then
   alias fze="fzf --exact"
   #alias als="alias|fzf"
   alias _als_script="$SCRIPTS_PATH/als.sh"
-  alias als="alias|_als_script"
+  alias als="alias|_als_script -m"
   if [ -x "$(command -v fd)" ]; then
     alias ff="$SCRIPTS_PATH/ffo.sh"
     alias ffo="$SCRIPTS_PATH/ffo.sh -o"
@@ -73,8 +77,7 @@ if [ -x "$(command -v git)" ]; then
     alias g='git'
     alias ga='git add'
     alias gaa='git add .'
-    alias gs='git status -sb'
-    alias gsa="$SCRIPTS_PATH/git-assumed-status.sh"
+    alias gs="$SCRIPTS_PATH/git-assumed-status.sh"
     alias gd='git diff'
     alias gco='git checkout'
     alias gc='git commit'

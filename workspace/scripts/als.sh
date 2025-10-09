@@ -2,8 +2,17 @@
 
 # Path to lookup file (adjust if needed)
 LOOKUP_FILE="${WORKSPACE_PATH:-$HOME}/.alias_descriptions"
-MAX_COMMAND_LENGTH=30
 SHOW_DESCRIPTIONS=false
+
+# Color definitions
+BOLD='\033[1m'
+DIM='\033[2m'
+RESET='\033[0m'
+CYAN='\033[36m'
+GREEN='\033[32m'
+YELLOW='\033[33m'
+BLUE='\033[34m'
+MAGENTA='\033[35m'
 
 # Check for the -m flag
 while [[ "$1" ]]; do
@@ -16,12 +25,10 @@ done
 
 # Ensure input is provided (prevent empty pipe)
 if [[ -t 0 ]]; then
-    echo "Error: No input provided. Pipe alias list into this script."
-    echo "Example: alias | ./script.sh [-m]"
+    echo -e "${BOLD}Error:${RESET} No input provided. Pipe alias list into this script."
+    echo -e "${DIM}Example: alias | ./script.sh [-m]${RESET}"
     exit 1
 fi
-
-echo -e "NAME                  COMMAND                                   DESCRIPTION"
 
 # Process input aliases (passed to the script)
 while read -r line; do
@@ -29,7 +36,7 @@ while read -r line; do
     [[ "$line" =~ ^[^=]+=[^=]+$ ]] || continue
 
     name=$(echo "$line" | awk -F '=' '{print $1}')
-    
+
     # Ignore aliases that start with "_"
     if [[ ! $name =~ ^_ ]]; then
         command=$(echo "$line" | awk -F '=' '{print $2}' | sed "s/'//g")  # Remove surrounding quotes
@@ -40,10 +47,25 @@ while read -r line; do
         fi
 
         if [[ -n "$description" ]]; then
-            printf "%-10s %-35s %s\n" "$name" "$command" "$description"
+            # Format: name in cyan, command in green, description in dim
+            printf "${CYAN}%-14s${RESET} ${GREEN}%-45s${RESET} ${DIM}%s${RESET}\n" "$name" "$command" "$description"
         else
-            printf "%-10s %-35s\n" "$name" "$command"
+            printf "${CYAN}%-14s${RESET} ${GREEN}%-45s${RESET}\n" "$name" "$command"
         fi
     fi
-done | fzf --layout=reverse --border --preview-window=wrap
+done | fzf \
+    --ansi \
+    --layout=reverse \
+    --border=rounded \
+    --border-label="│ Shell Aliases │" \
+    --border-label-pos=3 \
+    --prompt="🔍 " \
+    --pointer="▶" \
+    --marker="✓" \
+    --header="NAME            COMMAND                                       DESCRIPTION" \
+    --header-first \
+    --color="border:#5f87af,label:#87afff:bold,header:#87afff:bold,prompt:#87d787:bold,pointer:#ff5f87:bold,marker:#87d787:bold" \
+    --preview-window=hidden \
+    --info=inline \
+    --height=100%
 

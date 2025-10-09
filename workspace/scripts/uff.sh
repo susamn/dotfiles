@@ -161,9 +161,15 @@ fi
 # Filter results with fzf (with preview panel showing absolute path and file content)
 if [ -n "$search_results" ]; then
   if [ -n "$CONTENT_SEARCH" ]; then
-    selected_file=$(echo "$search_results" | fzf --preview "echo -e '\033[1;32mFile Path: \033[1;37m{}' && echo '------------------------------------' && rg --color=always --context=5 '$CONTENT_SEARCH' {} || bat --style=numbers --color=always --line-range=:100 {}")
+    selected_file=$(echo "$search_results" | fzf \
+      --ansi \
+      --preview-window='right:60%:wrap' \
+      --preview "echo -e '\033[1;36m{}\033[0m' && echo '' && rg --color=always --heading --line-number --context=3 '$CONTENT_SEARCH' {} 2>/dev/null || bat --style=numbers --color=always --line-range=:100 {} 2>/dev/null")
   else
-    selected_file=$(echo "$search_results" | fzf --preview 'echo -e "\033[1;32mFile Path: \033[1;37m{}"; echo "------------------------------------"; bat --style=numbers --color=always --line-range=:100 {}')
+    selected_file=$(echo "$search_results" | fzf \
+      --ansi \
+      --preview-window='right:60%:wrap' \
+      --preview "echo -e '\033[1;36m{}\033[0m' && echo '' && bat --style=numbers --color=always --line-range=:100 {} 2>/dev/null")
   fi
 
   if [ -n "$selected_file" ]; then

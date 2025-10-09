@@ -37,8 +37,9 @@ pause() {
 }
 
 run_command() {
-    local cmd="$1"
-    local desc="$2"
+    local desc="$1"
+    shift
+    local cmd=("$@")
 
     echo ""
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
@@ -46,7 +47,7 @@ run_command() {
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
 
-    eval "$cmd"
+    "${cmd[@]}"
     local exit_code=$?
 
     echo ""
@@ -779,7 +780,7 @@ action_pre_upgrade() {
         return 1
     fi
 
-    run_command "$PRE_UPGRADE_SCRIPT" "Pre-Upgrade Preview"
+    run_command "Pre-Upgrade Preview" "$PRE_UPGRADE_SCRIPT"
     pause
 }
 
@@ -825,9 +826,9 @@ action_boot_check_autofix() {
     fi
 
     if [[ $EUID -ne 0 ]]; then
-        run_command "sudo '$BOOT_CHECK_SCRIPT' --auto-fix" "Boot Safety Check with Auto-Fix (requires sudo)"
+        run_command "Boot Safety Check with Auto-Fix (requires sudo)" sudo "$BOOT_CHECK_SCRIPT" --auto-fix
     else
-        run_command "$BOOT_CHECK_SCRIPT --auto-fix" "Boot Safety Check with Auto-Fix"
+        run_command "Boot Safety Check with Auto-Fix" "$BOOT_CHECK_SCRIPT" --auto-fix
     fi
     pause
 }
@@ -839,7 +840,7 @@ action_create_backup() {
         return 1
     fi
 
-    run_command "$BACKUP_SCRIPT" "Create Boot Backup"
+    run_command "Create Boot Backup" "$BACKUP_SCRIPT"
     pause
 }
 
@@ -850,7 +851,7 @@ action_list_backups() {
         return 1
     fi
 
-    run_command "$BACKUP_SCRIPT --list" "List Backups"
+    run_command "List Backups" "$BACKUP_SCRIPT" --list
     pause
 }
 
@@ -888,7 +889,7 @@ action_restore_backup() {
     echo -e "${YELLOW}════════════════════════════════════════════════════════════════${NC}"
     echo ""
 
-    run_command "$BACKUP_SCRIPT --restore" "Restore from Backup"
+    run_command "Restore from Backup" "$BACKUP_SCRIPT" --restore
     pause
 }
 

@@ -180,7 +180,7 @@ if [[ -n "$installed_kernel" ]]; then
 
     if [[ -n "$critical_updates" ]] && echo "$critical_updates" | grep -q "^linux "; then
         # More robust kernel version extraction
-        new_kernel=$(echo "$critical_updates" | grep "^linux " | awk '{for(i=1;i<=NF;i++) if($i ~ /->/) print $(i+1)}' | head -1 || echo "unknown")
+        new_kernel=$(echo "$critical_updates" | awk '/^linux / {for(i=1; i<=NF; i++) if ($i == "->") { print $(i+1); break } }' | head -1 || echo "unknown")
         if [[ -n "$new_kernel" ]] && [[ "$new_kernel" != "unknown" ]]; then
             echo "  Will upgrade to: $new_kernel"
             echo ""

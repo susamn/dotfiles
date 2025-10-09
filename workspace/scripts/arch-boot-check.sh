@@ -108,7 +108,7 @@ check_boot_partition() {
     log_success "/boot is writable"
 
     # Check available space
-    local available_space=$(df -BM "$BOOT_MOUNT" | awk 'NR==2 {print $4}' | sed 's/M$//' | tr -d ' ')
+    local available_space=$(df -BM --output=avail "$BOOT_MOUNT" | tail -n 1 | sed 's/M$//' | tr -d ' ')
     # Validate it's a number
     if [[ "$available_space" =~ ^[0-9]+$ ]]; then
         if [[ $available_space -lt 50 ]]; then
@@ -280,7 +280,7 @@ check_grub_config() {
     fi
 
     # Count available kernels in GRUB
-    local grub_kernel_count=$(grep -c "vmlinuz-linux" "$grub_cfg" || true)
+    local grub_kernel_count=$(grep -c "vmlinuz-linux" "$grub_cfg" || echo "0")
     if [[ $grub_kernel_count -eq 0 ]]; then
         log_error "No kernel entries found in GRUB config"
         if $AUTO_FIX; then
@@ -484,6 +484,11 @@ check_disk_health() {
         return 0
     fi
 
+    if ! command -v jq &> /dev/null; then
+        log_info "jq not installed (install jq for reliable SMART checks)"
+        return 0
+    fi
+
     # Get the disk device (not partition)
     local boot_partition=$(df "$BOOT_MOUNT" | awk 'NR==2 {print $1}')
     local disk_device=$(lsblk -no PKNAME "$boot_partition" 2>/dev/null | head -1)
@@ -500,15 +505,15 @@ check_disk_health() {
 
     log_info "Checking SMART status for $disk_device..."
 
-    # Quick SMART health check
-    local smart_health=$(smartctl -H "$disk_device" 2>/dev/null | grep -i "SMART overall-health" || true)
-
-    if [[ -z "$smart_health" ]]; then
+    # Quick SMART health check using JSON output for reliability
+    local smart_output
+    smart_output=$(smartctl -j -H "$disk_device" 2>/dev/null)
+    if [[ -z "$smart_output" ]]; then
         log_warn "SMART not available/supported for $disk_device"
         return 0
     fi
 
-    if echo "$smart_health" | grep -qi "PASSED"; then
+    if echo "$smart_output" | jq -e '.smart_status.passed' >/dev/null; then
         log_success "Disk health: PASSED"
     else
         log_error "Disk health: FAILED or DEGRADED"
@@ -516,8 +521,8 @@ check_disk_health() {
         return 1
     fi
 
-    # Check for reallocated sectors
-    local reallocated=$(smartctl -A "$disk_device" 2>/dev/null | grep -i "Reallocated_Sector" | awk '{print $10}' || echo "0")
+    # Check for reallocated sectors using JSON
+    local reallocated=$(echo "$smart_output" | jq -r '.ata_smart_attributes.table[] | select(.name == "Reallocated_Sector_Ct") | .raw.value' 2>/dev/null || echo "0")
     if [[ "$reallocated" != "0" ]] && [[ -n "$reallocated" ]]; then
         log_warn "Disk has $reallocated reallocated sectors (potential hardware issues)"
     fi

@@ -95,8 +95,12 @@ create_backup() {
 
     # Installed kernels
     log_info "Backing up kernel package list..."
-    pacman -Qq | grep '^linux' > "$BACKUP_PATH/installed-kernels.txt" || true
-    log_success "Saved to installed-kernels.txt"
+    if pacman -Qq | grep '^linux' > "$BACKUP_PATH/installed-kernels.txt" 2>/dev/null; then
+        log_success "Saved to installed-kernels.txt"
+    else
+        log_warn "No Linux kernel packages found (unusual - creating empty file)"
+        echo "# No Linux kernel packages found at backup time" > "$BACKUP_PATH/installed-kernels.txt"
+    fi
 
     # /etc/fstab
     if [[ -f /etc/fstab ]]; then
@@ -353,18 +357,28 @@ list_backups() {
     echo "╚════════════════════════════════════════════════╝"
     echo ""
 
-    if [[ ! -d "$BACKUP_DIR" ]] || [[ -z "$(ls -A "$BACKUP_DIR" 2>/dev/null)" ]]; then
+    if [[ ! -d "$BACKUP_DIR" ]]; then
+        log_warn "No backups found in $BACKUP_DIR"
+        exit 0
+    fi
+
+    local backups=()
+    while IFS= read -r -d '' backup_path; do
+        [[ -n "$backup_path" ]] && backups+=("$backup_path")
+    done < <(find "$BACKUP_DIR" -maxdepth 1 -mindepth 1 -type d -name 'boot-backup-*' -printf '%T@ %p\0' 2>/dev/null | sort -znr | cut -zd' ' -f2-)
+
+    if [[ ${#backups[@]} -eq 0 ]]; then
         log_warn "No backups found in $BACKUP_DIR"
         exit 0
     fi
 
     local count=1
-    for backup in $(ls -1t "$BACKUP_DIR"); do
-        local backup_path="${BACKUP_DIR}/${backup}"
+    for backup_path in "${backups[@]}"; do
+        local backup_name=$(basename "$backup_path")
         local size=$(du -sh "$backup_path" | cut -f1)
         local date_created=$(stat -c %y "$backup_path" | cut -d' ' -f1,2 | cut -d'.' -f1)
 
-        echo "${count}. $backup"
+        echo "${count}. $backup_name"
         echo "   Created: $date_created"
         echo "   Size: $size"
         echo "   Path: $backup_path"
@@ -382,20 +396,29 @@ restore_backup() {
     echo "╚════════════════════════════════════════════════╝"
     echo ""
 
-    if [[ ! -d "$BACKUP_DIR" ]] || [[ -z "$(ls -A "$BACKUP_DIR" 2>/dev/null)" ]]; then
+    if [[ ! -d "$BACKUP_DIR" ]]; then
         log_error "No backups found in $BACKUP_DIR"
         exit 1
+    fi
+
+    local backups=()
+    while IFS= read -r -d '' backup_path; do
+        [[ -n "$backup_path" ]] && backups+=("$backup_path")
+    done < <(find "$BACKUP_DIR" -maxdepth 1 -mindepth 1 -type d -name 'boot-backup-*' -printf '%T@ %p\0' 2>/dev/null | sort -znr | cut -zd' ' -f2-)
+
+    if [[ ${#backups[@]} -eq 0 ]]; then
+        log_warn "No backups found in $BACKUP_DIR"
+        exit 0
     fi
 
     log_info "Available backups:"
     echo ""
 
-    local backups=($(ls -1t "$BACKUP_DIR"))
     local count=1
-
-    for backup in "${backups[@]}"; do
-        local date_created=$(stat -c %y "${BACKUP_DIR}/${backup}" | cut -d' ' -f1,2 | cut -d'.' -f1)
-        echo "  ${count}. $backup (${date_created})"
+    for backup_path in "${backups[@]}"; do
+        local backup_name=$(basename "$backup_path")
+        local date_created=$(stat -c %y "$backup_path" | cut -d' ' -f1,2 | cut -d'.' -f1)
+        echo "  ${count}. $backup_name (${date_created})"
         ((count++))
     done
 
@@ -412,8 +435,8 @@ restore_backup() {
         exit 1
     fi
 
-    local selected_backup="${backups[$((selection - 1))]}"
-    local selected_path="${BACKUP_DIR}/${selected_backup}"
+    local selected_path="${backups[$((selection - 1))]}"
+    local selected_backup=$(basename "$selected_path")
 
     echo ""
     log_warn "You are about to restore configuration from: $selected_backup"

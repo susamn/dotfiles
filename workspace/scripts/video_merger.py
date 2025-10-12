@@ -63,6 +63,7 @@ def main():
     parser.add_argument("-c", "--config", required=True, help="Path to the configuration file.")
     parser.add_argument("-p", "--path", required=True, help="Path to the directory containing video files.")
     parser.add_argument("-o", "--output", required=True, help="Path to the output directory.")
+    parser.add_argument("-f", "--fade", type=float, default=0, help="Fade duration in seconds (0 to disable, default: 0).")
     args = parser.parse_args()
 
     # Check if ffmpeg is installed
@@ -143,8 +144,7 @@ def main():
                         '-c:v', 'libx264',
                         '-c:a', 'aac',
                         '-y',
-                        output_file,
-                        '-loglevel', 'quiet'
+                        output_file
                     ]
 
                     try:
@@ -178,51 +178,139 @@ def main():
 
     print("Merging video parts...")
 
-    # Create a file list for ffmpeg using absolute paths
-    file_list_path = os.path.join(merged_dir, "file_list.txt")
-
-    try:
-        with open(file_list_path, 'w') as f:
-            for file_path in cut_files:
-                # ffmpeg's concat demuxer requires paths to be quoted if they contain special characters
-                f.write(f"file '{file_path}'\n")
-    except (PermissionError, OSError) as e:
-        print(f"Error: Cannot create file list: {e}", file=sys.stderr)
-        sys.exit(1)
-
     final_output_file = os.path.join(merged_dir, "merged.mp4")
-    merge_command = [
-        'ffmpeg',
-        '-f', 'concat',
-        '-safe', '0',
-        '-i', file_list_path,
-        '-c', 'copy',
-        '-y',
-        final_output_file,
-        '-loglevel', 'quiet'
-    ]
 
-    try:
-        result = subprocess.run(merge_command, capture_output=True, text=True, timeout=600)
+    # If no fade or only one file, use simple concat
+    if args.fade <= 0 or len(cut_files) == 1:
+        # Create a file list for ffmpeg using absolute paths
+        file_list_path = os.path.join(merged_dir, "file_list.txt")
 
-        if result.returncode != 0:
-            print("Error merging video parts.", file=sys.stderr)
-            print(f"ffmpeg stderr:\n{result.stderr}", file=sys.stderr)
+        try:
+            with open(file_list_path, 'w') as f:
+                for file_path in cut_files:
+                    # ffmpeg's concat demuxer requires absolute paths for reliability
+                    abs_path = os.path.abspath(file_path)
+                    f.write(f"file '{abs_path}'\n")
+        except (PermissionError, OSError) as e:
+            print(f"Error: Cannot create file list: {e}", file=sys.stderr)
             sys.exit(1)
 
-        print(f"Merging complete. Output file: {final_output_file}")
-    except subprocess.TimeoutExpired:
-        print("Error: Merging timed out.", file=sys.stderr)
-        sys.exit(1)
-    except Exception as e:
-        print(f"Error: Unexpected error during merge: {e}", file=sys.stderr)
-        sys.exit(1)
+        merge_command = [
+            'ffmpeg',
+            '-f', 'concat',
+            '-safe', '0',
+            '-i', file_list_path,
+            '-c', 'copy',
+            '-y',
+            final_output_file
+        ]
 
-    # Clean up the file list
-    try:
-        os.remove(file_list_path)
-    except OSError:
-        pass  # Ignore cleanup errors
+        try:
+            result = subprocess.run(merge_command, capture_output=True, text=True, timeout=600)
+
+            if result.returncode != 0:
+                print("Error merging video parts.", file=sys.stderr)
+                print(f"ffmpeg stderr:\n{result.stderr}", file=sys.stderr)
+                sys.exit(1)
+
+            print(f"Merging complete. Output file: {final_output_file}")
+        except subprocess.TimeoutExpired:
+            print("Error: Merging timed out.", file=sys.stderr)
+            sys.exit(1)
+        except Exception as e:
+            print(f"Error: Unexpected error during merge: {e}", file=sys.stderr)
+            sys.exit(1)
+
+        # Clean up the file list
+        try:
+            os.remove(file_list_path)
+        except OSError:
+            pass  # Ignore cleanup errors
+    else:
+        # Use xfade filter for cross-fade transitions
+        print(f"Applying {args.fade}s cross-fade transitions between segments...")
+
+        # Get duration of each video file
+        durations = []
+        for video_file in cut_files:
+            try:
+                probe_command = [
+                    'ffprobe',
+                    '-v', 'error',
+                    '-show_entries', 'format=duration',
+                    '-of', 'default=noprint_wrappers=1:nokey=1',
+                    video_file
+                ]
+                result = subprocess.run(probe_command, capture_output=True, text=True, timeout=30)
+                if result.returncode != 0:
+                    print(f"Error getting duration for {video_file}", file=sys.stderr)
+                    sys.exit(1)
+                duration = float(result.stdout.strip())
+                durations.append(duration)
+            except (subprocess.TimeoutExpired, ValueError) as e:
+                print(f"Error getting duration for {video_file}: {e}", file=sys.stderr)
+                sys.exit(1)
+
+        # Build ffmpeg command with xfade filters
+        merge_command = ['ffmpeg']
+
+        # Add all input files
+        for video_file in cut_files:
+            merge_command.extend(['-i', os.path.abspath(video_file)])
+
+        # Build filter_complex for xfade transitions
+        video_filters = []
+        audio_filters = []
+
+        offset = 0
+        current_label = '[0:v]'
+        current_audio = '[0:a]'
+
+        for i in range(len(cut_files) - 1):
+            offset += durations[i] - args.fade
+            next_label = f'[v{i+1}]' if i < len(cut_files) - 2 else '[vout]'
+            next_audio = f'[a{i+1}]' if i < len(cut_files) - 2 else '[aout]'
+
+            # Video xfade
+            video_filters.append(
+                f"{current_label}[{i+1}:v]xfade=transition=fade:duration={args.fade}:offset={offset}{next_label}"
+            )
+
+            # Audio acrossfade
+            audio_filters.append(
+                f"{current_audio}[{i+1}:a]acrossfade=d={args.fade}{next_audio}"
+            )
+
+            current_label = next_label
+            current_audio = next_audio
+
+        filter_complex = ';'.join(video_filters + audio_filters)
+
+        merge_command.extend([
+            '-filter_complex', filter_complex,
+            '-map', '[vout]',
+            '-map', '[aout]',
+            '-c:v', 'libx264',
+            '-c:a', 'aac',
+            '-y',
+            final_output_file
+        ])
+
+        try:
+            result = subprocess.run(merge_command, capture_output=True, text=True, timeout=600)
+
+            if result.returncode != 0:
+                print("Error merging video parts with xfade.", file=sys.stderr)
+                print(f"ffmpeg stderr:\n{result.stderr}", file=sys.stderr)
+                sys.exit(1)
+
+            print(f"Merging complete with cross-fade transitions. Output file: {final_output_file}")
+        except subprocess.TimeoutExpired:
+            print("Error: Merging with xfade timed out.", file=sys.stderr)
+            sys.exit(1)
+        except Exception as e:
+            print(f"Error: Unexpected error during merge: {e}", file=sys.stderr)
+            sys.exit(1)
 
 if __name__ == "__main__":
     main()

@@ -21,3 +21,6 @@ ncdu=A disk usage analyzer with a fast and simple TUI
 chezmoi=A dotfile manager that syncs and manages configuration files
 openssl=Secure Sockets Layer toolkit - cryptographic utility
 tlp=TLP helps extend battery lifespan in linux
+yazi=Terminal folder explorer, use with kitty term to get image previews
+avahi=Advertises and discovers services/devices on the local network using mDNS (Multicast DNS).
+nss-mdns=Lets your system resolve .local hostnames (like myserver.local) via mDNS instead of traditional DNS.

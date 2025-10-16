@@ -22,3 +22,6 @@ chezmoi
 openssl
 tlp
 tlp-rdw
+yazi
+avahi
+nss-mdns

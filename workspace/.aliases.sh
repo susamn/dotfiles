@@ -2,6 +2,7 @@
 alias cht="$SCRIPTS_PATH/cht.sh"
 alias pkgs="$SCRIPTS_PATH/pkg-listing.sh"
 alias o="$SCRIPTS_PATH/open.sh"
+alias zsht="$SCRIPTS_PATH/zsh-timeline.sh"
 alias gsk="$SCRIPTS_PATH/generate-ssh-keys.sh"
 alias ht2="$TOOLS_PATH/helpful-tools-v2/quick-start.sh"
 alias pfm="$TOOLS_PATH/performance-manager/quick-start.sh"

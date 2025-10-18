@@ -67,6 +67,7 @@ show_main_menu() {
     echo -e "${CYAN}═══ Main Menu ═══${NC}"
     echo ""
     echo -e "  ${MAGENTA}Q${NC}) ${YELLOW}⚡ Quick Check - Is it safe to reboot?${NC}"
+    echo -e "  ${MAGENTA}A${NC}) ${YELLOW}🔍 Analyze Package - Check dependencies & boot impact${NC}"
     echo -e "  ${MAGENTA}G${NC}) ${YELLOW}📋 View GRUB Config & Menu Entries${NC}"
     echo -e "  ${MAGENTA}T${NC}) ${YELLOW}📸 List Timeshift Snapshots${NC}"
     echo -e "  ${MAGENTA}P${NC}) ${YELLOW}📦 View Package Timeline - Installation history${NC}"
@@ -603,6 +604,256 @@ action_view_package_timeline() {
     fi
 
     "$TIMELINE_SCRIPT" --view
+}
+
+action_analyze_package() {
+    print_header
+    echo -e "${CYAN}═══ Pre-Installation Package Analysis ═══${NC}"
+    echo ""
+    echo -e "${YELLOW}This tool checks what dependencies will be installed${NC}"
+    echo -e "${YELLOW}and whether they might affect boot safety.${NC}"
+    echo ""
+
+    # Get package name
+    read -p "Enter package name to analyze (or 'q' to quit): " package_name
+
+    if [[ "$package_name" == "q" ]] || [[ -z "$package_name" ]]; then
+        return 0
+    fi
+
+    echo ""
+    echo -e "${BLUE}━━━ Analyzing package: ${CYAN}$package_name${BLUE} ━━━${NC}"
+    echo ""
+
+    # Check if package exists in repos
+    if ! pacman -Si "$package_name" &>/dev/null; then
+        echo -e "${RED}✗ Package '$package_name' not found in repositories${NC}"
+        echo ""
+        echo -e "${CYAN}Suggestions:${NC}"
+        echo "  • Check spelling"
+        echo "  • Search for similar packages: pacman -Ss $package_name"
+        echo "  • Check if it's in AUR"
+        pause
+        return 1
+    fi
+
+    # Get package info
+    local pkg_info=$(pacman -Si "$package_name" 2>/dev/null)
+
+    # Extract basic info
+    local version=$(echo "$pkg_info" | grep "^Version" | cut -d':' -f2- | xargs)
+    local repo=$(echo "$pkg_info" | grep "^Repository" | cut -d':' -f2- | xargs)
+    local installed_size=$(echo "$pkg_info" | grep "^Installed Size" | cut -d':' -f2- | xargs)
+    local description=$(echo "$pkg_info" | grep "^Description" | cut -d':' -f2- | xargs)
+
+    echo -e "${CYAN}Package Information:${NC}"
+    echo -e "  ${BLUE}Repository:${NC} $repo"
+    echo -e "  ${BLUE}Version:${NC} $version"
+    echo -e "  ${BLUE}Installed Size:${NC} $installed_size"
+    echo -e "  ${BLUE}Description:${NC} $description"
+    echo ""
+
+    # Check if already installed
+    if pacman -Q "$package_name" &>/dev/null; then
+        local current_version=$(pacman -Q "$package_name" | awk '{print $2}')
+        echo -e "${YELLOW}⚠ Package already installed (version: $current_version)${NC}"
+
+        if [[ "$current_version" == "$version" ]]; then
+            echo -e "  ${GREEN}✓ Up to date${NC}"
+        else
+            echo -e "  ${CYAN}→ Will be upgraded to $version${NC}"
+        fi
+        echo ""
+    fi
+
+    # Get dependency tree
+    echo -e "${BLUE}━━━ Dependency Analysis ━━━${NC}"
+    echo ""
+    echo -e "${CYAN}Resolving dependencies...${NC}"
+    echo ""
+
+    # Use pactree if available, otherwise use pacman
+    local dep_list=""
+    local new_packages=()
+    local total_download_size=0
+    local total_install_size=0
+
+    if command -v pactree &>/dev/null; then
+        # Show dependency tree
+        echo -e "${CYAN}Dependency tree:${NC}"
+        pactree -c "$package_name" 2>/dev/null | head -30
+
+        if [[ $(pactree "$package_name" 2>/dev/null | wc -l) -gt 30 ]]; then
+            echo "  ... (truncated, use 'pactree $package_name' for full tree)"
+        fi
+        echo ""
+    fi
+
+    # Get list of packages that would be installed
+    local install_preview=$(pacman -Sp "$package_name" --print-format '%n' 2>/dev/null)
+
+    if [[ -z "$install_preview" ]]; then
+        echo -e "${YELLOW}⚠ Could not determine package dependencies${NC}"
+        pause
+        return 1
+    fi
+
+    # Count new vs existing packages
+    local new_count=0
+    local existing_count=0
+
+    while IFS= read -r pkg; do
+        if pacman -Q "$pkg" &>/dev/null; then
+            ((existing_count++))
+        else
+            new_packages+=("$pkg")
+            ((new_count++))
+        fi
+    done <<< "$install_preview"
+
+    echo -e "${CYAN}Installation Summary:${NC}"
+    echo -e "  ${BLUE}Total packages:${NC} $((new_count + existing_count))"
+    echo -e "  ${GREEN}Already installed:${NC} $existing_count"
+    echo -e "  ${YELLOW}New to install:${NC} $new_count"
+    echo ""
+
+    if [[ $new_count -gt 0 ]]; then
+        echo -e "${CYAN}New packages to be installed:${NC}"
+        for pkg in "${new_packages[@]}"; do
+            local pkg_size=$(pacman -Si "$pkg" 2>/dev/null | grep "^Installed Size" | cut -d':' -f2- | xargs)
+            echo -e "  ${BLUE}•${NC} $pkg ${YELLOW}($pkg_size)${NC}"
+        done
+        echo ""
+    fi
+
+    # Boot-critical package detection
+    echo -e "${BLUE}━━━ Boot Impact Analysis ━━━${NC}"
+    echo ""
+
+    local boot_critical=()
+    local boot_related=()
+    local risk_level="LOW"
+
+    # Check each package for boot-critical keywords
+    # Combine new_packages and all packages from install_preview
+    local all_packages=("${new_packages[@]}")
+    while IFS= read -r pkg; do
+        [[ -n "$pkg" ]] && all_packages+=("$pkg")
+    done <<< "$install_preview"
+
+    for pkg in "${all_packages[@]}"; do
+        case "$pkg" in
+            linux|linux-lts|linux-zen|linux-hardened|linux-*)
+                boot_critical+=("$pkg - Kernel package")
+                risk_level="HIGH"
+                ;;
+            grub|grub2|grub-*)
+                boot_critical+=("$pkg - Bootloader")
+                risk_level="HIGH"
+                ;;
+            mkinitcpio|mkinitcpio-*)
+                boot_critical+=("$pkg - initramfs generator")
+                risk_level="HIGH"
+                ;;
+            systemd|systemd-*)
+                boot_critical+=("$pkg - Init system")
+                risk_level="HIGH"
+                ;;
+            efibootmgr|efitools|efi-*)
+                boot_related+=("$pkg - EFI/UEFI tools")
+                [[ "$risk_level" == "LOW" ]] && risk_level="MEDIUM"
+                ;;
+            filesystem|glibc|gcc-libs|bash)
+                boot_related+=("$pkg - Core system library")
+                [[ "$risk_level" == "LOW" ]] && risk_level="MEDIUM"
+                ;;
+            *-firmware|firmware-*)
+                boot_related+=("$pkg - Hardware firmware")
+                ;;
+            virtualbox-guest-utils|virtualbox-guest-modules-arch)
+                boot_related+=("$pkg - Kernel modules for VirtualBox")
+                [[ "$risk_level" == "LOW" ]] && risk_level="MEDIUM"
+                ;;
+        esac
+    done
+
+    # Display risk assessment
+    case "$risk_level" in
+        HIGH)
+            echo -e "${RED}⚠⚠⚠ RISK LEVEL: HIGH ⚠⚠⚠${NC}"
+            echo ""
+            echo -e "${RED}Boot-critical packages detected:${NC}"
+            for item in "${boot_critical[@]}"; do
+                echo -e "  ${RED}•${NC} $item"
+            done
+            echo ""
+            echo -e "${YELLOW}RECOMMENDATIONS:${NC}"
+            echo -e "  ${BLUE}1.${NC} Create a boot backup first (Option 3)"
+            echo -e "  ${BLUE}2.${NC} Ensure you have a fallback kernel installed"
+            echo -e "  ${BLUE}3.${NC} Run boot safety check after installation (Option 2)"
+            echo -e "  ${BLUE}4.${NC} DO NOT reboot without validation"
+            ;;
+        MEDIUM)
+            echo -e "${YELLOW}⚠ RISK LEVEL: MEDIUM${NC}"
+            echo ""
+            if [[ ${#boot_related[@]} -gt 0 ]]; then
+                echo -e "${YELLOW}Boot-related packages detected:${NC}"
+                for item in "${boot_related[@]}"; do
+                    echo -e "  ${YELLOW}•${NC} $item"
+                done
+                echo ""
+            fi
+            echo -e "${CYAN}RECOMMENDATIONS:${NC}"
+            echo -e "  ${BLUE}1.${NC} Review dependencies carefully"
+            echo -e "  ${BLUE}2.${NC} Consider creating a backup"
+            echo -e "  ${BLUE}3.${NC} Run quick check before reboot (Option Q)"
+            ;;
+        LOW)
+            echo -e "${GREEN}✓ RISK LEVEL: LOW${NC}"
+            echo ""
+            echo -e "${GREEN}No boot-critical packages detected.${NC}"
+            echo -e "This package should be safe to install without affecting boot."
+            ;;
+    esac
+
+    echo ""
+
+    # Additional warnings for specific packages
+    if [[ "$package_name" == "virtualbox-guest-utils" ]] || [[ "$package_name" == "virtualbox-guest-modules-arch" ]]; then
+        echo -e "${BLUE}━━━ VirtualBox Guest-Specific Notes ━━━${NC}"
+        echo ""
+        echo -e "${CYAN}virtualbox-guest-modules-arch requirements:${NC}"
+        echo -e "  ${BLUE}•${NC} Must match your kernel version"
+        echo -e "  ${BLUE}•${NC} Rebuilds needed after kernel updates"
+        echo -e "  ${BLUE}•${NC} Consider virtualbox-guest-dkms for automatic rebuilds"
+        echo ""
+        echo -e "${YELLOW}Boot impact:${NC}"
+        echo -e "  ${BLUE}•${NC} Modules load at boot time"
+        echo -e "  ${BLUE}•${NC} Failure won't prevent boot, but will disable guest features"
+        echo -e "  ${BLUE}•${NC} Check dmesg after boot for module loading errors"
+        echo ""
+    fi
+
+    # Show disk space check
+    echo -e "${BLUE}━━━ Disk Space Check ━━━${NC}"
+    echo ""
+
+    local boot_avail=$(df -h /boot 2>/dev/null | awk 'NR==2 {print $4}')
+    local root_avail=$(df -h / 2>/dev/null | awk 'NR==2 {print $4}')
+
+    echo -e "${CYAN}Available space:${NC}"
+    echo -e "  ${BLUE}/boot:${NC} $boot_avail"
+    echo -e "  ${BLUE}/:${NC} $root_avail"
+    echo ""
+
+    # Final action prompt
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+    echo -e "${CYAN}Install command:${NC}"
+    echo -e "  ${GREEN}sudo pacman -S $package_name${NC}"
+    echo ""
+
+    pause
 }
 
 action_view_grub() {
@@ -1173,6 +1424,7 @@ main() {
 
         case $choice in
             q|Q) action_quick_check ;;
+            a|A) action_analyze_package ;;
             g|G) action_view_grub ;;
             t|T) action_list_timeshift ;;
             p|P) action_view_package_timeline ;;

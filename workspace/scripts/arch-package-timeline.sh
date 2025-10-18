@@ -79,14 +79,15 @@ log_package_operation() {
 
             # Check what operation was performed by looking at recent pacman log
             local operation="UNKNOWN"
-            local last_log=$(grep "\[ALPM\].*${package}" /var/log/pacman.log 2>/dev/null | tail -1 || echo "")
+            # Use word boundary pattern to match exact package name
+            local last_log=$(grep "\[ALPM\].* ${package} (" /var/log/pacman.log 2>/dev/null | tail -1 || echo "")
 
             # Check in order: reinstalled BEFORE installed (since reinstalled contains "installed")
-            if echo "$last_log" | grep -q "reinstalled ${package}"; then
+            if echo "$last_log" | grep -q "reinstalled ${package} ("; then
                 operation="REINSTALLED"
-            elif echo "$last_log" | grep -q "installed ${package}"; then
+            elif echo "$last_log" | grep -q "installed ${package} ("; then
                 operation="INSTALLED"
-            elif echo "$last_log" | grep -q "upgraded ${package}"; then
+            elif echo "$last_log" | grep -q "upgraded ${package} ("; then
                 operation="UPGRADED"
                 # Extract old and new versions for upgrades
                 local old_ver=$(echo "$last_log" | sed 's/.*(\(.*\) -> .*/\1/')

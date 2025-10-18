@@ -12,7 +12,7 @@ alias att="$TOOLS_PATH/api-testing-tool/quick-start.sh"
 alias pnv="$TOOLS_PATH/pyenv-sync/pyenv-sync.sh"
 
 if [ -f /etc/os-release ] && grep -qi "arch" /etc/os-release; then
-  alias abm="$SCRIPTS_PATH/arch-boot-manager.sh"
+  alias asm="$SCRIPTS_PATH/arch-system-manager.sh"
 fi
 
 if [ -x "$(command -v yt-dlp)" ]; then

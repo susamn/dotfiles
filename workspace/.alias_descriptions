@@ -15,5 +15,5 @@ gas=Git status with assumed unchanged files
 gassume=Update git index to assume some file file which is already tracked
 gunassume=Unassume an previously assumed file
 gassumed=Show all assumed files
-abm=Launches arch boot manager troubleshooting tool
+asm=Launches arch system manager troubleshooting tool
 zsht=See timeline for .zshrc evaluation time

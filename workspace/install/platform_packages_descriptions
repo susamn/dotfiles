@@ -26,3 +26,4 @@ avahi=Advertises and discovers services/devices on the local network using mDNS 
 nss-mdns=Lets your system resolve .local hostnames (like myserver.local) via mDNS instead of traditional DNS.
 dysk=Disk usage in a visual bar
 bat=Beautiful cat clone
+bat-extras=After bat is installed some extra commands to improve man, diff, grep etc

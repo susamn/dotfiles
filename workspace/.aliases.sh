@@ -20,8 +20,13 @@ if [ -x "$(command -v yt-dlp)" ]; then
 fi
 
 if [ -x "$(command -v bat)" ]; then
-  alias cat="bat"
+  alias cat="bat -p"
   alias catx="bat -A"
+
+  if [ -x "$(command -v batman)" ]; then
+    alias man="batman"
+  fi
+
 fi
 
 if [ -x "$(command -v zoxide)" ]; then

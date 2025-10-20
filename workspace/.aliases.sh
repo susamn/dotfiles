@@ -24,6 +24,10 @@ if [ -x "$(command -v yt-dlp)" ]; then
   alias ytd="$SCRIPTS_PATH/ytd.sh"
 fi
 
+if [ -x "$(command -v mpd)" ] && [ -x "$(command -v playerctl)" ] ; then
+  alias mp="$SCRIPTS_PATH/media-play-manager.sh"
+fi
+
 if [ -x "$(command -v bat)" ]; then
   if [ "$SHELL_MODE" = "ENHANCED" ]; then
     alias cat="bat -p"

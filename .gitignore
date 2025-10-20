@@ -28,3 +28,5 @@ workspace/tools/.claude
 **/.idea/
 *.log
 *.pid
+*mpd.db
+*mpdstate

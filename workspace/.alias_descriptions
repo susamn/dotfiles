@@ -17,3 +17,5 @@ gunassume=Unassume an previously assumed file
 gassumed=Show all assumed files
 asm=Launches arch system manager troubleshooting tool
 zsht=See timeline for .zshrc evaluation time
+mp=Media player manager with mpd, playerctl and mpDris2
+

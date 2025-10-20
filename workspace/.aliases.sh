@@ -1,3 +1,8 @@
+# Shell Mode Configuration
+# Set SHELL_MODE=ENHANCED to enable system command replacements (bat->cat, nvim->vim, etc.)
+# Set SHELL_MODE=NATIVE to use native system commands
+: ${SHELL_MODE:=ENHANCED}  # Default to ENHANCED if not set
+
 # Generic aliases
 alias cht="$SCRIPTS_PATH/cht.sh"
 alias pkgs="$SCRIPTS_PATH/pkg-listing.sh"
@@ -20,23 +25,29 @@ if [ -x "$(command -v yt-dlp)" ]; then
 fi
 
 if [ -x "$(command -v bat)" ]; then
-  alias cat="bat -p"
-  alias catx="bat -A"
-
-  if [ -x "$(command -v batman)" ]; then
-    alias man="batman"
+  if [ "$SHELL_MODE" = "ENHANCED" ]; then
+    alias cat="bat -p"
+    alias catx="bat -A"
   fi
 
+  if [ -x "$(command -v batman)" ] && [ "$SHELL_MODE" = "ENHANCED" ]; then
+    alias man="batman"
+  fi
 fi
 
 if [ -x "$(command -v zoxide)" ]; then
-  eval "$(zoxide init zsh)"
-  alias cd="z"
+  if [ "$SHELL_MODE" = "ENHANCED" ]; then
+    eval "$(zoxide init zsh --cmd cd)"  # Replace 'cd' with zoxide
+  else
+    eval "$(zoxide init zsh)"           # Keep 'z' command, preserve native 'cd'
+  fi
 fi
 
 if [ -x "$(command -v colorls)" ]; then
-  alias ls="colorls"
-  alias lsrt="colorls -alrt"
+  if [ "$SHELL_MODE" = "ENHANCED" ]; then
+    alias ls="colorls"
+    alias lsrt="colorls -alrt"
+  fi
 fi
 
 if [ -x "$(command -v lazygit)" ]; then
@@ -44,9 +55,11 @@ if [ -x "$(command -v lazygit)" ]; then
 fi
 
 if [ -x "$(command -v lsd)" ]; then
-  alias ls="lsd"
-  alias lsrt="lsd -alrt"
-  alias lstree="lsd --tree"
+  if [ "$SHELL_MODE" = "ENHANCED" ]; then
+    alias ls="lsd"
+    alias lsrt="lsd -alrt"
+  fi
+  alias lstree="lsd --tree"  # Keep lstree as it's a new command, not a replacement
 fi
 
 if [ -x "$(command -v jq)" ]; then
@@ -60,8 +73,10 @@ if [ -x "$(command -v xsel)" ]; then
 fi
 
 if [ -x "$(command -v nvim)" ]; then
+  if [ "$SHELL_MODE" = "ENHANCED" ]; then
     alias vi="nvim"
     alias vim="nvim"
+  fi
 fi
 
 # fzf aliases

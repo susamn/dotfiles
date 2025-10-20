@@ -19,6 +19,11 @@ if [ -x "$(command -v yt-dlp)" ]; then
   alias ytd="$SCRIPTS_PATH/ytd.sh"
 fi
 
+if [ -x "$(command -v bat)" ]; then
+  alias cat="bat"
+  alias catx="bat -A"
+fi
+
 if [ -x "$(command -v zoxide)" ]; then
   eval "$(zoxide init zsh)"
   alias cd="z"
@@ -37,10 +42,6 @@ if [ -x "$(command -v lsd)" ]; then
   alias ls="lsd"
   alias lsrt="lsd -alrt"
   alias lstree="lsd --tree"
-fi
-
-if [ -x "$(command -v bat)" ]; then
-  alias cat="bat -p"
 fi
 
 if [ -x "$(command -v jq)" ]; then

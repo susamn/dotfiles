@@ -24,3 +24,5 @@ tlp=TLP helps extend battery lifespan in linux
 yazi=Terminal folder explorer, use with kitty term to get image previews
 avahi=Advertises and discovers services/devices on the local network using mDNS (Multicast DNS).
 nss-mdns=Lets your system resolve .local hostnames (like myserver.local) via mDNS instead of traditional DNS.
+dysk=Disk usage in a visual bar
+bat=Beautiful cat clone

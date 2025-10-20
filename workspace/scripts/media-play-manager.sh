@@ -53,9 +53,18 @@ get_all_players() {
         done <<< "$players"
     fi
 
-    # Add MPD if available
+    # Add MPD if available and not already in the list
     if mpc status &>/dev/null; then
-        player_array+=("mpd")
+        local mpd_exists=false
+        for player in "${player_array[@]}"; do
+            if [[ "$player" == "mpd" ]]; then
+                mpd_exists=true
+                break
+            fi
+        done
+        if [[ "$mpd_exists" == false ]]; then
+            player_array+=("mpd")
+        fi
     fi
 
     printf '%s\n' "${player_array[@]}"

@@ -73,104 +73,64 @@ run_command() {
 }
 
 # ═══════════════════════════════════════════════════════════════
-# MAIN MENU
+# MAIN MENU - Single Page with Submenus
 # ═══════════════════════════════════════════════════════════════
 
 show_main_menu() {
     print_header
-    echo -e "${CYAN}═══ Main Menu ═══${NC}"
+    echo -e "${CYAN}═══ System Management Menu ═══${NC}"
     echo ""
-    echo -e "  ${GREEN}1${NC}) ${BLUE}⚙️  Boot Management${NC}       - Kernel, GRUB, safety checks"
-    echo -e "  ${GREEN}2${NC}) ${BLUE}📦  Update Management${NC}     - System upgrades, package analysis"
-    echo -e "  ${GREEN}3${NC}) ${BLUE}📊  Package Timeline${NC}      - Installation history & tracking"
-    echo -e "  ${GREEN}4${NC}) ${BLUE}🔧  Services & Scripts${NC}    - Systemd, cron, timers status"
+
+    # Boot Management Section
+    echo -e "${GREEN}1${NC})   ${BLUE}⚙️  Boot Management${NC}"
+    echo -e "      ${MAGENTA}a${NC})  ${YELLOW}⚡ Quick Safety Check${NC} - Is it safe to reboot?"
+    echo -e "      ${MAGENTA}b${NC})  ${YELLOW}📖 Boot Process Help${NC} - Understand how boot works"
+    echo -e "      ${GREEN}1${NC})  View GRUB Configuration"
+    echo -e "      ${GREEN}2${NC})  Run Boot Safety Check"
+    echo -e "      ${GREEN}3${NC})  Auto-Fix Boot Issues ${RED}[modifies system]${NC}"
+    echo -e "      ${GREEN}4${NC})  Create Boot Backup"
+    echo -e "      ${GREEN}5${NC})  List Backups"
+    echo -e "      ${GREEN}6${NC})  Restore from Backup ${RED}[modifies system]${NC}"
+    echo -e "      ${GREEN}7${NC})  View Timeshift Snapshots"
     echo ""
-    echo -e "  ${YELLOW}5${NC}) ${MAGENTA}🛠️  Install System Tools${NC}  - Install scripts & hooks system-wide"
-    echo -e "  ${YELLOW}6${NC}) ${MAGENTA}📖  Documentation${NC}        - View help files"
+
+    # Update Management Section
+    echo -e "${GREEN}2${NC})   ${BLUE}📦  Update Management${NC}"
+    echo -e "      ${GREEN}1${NC})  Preview Pending Updates"
+    echo -e "      ${GREEN}2${NC})  Analyze Package"
+    echo -e "      ${GREEN}3${NC})  Complete Upgrade Workflow"
     echo ""
-    echo -e "  ${RED}0${NC}) Exit"
+
+    # Package Timeline Section
+    echo -e "${GREEN}3${NC})   ${BLUE}📊  Package Timeline${NC}"
+    echo -e "      ${GREEN}1${NC})  View Complete Timeline"
+    echo -e "      ${GREEN}2${NC})  View Recent Activity (Last 50)"
+    echo -e "      ${GREEN}3${NC})  Search Timeline"
     echo ""
-    echo -ne "${CYAN}Select category:${NC} "
+
+    # Services & Scripts Section
+    echo -e "${GREEN}4${NC})   ${BLUE}🔧  Services & Scripts${NC}"
+    echo -e "      ${GREEN}1${NC})  Active Systemd Services"
+    echo -e "      ${GREEN}2${NC})  Failed Services"
+    echo -e "      ${GREEN}3${NC})  Systemd Timers"
+    echo -e "      ${GREEN}4${NC})  Cron Jobs"
+    echo -e "      ${GREEN}5${NC})  User Scripts & Tools"
+    echo -e "      ${GREEN}6${NC})  Enabled Services"
+    echo -e "      ${GREEN}7${NC})  Recent Service Changes"
+    echo ""
+
+    # Installation & Docs
+    echo -e "${YELLOW}5${NC})   ${MAGENTA}🛠️  Install System Tools${NC} - Install scripts & hooks system-wide"
+    echo -e "${YELLOW}6${NC})   ${MAGENTA}📖  Documentation${NC} - View help files"
+    echo ""
+    echo -e "${RED}0${NC})   Exit"
+    echo ""
+    echo -ne "${CYAN}Select option (e.g., 11, 23, 1a):${NC} "
 }
 
 # ═══════════════════════════════════════════════════════════════
-# SECTION 1: BOOT MANAGEMENT
+# ACTION FUNCTIONS
 # ═══════════════════════════════════════════════════════════════
-
-show_boot_menu() {
-    print_section_header "Boot Management"
-    echo -e "${CYAN}═══ Boot Management ═══${NC}"
-    echo ""
-    echo -e "  ${MAGENTA}Q${NC}) ${YELLOW}⚡ Quick Safety Check${NC} - Is it safe to reboot?"
-    echo -e "  ${MAGENTA}H${NC}) ${YELLOW}📖 Boot Process Help${NC}  - Understand how boot works"
-    echo ""
-    echo -e "  ${GREEN}1${NC}) ${BLUE}View GRUB Configuration${NC} - Menu entries & kernel detection"
-    echo -e "  ${GREEN}2${NC}) ${BLUE}Run Boot Safety Check${NC} - Validate boot configuration"
-    echo -e "  ${GREEN}3${NC}) ${BLUE}Auto-Fix Boot Issues${NC} - Automatically repair problems ${RED}[modifies system]${NC}"
-    echo -e "  ${GREEN}4${NC}) ${BLUE}Create Boot Backup${NC} - Backup boot configuration"
-    echo -e "  ${GREEN}5${NC}) ${BLUE}List Backups${NC} - Show all available backups"
-    echo -e "  ${GREEN}6${NC}) ${BLUE}Restore from Backup${NC} - Restore boot configuration ${RED}[modifies system]${NC}"
-    echo -e "  ${GREEN}7${NC}) ${BLUE}View Timeshift Snapshots${NC} - System snapshot status"
-    echo ""
-    echo -e "  ${YELLOW}B${NC}) ${CYAN}← Back to Main Menu${NC}"
-    echo ""
-    echo -ne "${CYAN}Select option:${NC} "
-}
-
-# ═══════════════════════════════════════════════════════════════
-# SECTION 2: UPDATE MANAGEMENT
-# ═══════════════════════════════════════════════════════════════
-
-show_update_menu() {
-    print_section_header "Update Management"
-    echo -e "${CYAN}═══ Update Management ═══${NC}"
-    echo ""
-    echo -e "  ${GREEN}1${NC}) ${BLUE}Preview Pending Updates${NC} - See what will be upgraded"
-    echo -e "  ${GREEN}2${NC}) ${BLUE}Analyze Package${NC} - Check dependencies & boot impact"
-    echo -e "  ${GREEN}3${NC}) ${BLUE}Complete Upgrade Workflow${NC} - Guided safe upgrade process"
-    echo ""
-    echo -e "  ${YELLOW}B${NC}) ${CYAN}← Back to Main Menu${NC}"
-    echo ""
-    echo -ne "${CYAN}Select option:${NC} "
-}
-
-# ═══════════════════════════════════════════════════════════════
-# SECTION 3: PACKAGE TIMELINE
-# ═══════════════════════════════════════════════════════════════
-
-show_timeline_menu() {
-    print_section_header "Package Timeline"
-    echo -e "${CYAN}═══ Package Timeline ═══${NC}"
-    echo ""
-    echo -e "  ${GREEN}1${NC}) ${BLUE}View Complete Timeline${NC} - All package operations history"
-    echo -e "  ${GREEN}2${NC}) ${BLUE}View Recent Activity${NC} - Last 50 operations"
-    echo -e "  ${GREEN}3${NC}) ${BLUE}Search Timeline${NC} - Find specific package operations"
-    echo ""
-    echo -e "  ${YELLOW}B${NC}) ${CYAN}← Back to Main Menu${NC}"
-    echo ""
-    echo -ne "${CYAN}Select option:${NC} "
-}
-
-# ═══════════════════════════════════════════════════════════════
-# SECTION 4: SERVICES & SCRIPTS
-# ═══════════════════════════════════════════════════════════════
-
-show_services_menu() {
-    print_section_header "Services & Scripts"
-    echo -e "${CYAN}═══ Services & Scripts ═══${NC}"
-    echo ""
-    echo -e "  ${GREEN}1${NC}) ${BLUE}Active Systemd Services${NC} - Running services status"
-    echo -e "  ${GREEN}2${NC}) ${BLUE}Failed Services${NC} - Show failed service units"
-    echo -e "  ${GREEN}3${NC}) ${BLUE}Systemd Timers${NC} - View all timers and their status"
-    echo -e "  ${GREEN}4${NC}) ${BLUE}Cron Jobs${NC} - System and user crontabs"
-    echo -e "  ${GREEN}5${NC}) ${BLUE}User Scripts & Tools${NC} - Custom scripts in \$PATH"
-    echo -e "  ${GREEN}6${NC}) ${BLUE}Enabled Services${NC} - Services enabled at boot"
-    echo -e "  ${GREEN}7${NC}) ${BLUE}Recent Service Changes${NC} - Recently modified units"
-    echo ""
-    echo -e "  ${YELLOW}B${NC}) ${CYAN}← Back to Main Menu${NC}"
-    echo ""
-    echo -ne "${CYAN}Select option:${NC} "
-}
 
 # ═══════════════════════════════════════════════════════════════
 # BOOT MANAGEMENT ACTIONS
@@ -809,91 +769,6 @@ action_view_docs() {
     pause
 }
 
-# ═══════════════════════════════════════════════════════════════
-# MENU HANDLERS
-# ═══════════════════════════════════════════════════════════════
-
-handle_boot_menu() {
-    while true; do
-        show_boot_menu
-        read -r choice
-
-        case $choice in
-            q|Q) action_quick_check ;;
-            h|H) action_boot_help ;;
-            1) action_view_grub ;;
-            2) action_boot_check ;;
-            3) action_boot_autofix ;;
-            4) action_create_backup ;;
-            5) action_list_backups ;;
-            6) action_restore_backup ;;
-            7) action_view_timeshift ;;
-            b|B) return ;;
-            *)
-                echo -e "${RED}Invalid option${NC}"
-                sleep 1
-                ;;
-        esac
-    done
-}
-
-handle_update_menu() {
-    while true; do
-        show_update_menu
-        read -r choice
-
-        case $choice in
-            1) action_pre_upgrade ;;
-            2) action_analyze_package ;;
-            3) action_upgrade_workflow ;;
-            b|B) return ;;
-            *)
-                echo -e "${RED}Invalid option${NC}"
-                sleep 1
-                ;;
-        esac
-    done
-}
-
-handle_timeline_menu() {
-    while true; do
-        show_timeline_menu
-        read -r choice
-
-        case $choice in
-            1) action_view_timeline ;;
-            2) action_view_recent_timeline ;;
-            3) action_search_timeline ;;
-            b|B) return ;;
-            *)
-                echo -e "${RED}Invalid option${NC}"
-                sleep 1
-                ;;
-        esac
-    done
-}
-
-handle_services_menu() {
-    while true; do
-        show_services_menu
-        read -r choice
-
-        case $choice in
-            1) action_active_services ;;
-            2) action_failed_services ;;
-            3) action_systemd_timers ;;
-            4) action_cron_jobs ;;
-            5) action_user_scripts ;;
-            6) action_enabled_services ;;
-            7) action_recent_service_changes ;;
-            b|B) return ;;
-            *)
-                echo -e "${RED}Invalid option${NC}"
-                sleep 1
-                ;;
-        esac
-    done
-}
 
 # ═══════════════════════════════════════════════════════════════
 # MAIN LOOP
@@ -904,13 +779,45 @@ main() {
         show_main_menu
         read -r choice
 
-        case $choice in
-            1) handle_boot_menu ;;
-            2) handle_update_menu ;;
-            3) handle_timeline_menu ;;
-            4) handle_services_menu ;;
+        # Convert to lowercase for case-insensitive matching
+        choice_lower=$(echo "$choice" | tr '[:upper:]' '[:lower:]')
+
+        case $choice_lower in
+            # Boot Management
+            1a) action_quick_check ;;
+            1b) action_boot_help ;;
+            11) action_view_grub ;;
+            12) action_boot_check ;;
+            13) action_boot_autofix ;;
+            14) action_create_backup ;;
+            15) action_list_backups ;;
+            16) action_restore_backup ;;
+            17) action_view_timeshift ;;
+
+            # Update Management
+            21) action_pre_upgrade ;;
+            22) action_analyze_package ;;
+            23) action_upgrade_workflow ;;
+
+            # Package Timeline
+            31) action_view_timeline ;;
+            32) action_view_recent_timeline ;;
+            33) action_search_timeline ;;
+
+            # Services & Scripts
+            41) action_active_services ;;
+            42) action_failed_services ;;
+            43) action_systemd_timers ;;
+            44) action_cron_jobs ;;
+            45) action_user_scripts ;;
+            46) action_enabled_services ;;
+            47) action_recent_service_changes ;;
+
+            # Installation & Documentation
             5) action_install_tools ;;
             6) action_view_docs ;;
+
+            # Exit
             0)
                 echo ""
                 echo -e "${GREEN}Goodbye!${NC}"

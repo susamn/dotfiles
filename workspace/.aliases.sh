@@ -124,7 +124,7 @@ if [ -x "$(command -v git)" ]; then
     alias gnew='git checkout -b'
     alias gm='git merge'
     alias grb='git rebase'
-    alias gsh='git stash'
+    alias gsh="$SCRIPTS_PATH/git-stash-manager.sh"
     alias gclean='git clean -fd'
     alias gt='git tag'
     alias gcfg='git config'

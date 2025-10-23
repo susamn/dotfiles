@@ -125,6 +125,8 @@ if [ -x "$(command -v git)" ]; then
     alias gm='git merge'
     alias grb='git rebase'
     alias gsh="$SCRIPTS_PATH/git-stash-manager.sh"
+    alias gsha="$SCRIPTS_PATH/git-stash-apply-current.sh"
+    alias gshap="$SCRIPT_PATH/git-stash-apply-current.sh -p"
     alias gclean='git clean -fd'
     alias gt='git tag'
     alias gcfg='git config'

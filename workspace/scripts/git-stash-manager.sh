@@ -27,6 +27,10 @@ NC='\033[0m'
 
 # Get current branch
 current_branch=$(git branch --show-current)
+if [[ -z "$current_branch" ]]; then
+    # Detached HEAD state
+    current_branch="(detached HEAD)"
+fi
 echo -e "${MAGENTA}🌿 Current Branch:${NC} ${current_branch}"
 echo
 
@@ -48,6 +52,14 @@ git stash list --format="%gd|%gs|%cr" | while IFS='|' read -r stash_ref message 
         # Try sed -E first (macOS, modern GNU sed), fall back to sed -r (older GNU sed)
         branch=$(echo "$message" | sed -E 's/(WIP on|On) ([^:]+):.*/\2/' 2>/dev/null || echo "$message" | sed -r 's/(WIP on|On) ([^:]+):.*/\2/' 2>/dev/null)
         description=$(echo "$message" | sed -E 's/(WIP on|On) [^:]+: (.+)/\2/' 2>/dev/null || echo "$message" | sed -r 's/(WIP on|On) [^:]+: (.+)/\2/' 2>/dev/null)
+
+        # Fallback if sed failed
+        if [[ -z "$branch" ]]; then
+            branch="unknown"
+        fi
+        if [[ -z "$description" ]]; then
+            description="$message"
+        fi
     else
         branch="unknown"
         description="$message"

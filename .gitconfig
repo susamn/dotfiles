@@ -56,3 +56,6 @@
 
 [commit]
         gpgsign = false # set to true if you want to sign commits by default
+[user]
+	name = Supratim Samanta
+	email = supratim.iee23.ju2005@gmail.com

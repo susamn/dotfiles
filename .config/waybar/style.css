@@ -2,7 +2,7 @@
     border: none;
     border-radius: 0;
     font-family: Roboto, Helvetica, Arial, sans-serif;
-    font-size: 13px;
+    font-size: 1rem;
     min-height: 0;
 }
 
@@ -32,44 +32,11 @@ tooltip label {
     border-bottom: 3px solid white;
 }
 
-#mode,
+#network,
+#pulseaudio,
 #clock,
 #battery {
     padding: 0 10px;
-}
-
-#mode {
-    background: #64727d;
-    border-bottom: 3px solid white;
-}
-
-#clock {
-    background-color: #64727d;
-}
-
-#battery {
-    background-color: #ffffff;
-    color: black;
-}
-
-#battery.charging {
-    color: white;
-    background-color: #26a65b;
-}
-
-@keyframes blink {
-    to {
-        background-color: #ffffff;
-        color: black;
-    }
-}
-
-#battery.warning:not(.charging) {
-    background: #f53c3c;
-    color: white;
-    animation-name: blink;
-    animation-duration: 0.5s;
-    animation-timing-function: steps(12);
-    animation-iteration-count: infinite;
-    animation-direction: alternate;
+    background-color: #e8eaed;
+    color: #121212;
 }

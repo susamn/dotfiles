@@ -1,6 +1,6 @@
 {
   "layer": "top",
-  "modules-left": [],
+  "modules-left": ["hyprland/workspaces", "hyprland/window"],
   "modules-right": ["battery", "clock"],
 
   "battery": {
@@ -19,8 +19,24 @@
     "format-icons": ["", "", "", "", ""],
   },
   "clock": {
-    // "timezone": "America/New_York",
+    "timezone": "America/New_York",
     "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
     "format-alt": "{:%Y-%m-%d}",
+  },
+
+  "hyprland/workspaces": {
+    "format": "{name}",
+    "persistent-workspaces": {
+      "*": 5, // 5 workspaces by default on every monitor
+      "HDMI-A-1": 3, // but only three on HDMI-A-1
+    },
+  },
+  "hyprland/window": {
+    "format": "{}",
+    "rewrite": {
+      "(.*) — Mozilla Firefox": "🌎 $1",
+      "(.*) - fish": "> [$1]",
+    },
+    "separate-outputs": true,
   },
 }

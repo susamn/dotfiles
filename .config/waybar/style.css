@@ -1,3 +1,5 @@
+@import "colors.css";
+
 * {
     border: none;
     border-radius: 0;
@@ -7,36 +9,51 @@
 }
 
 window#waybar {
-    background: rgba(43, 48, 59, 0.5);
-    border-bottom: 3px solid rgba(100, 114, 125, 0.5);
-    color: white;
+    background: transparent;
+    color: @on_surface;
 }
 
 tooltip {
-    background: rgba(43, 48, 59, 0.5);
+    background: @background;
     border: 1px solid rgba(100, 114, 125, 0.5);
 }
 tooltip label {
-    color: white;
+    color: @on_surface;
+}
+
+#workspaces {
+    background: @surface_container;
+    border-radius: 100px;
+    padding: 5px 10px;
+    margin: 10px;
 }
 
 #workspaces button {
-    padding: 0 5px;
+    padding: 5px 12px;
     background: transparent;
-    color: white;
-    border-bottom: 3px solid transparent;
+    color: @on_surface_variant;
+    border-radius: 100px;
+    margin: 0 3px;
+    transition: all 0.3s ease;
 }
 
-#workspaces button.focused {
-    background: #64727d;
-    border-bottom: 3px solid white;
+#workspaces button.active {
+    background: @primary;
+    color: @on_primary;
+}
+
+#workspaces button:hover {
+    background: @surface_container_high;
+    color: @on_surface;
 }
 
 #network,
 #pulseaudio,
 #clock,
 #battery {
-    padding: 0 10px;
-    background-color: #e8eaed;
+    padding: 5px 15px;
+    margin: 10px;
+    border-radius: 100px;
+    background-color: @primary;
     color: #121212;
 }

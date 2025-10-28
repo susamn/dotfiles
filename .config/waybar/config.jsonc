@@ -1,7 +1,8 @@
 {
   "layer": "top",
-  "modules-left": ["hyprland/workspaces", "hyprland/window"],
-  "modules-right": ["network", "pulseaudio", "battery", "clock"],
+  "modules-left": ["clock", "hyprland/window"],
+  "modules-center": ["hyprland/workspaces"],
+  "modules-right": ["network", "pulseaudio", "battery"],
 
   "battery": {
     "states": {

@@ -21,7 +21,7 @@ output_path = '~/.config/kitty/colors.conf'
 
 [templates.rofi]
 input_path = '~/.config/matugen/templates/rofi-colors.rasi'
-output_path = '~/.config/rofi/colors.conf'
+output_path = '~/.config/rofi/colors.rasi'
 
 [templates.waybar]
 input_path = '~/.config/matugen/templates/colors.css'

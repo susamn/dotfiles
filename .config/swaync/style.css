@@ -1,0 +1,178 @@
+* {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 14px;
+}
+
+.notification-row {
+    outline: none;
+    margin: 0;
+    padding: 0;
+}
+
+.notification {
+    background: rgba(30, 30, 46, 0.95);
+    border-radius: 16px;
+    border: 2px solid rgba(137, 180, 250, 0.5);
+    margin: 8px;
+    padding: 0;
+}
+
+.notification-content {
+    background: transparent;
+    padding: 12px;
+    border-radius: 14px;
+}
+
+.notification-default-action {
+    border-radius: 14px;
+    margin: 0;
+}
+
+.close-button {
+    background: rgba(243, 139, 168, 0.8);
+    color: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    margin: 8px;
+    padding: 2px;
+    min-width: 24px;
+    min-height: 24px;
+}
+
+.close-button:hover {
+    background: rgba(243, 139, 168, 1);
+    color: white;
+}
+
+.notification-action {
+    background: rgba(137, 180, 250, 0.3);
+    border-radius: 8px;
+    border: 1px solid rgba(137, 180, 250, 0.5);
+    margin: 4px;
+    padding: 6px 12px;
+}
+
+.notification-action:hover {
+    background: rgba(137, 180, 250, 0.5);
+}
+
+.summary {
+    color: rgba(205, 214, 244, 1);
+    font-weight: bold;
+    font-size: 15px;
+    margin-bottom: 4px;
+}
+
+.body {
+    color: rgba(186, 194, 222, 0.9);
+    font-size: 14px;
+}
+
+.control-center {
+    background: rgba(30, 30, 46, 0.95);
+    border-radius: 16px;
+    border: 2px solid rgba(137, 180, 250, 0.5);
+    margin: 8px;
+    padding: 12px;
+}
+
+.control-center-list {
+    background: transparent;
+}
+
+.control-center-list-placeholder {
+    color: rgba(186, 194, 222, 0.5);
+}
+
+.floating-notifications {
+    background: transparent;
+}
+
+/* Notification groups */
+.notification-group {
+    margin: 8px;
+}
+
+.notification-group-headers {
+    background: rgba(30, 30, 46, 0.95);
+    border-radius: 12px;
+    border: 2px solid rgba(137, 180, 250, 0.5);
+    padding: 8px 12px;
+    margin-bottom: 4px;
+}
+
+.notification-group-header {
+    color: rgba(205, 214, 244, 1);
+    font-weight: bold;
+}
+
+.notification-group-collapse-button,
+.notification-group-close-all-button {
+    background: rgba(137, 180, 250, 0.3);
+    border-radius: 8px;
+    border: none;
+    padding: 4px 8px;
+    margin: 0 4px;
+}
+
+.notification-group-collapse-button:hover,
+.notification-group-close-all-button:hover {
+    background: rgba(137, 180, 250, 0.5);
+}
+
+/* Widget styling */
+.widget-title {
+    color: rgba(205, 214, 244, 1);
+    font-weight: bold;
+    font-size: 16px;
+    margin: 8px;
+}
+
+.widget-dnd {
+    background: rgba(30, 30, 46, 0.95);
+    border-radius: 12px;
+    border: 2px solid rgba(137, 180, 250, 0.5);
+    padding: 8px;
+    margin: 8px;
+}
+
+.widget-dnd > switch {
+    background: rgba(88, 91, 112, 0.5);
+    border-radius: 12px;
+    border: none;
+}
+
+.widget-dnd > switch:checked {
+    background: rgba(137, 180, 250, 0.8);
+}
+
+.widget-dnd > switch slider {
+    background: rgba(205, 214, 244, 1);
+    border-radius: 50%;
+}
+
+/* Progress bar styling for volume/brightness */
+progressbar {
+    border-radius: 8px;
+    background: rgba(88, 91, 112, 0.5);
+}
+
+progressbar progress {
+    background: rgba(137, 180, 250, 0.8);
+    border-radius: 8px;
+}
+
+trough {
+    border-radius: 8px;
+    background: rgba(88, 91, 112, 0.5);
+}
+
+progress {
+    background: rgba(137, 180, 250, 0.8);
+    border-radius: 8px;
+}
+
+/* Image styling */
+.notification .notification-content .image {
+    margin-right: 12px;
+    border-radius: 8px;
+}

@@ -3,6 +3,7 @@ mkdir -p $WORKSPACE_PATH/sdk $WORKSPACE_PATH/scripts $WORKSPACE_PATH/install $WO
 source $WORKSPACE_PATH/.variables.sh
 source $WORKSPACE_PATH/.aliases.sh
 source $WORKSPACE_PATH/.paths.sh
+source $WORKSPACE_PATH/.arch.aliases.sh
 #source ~/workspace/.variables.sh
 
 HISTFILE=~/.zsh_history

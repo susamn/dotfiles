@@ -18,7 +18,7 @@ post_hook = "hyprctl reload >/dev/null 2>&1"
 [templates.kitty]
 input_path = '~/.config/matugen/templates/kitty-colors.conf'
 output_path = '~/.config/kitty/current-theme.conf'
-post_hook = 'kill -SIGUSER1 $(pgrep kitty)'
+post_hook = 'kill -SIGUSR1 $(pgrep kitty)'
 
 [templates.rofi]
 input_path = '~/.config/matugen/templates/rofi-colors.rasi'
@@ -28,3 +28,7 @@ output_path = '~/.config/rofi/colors.rasi'
 input_path = '~/.config/matugen/templates/colors.css'
 output_path = '~/.config/waybar/colors.css'
 post_hook = "~/.config/waybar/scripts/launch.sh"
+
+[templates.p10k]
+input_path = '~/.config/matugen/templates/p10k-colors.zsh'
+output_path = '~/.config/zsh/matugen-p10k-colors.zsh'

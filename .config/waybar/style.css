@@ -4,7 +4,7 @@
     border: none;
     border-radius: 0;
     font-family: Roboto, Helvetica, Arial, sans-serif;
-    font-size: 1rem;
+    font-size: 0.9rem;
     min-height: 0;
 }
 
@@ -24,12 +24,12 @@ tooltip label {
 #workspaces {
     background: @surface_container;
     border-radius: 100px;
-    padding: 5px 10px;
-    margin: 10px;
+    padding: 2px 8px;
+    margin: 5px;
 }
 
 #workspaces button {
-    padding: 5px 12px;
+    padding: 4px 10px;
     background: transparent;
     color: @on_surface_variant;
     border-radius: 100px;
@@ -51,8 +51,8 @@ tooltip label {
 #pulseaudio,
 #clock,
 #battery {
-    padding: 5px 15px;
-    margin: 10px;
+    padding: 2px 12px;
+    margin: 5px;
     border-radius: 100px;
     background-color: @primary;
     color: #121212;

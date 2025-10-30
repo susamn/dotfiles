@@ -37,3 +37,8 @@ output_path = '~/.config/zsh/matugen-p10k-colors.zsh'
 input_path = '~/.config/matugen/templates/swaync-style.css'
 output_path = '~/.config/swaync/style.css'
 post_hook = 'swaync-client -R'
+
+[templates.tmux]
+input_path = '~/.config/matugen/templates/tmux-colors.conf'
+output_path = '~/.config/tmux/colors.conf'
+post_hook = "tmux list-sessions -F '#S' 2>/dev/null | xargs -I {} tmux source-file -t {} ~/.config/tmux/colors.conf || true"

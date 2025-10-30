@@ -32,3 +32,8 @@ post_hook = "~/.config/waybar/scripts/launch.sh"
 [templates.p10k]
 input_path = '~/.config/matugen/templates/p10k-colors.zsh'
 output_path = '~/.config/zsh/matugen-p10k-colors.zsh'
+
+[templates.swaync]
+input_path = '~/.config/matugen/templates/swaync-style.css'
+output_path = '~/.config/swaync/style.css'
+post_hook = 'swaync-client -R'

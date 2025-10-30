@@ -3,7 +3,7 @@
 * {
     border: none;
     border-radius: 0;
-    font-family: Roboto, Helvetica, Arial, sans-serif;
+    font-family: "JetBrains Mono", monospace;
     font-size: 0.9rem;
     min-height: 0;
 }
@@ -56,4 +56,8 @@ tooltip label {
     border-radius: 100px;
     background-color: @primary;
     color: #121212;
+}
+
+#clock {
+    font-weight: bold;
 }

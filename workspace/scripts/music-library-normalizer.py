@@ -423,6 +423,9 @@ class MusicLibraryNormalizer:
             # Remove all dots from the stem (only extension should have a dot)
             normalized_stem = normalized_stem.replace('.', '')
 
+            # Remove parentheses by replacing with spaces (to avoid joining words)
+            normalized_stem = normalized_stem.replace('(', ' ').replace(')', ' ')
+
             # Remove spaces around non-word characters (punctuation like , & etc.)
             # This handles: ", " -> "," and " & " -> "&"
             normalized_stem = re.sub(r'\s*([^\w\s-])\s*', r'\1', normalized_stem)
@@ -430,8 +433,8 @@ class MusicLibraryNormalizer:
             # Now replace remaining spaces with hyphens
             normalized_stem = normalized_stem.replace(' ', '-')
 
-            # Collapse multiple consecutive hyphens into single hyphen
-            normalized_stem = re.sub(r'-+', '-', normalized_stem)
+            # Collapse multiple consecutive hyphens into single hyphen and strip leading/trailing
+            normalized_stem = re.sub(r'-+', '-', normalized_stem).strip('-')
 
             # Add MCATALOGID if available
             if mcatalogid:
@@ -482,6 +485,9 @@ class MusicLibraryNormalizer:
             # Remove all dots from directory names
             clean_name = clean_name.replace('.', '')
 
+            # Remove parentheses by replacing with spaces (to avoid joining words)
+            clean_name = clean_name.replace('(', ' ').replace(')', ' ')
+
             # Remove spaces around non-word characters (punctuation like , & etc.)
             # This handles: ", " -> "," and " & " -> "&"
             clean_name = re.sub(r'\s*([^\w\s-])\s*', r'\1', clean_name)
@@ -489,8 +495,8 @@ class MusicLibraryNormalizer:
             # Now replace remaining spaces with hyphens
             clean_name = clean_name.replace(' ', '-')
 
-            # Collapse multiple consecutive hyphens into single hyphen
-            clean_name = re.sub(r'-+', '-', clean_name)
+            # Collapse multiple consecutive hyphens into single hyphen and strip leading/trailing
+            clean_name = re.sub(r'-+', '-', clean_name).strip('-')
 
             # CRITICAL: Final check - ensure NO spaces in directory name
             if ' ' in clean_name:

@@ -15,7 +15,19 @@ alias pfm="$TOOLS_PATH/performance-manager/quick-start.sh"
 alias mt="$TOOLS_PATH/media-trimmer/quick-start.sh"
 alias att="$TOOLS_PATH/api-testing-tool/quick-start.sh"
 
-alias pnv="$TOOLS_PATH/pyenv-sync/pyenv-sync.sh"
+pnv() {
+  if [ "$1" = "activate" ]; then
+    if [ -z "$2" ]; then
+      echo "Usage: pnv activate <env_name>"
+      return 1
+    fi
+    pyenv activate "$2"
+  elif [ "$1" = "deactivate" ]; then
+    pyenv deactivate
+  else
+    bash "$TOOLS_PATH/pyenv-sync/pyenv-sync.sh" "$@"
+  fi
+}
 
 if [ -f /etc/os-release ] && grep -qi "arch" /etc/os-release; then
   alias asm="$SCRIPTS_PATH/arch-system-manager.sh"

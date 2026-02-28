@@ -1,2 +1,0 @@
-pyenv-virtualenv
-pyenv-update

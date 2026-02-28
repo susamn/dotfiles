@@ -306,6 +306,127 @@ cmd_sync_repo_to_envs() {
   print_footer
 }
 
+cmd_new() {
+  print_banner
+  print_header "Create New Environment"
+  
+  local env_name="${2:-}"
+  local py_version="${3:-}"
+
+  if [ -z "$env_name" ]; then
+    echo -n -e "${CYAN}│${NC}  ${MAGENTA}Enter new environment name:${NC} "
+    read -r env_name < /dev/tty
+  fi
+  
+  if [ -z "$env_name" ]; then
+    print_error "Environment name cannot be empty."
+    print_footer
+    exit 1
+  fi
+
+  if pyenv virtualenvs --bare | grep -Fxq "$env_name"; then
+    print_error "Virtualenv '$env_name' already exists in pyenv."
+    print_footer
+    exit 1
+  fi
+
+  if [ -z "$py_version" ]; then
+    py_version=$(pyenv global 2>/dev/null || echo "")
+    if ! pyenv versions --bare | grep -q '^[0-9]'; then
+       print_error "No Python versions installed. Run 'pnv init' first."
+       print_footer
+       exit 1
+    fi
+    echo -e "${CYAN}│${NC}  Available Python versions:"
+    pyenv versions --bare | grep -E '^[0-9]' | sed "s/^/│    /"
+    echo -n -e "${CYAN}│${NC}  ${MAGENTA}Select Python version (default: $py_version):${NC} "
+    read -r py_input < /dev/tty
+    if [ -n "$py_input" ]; then
+      py_version="$py_input"
+    fi
+  fi
+  
+  if [ -z "$py_version" ] || [ "$py_version" = "system" ]; then
+     print_error "Invalid Python version selected."
+     print_footer
+     exit 1
+  fi
+
+  print_step "Creating virtualenv ${WHITE}$env_name${NC} with Python ${YELLOW}$py_version${NC}..."
+  
+  if ! pyenv versions --bare | grep -Fxq "$py_version"; then
+    print_step "Python $py_version not found locally. Installing..."
+    if ! pyenv install "$py_version"; then
+      print_error "Failed to install Python $py_version."
+      print_footer
+      exit 1
+    fi
+  fi
+
+  if pyenv virtualenv "$py_version" "$env_name"; then
+    print_success "Virtualenv created successfully."
+    mkdir -p "$REQS_DIR"
+    echo "# python=$py_version" > "$REQS_DIR/$env_name.txt"
+    print_success "Created tracking file: ${WHITE}requirements/$env_name.txt${NC}"
+    echo -e "${CYAN}│${NC}"
+    print_step "You can now activate it with: ${GREEN}pnv activate $env_name${NC}"
+  else
+    print_error "Failed to create virtualenv."
+  fi
+  print_footer
+}
+
+cmd_delete() {
+  print_banner
+  print_header "Delete Environment"
+  
+  local env_name="${2:-}"
+
+  if [ -z "$env_name" ]; then
+    echo -n -e "${CYAN}│${NC}  ${MAGENTA}Enter environment name to delete:${NC} "
+    read -r env_name < /dev/tty
+  fi
+  
+  if [ -z "$env_name" ]; then
+    print_error "Environment name cannot be empty."
+    print_footer
+    exit 1
+  fi
+  
+  if [ "$PYENV_VERSION" = "$env_name" ]; then
+    print_error "Cannot delete environment '$env_name' while it is active."
+    print_step "Run 'pnv deactivate' first."
+    print_footer
+    exit 1
+  fi
+
+  echo -n -e "${CYAN}│${NC}  ${RED}Are you sure you want to completely delete '$env_name'? [y/N]:${NC} "
+  read -r confirm < /dev/tty
+  if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+    print_step "Deletion cancelled."
+    print_footer
+    exit 0
+  fi
+
+  print_step "Removing pyenv virtualenv..."
+  if pyenv virtualenvs --bare | grep -Fxq "$env_name"; then
+    pyenv uninstall -f "$env_name" >/dev/null 2>&1 || true
+    print_success "Removed virtualenv from pyenv."
+  else
+    print_warn "Virtualenv not found in pyenv."
+  fi
+
+  print_step "Removing tracking file..."
+  if [ -f "$REQS_DIR/$env_name.txt" ]; then
+    rm -f "$REQS_DIR/$env_name.txt"
+    print_success "Removed requirements/$env_name.txt"
+  else
+    print_warn "Tracking file not found."
+  fi
+  
+  print_footer
+}
+
 cmd_sync() {
   print_banner
   mkdir -p "$REQS_DIR"
@@ -342,8 +463,23 @@ cmd_list() {
       header=$(grep -m 1 "^# python=" "$req_file" || true)
       local py_version="unknown"
       if [ -n "$header" ]; then
-        py_version="${header#*python=}"
+        py_version=$(echo "$header" | sed -n 's/.*python=\([0-9.]*\).*/\1/p')
       fi
+      
+      # If the header was missing or empty, ask pyenv what version it is mapped to
+      if [ -z "$py_version" ] || [ "$py_version" = "unknown" ]; then
+        if [ -d "$PYENV_ROOT/versions/$env_name" ]; then
+           # pyenv versions resolves the base version for an env
+           py_version=$(pyenv version-name "$env_name" 2>/dev/null || echo "unknown")
+           # When pyenv version-name gets an env name, it often returns "env_name", we want the base python
+           if [ "$py_version" = "$env_name" ] || [ "$py_version" = "unknown" ]; then
+               if [ -f "$PYENV_ROOT/versions/$env_name/pyvenv.cfg" ]; then
+                   py_version=$(grep -i "version = " "$PYENV_ROOT/versions/$env_name/pyvenv.cfg" | cut -d' ' -f3 || echo "unknown")
+               fi
+           fi
+        fi
+      fi
+      
       py_version=$(echo "$py_version" | tr -d '\r')
       
       local last_mod
@@ -390,12 +526,16 @@ case "${1:-}" in
   sync|-s) cmd_sync ;;
   list|-l) cmd_list ;;
   status|-st) cmd_status ;;
+  new|-n) cmd_new "$@" ;;
+  delete|-rm) cmd_delete "$@" ;;
   *)
     print_banner
     print_header "Usage"
     print_step "pnv [command]"
     echo -e "${CYAN}│${NC}"
     print_step "${WHITE}init | -i${NC}         - Initialize pyenv, plugins, and setup shell"
+    print_step "${WHITE}new | -n [name]${NC}   - Create a new environment tracked in the repo"
+    print_step "${WHITE}delete | -rm [env]${NC}- Delete a tracked environment"
     print_step "${WHITE}activate | -a [env]${NC}- Activate virtualenv. Uses fzf if env is omitted"
     print_step "${WHITE}deactivate | -d${NC}   - Deactivate virtualenv"
     print_step "${WHITE}sync | -s${NC}         - Sync packages to/from tracked requirements"

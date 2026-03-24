@@ -4,8 +4,7 @@ source $WORKSPACE_PATH/.variables.sh
 source $WORKSPACE_PATH/.aliases.sh
 source $WORKSPACE_PATH/.paths.sh
 source $WORKSPACE_PATH/.linux.aliases.sh
-source $WORKSPACE_PATH/.arch.aliases.sh
-#source ~/workspace/.variables.sh
+source $WORKSPACE_PATH/.distro.aliases.sh
 
 HISTFILE=~/.zsh_history
 HISTSIZE=10000

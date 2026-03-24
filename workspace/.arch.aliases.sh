@@ -1,5 +1,0 @@
-alias i="yay -S"
-alias r="yay -Rns"
-alias u="yay -Syu"
-alias s="yay -Ss"
-alias q="yay -Q"

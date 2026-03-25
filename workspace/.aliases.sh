@@ -173,9 +173,9 @@ if [ -x "$(command -v minikube)" ]; then
   alias mk="minikube"
 fi
 
-# Maven aliases
+
+
 if [ -x "$(command -v mvn)" ]; then
-  alias mvn8="JAVA_HOME=/path/to/java8 mvn -s <settings-file-location>"
   alias mvn_sort="mvn com.github.ekryd.sortpom:sortpom-maven-plugin:2.15.0:sort \
         -Dsort.createBackupFile=false \
         -Dsort.nrOfIndentSpace=1 \

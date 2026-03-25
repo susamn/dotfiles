@@ -1,7 +1,3 @@
-export GOPATH=$WORKSPACE_PATH/sdk/repositories/gopath
-export M2_HOME=$WORKSPACE_PATH/sdk/repositories/m2
-
-mkdir -p $GOPATH $M2_HOME
-
-export PATH=$PATH:$GOPATH/bin
-
+# Source language specific environments
+source $WORKSPACE_PATH/.paths-java.sh
+source $WORKSPACE_PATH/.paths-go.sh

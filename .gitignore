@@ -30,3 +30,4 @@ workspace/tools/.claude
 *.pid
 *mpd.db
 *mpdstate
+*generated.aliases.sh

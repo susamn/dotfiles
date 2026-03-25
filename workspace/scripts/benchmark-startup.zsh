@@ -13,6 +13,25 @@ command() {
   builtin command "$@"
 }
 
+# Catch-all handler for missing commands (like 'zoxide init' or 'fzf --zsh')
+# This ensures that when the scripts try to execute the mocked tools, they silently succeed without error output.
+command_not_found_handler() {
+  return 0
+}
+
+# Explicit mocks to simulate realistic shell initialization execution times
+# zoxide eval initialization usually takes ~15ms 
+zoxide() {
+  sleep 0.015
+  return 0
+}
+
+# fzf --zsh initialization usually takes ~10ms
+fzf() {
+  sleep 0.010
+  return 0
+}
+
 echo "Starting benchmark of ~/.bootstrap.sh..."
 
 # Capture start time in milliseconds

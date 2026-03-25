@@ -1,0 +1,35 @@
+name: Shell Startup Benchmark
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v3
+
+    - name: Install Zsh
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y zsh
+
+    - name: Setup Dotfiles Environment
+      run: |
+        # Simulate `stow` by copying everything to $HOME
+        # This makes ~/.bootstrap.sh and ~/workspace available exactly like the real environment
+        cp -a ./. $HOME/ || true
+        
+        # Ensure our new benchmark script is executable
+        chmod +x $HOME/workspace/scripts/benchmark-startup.zsh
+
+    - name: Run Startup Benchmark
+      run: |
+        # Execute the benchmark script using zsh
+        zsh $HOME/workspace/scripts/benchmark-startup.zsh

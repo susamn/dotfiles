@@ -27,8 +27,13 @@ __pm_detect_distro() {
     return
   fi
 
+  # macOS / Darwin
+  if [ "$(uname -s 2>/dev/null)" = "Darwin" ]; then
+    id="mac"
+  fi
+
   # 2. /etc/os-release (systemd standard)
-  if [ -f /etc/os-release ]; then
+  if [ -z "$id" ] && [ -f /etc/os-release ]; then
     id=$(. /etc/os-release 2>/dev/null && printf '%s' "${ID:-}")
   fi
 
@@ -69,6 +74,8 @@ __pm_detect_distro() {
 # ── Internal: map distro id → package manager family ─────────────────────────
 __pm_family_for() {
   case "$1" in
+    mac|macos|darwin)
+      printf 'mac' ;;
     arch|manjaro|endeavouros|garuda|artix|archcraft|arcolinux|cachyos)
       printf 'arch' ;;
     ubuntu|debian|linuxmint|mint|pop|"pop!_os"|kali|raspbian|elementary|\
@@ -133,6 +140,17 @@ case "$__PM_FAMILY" in
     alias q="$PM -Q"
     alias qi="$PM -Qi"
     alias qf="$PM -Ql"
+    ;;
+
+  mac)
+    PM="brew"
+    alias i="brew install"
+    alias r="brew uninstall"
+    alias u="brew update && brew upgrade"
+    alias s="brew search"
+    alias q="brew list"
+    alias qi="brew info"
+    alias qf="brew ls"
     ;;
 
   debian)

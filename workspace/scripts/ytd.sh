@@ -6,9 +6,10 @@ DEST_DIR="$HOME"
 USE_START_TIME=true
 MODE=""
 SHOW_FORMAT=false
+MULTIPART=false
 
 show_help() {
-  echo "Usage: $0 [-d destination_dir] [-s] [-a] [-v] [-f] [-h]"
+  echo "Usage: $0 [-d destination_dir] [-s] [-a] [-v] [-f] [-m] [-h]"
   echo
   echo "Options:"
   echo "  -d destination_dir  Set custom destination directory (default: \$HOME)"
@@ -16,26 +17,21 @@ show_help() {
   echo "  -a                  Download audio only (MP3)"
   echo "  -v                  Download video only"
   echo "  -f                  Show format selection menu"
+  echo "  -m                  Enable multipart/concurrent downloads (faster)"
   echo "  -h                  Show this help message"
   echo
   echo "Examples:"
   echo "  $0 -a -d ~/Music    # Download audio to Music directory"
-  echo "  $0 -v -f            # Video download with format selection"
+  echo "  $0 -v -f -m         # Fast video download with format selection"
 }
 
 validate_time() {
   local time=$1
-  [[ "$time" =~ ^([0-9]{2}):([0-9]{2}):([0-9]{2})$ ]] || return 1
-  local h=$((10#${BASH_REMATCH[1]}))
-  local m=$((10#${BASH_REMATCH[2]}))
-  local s=$((10#${BASH_REMATCH[3]}))
-  
-  (( h >= 0 && h <= 23 )) || return 1
-  (( m >= 0 && m <= 59 )) || return 1
-  (( s >= 0 && s <= 59 )) || return 1
+  [[ "$time" == "inf" ]] && return 0
+  [[ "$time" =~ ^([0-9]{1,2}:)?([0-9]{1,2}:)?[0-9]{1,2}$ ]] || [[ "$time" =~ ^[0-9]+$ ]]
 }
 
-while getopts "d:savfh" opt; do
+while getopts "d:savfmh" opt; do
   case $opt in
     d) DEST_DIR="$OPTARG" ;;
     s) USE_START_TIME=false ;;
@@ -48,6 +44,7 @@ while getopts "d:savfh" opt; do
       MODE="video"
       ;;
     f) SHOW_FORMAT=true ;;
+    m) MULTIPART=true ;;
     h) show_help; exit 0 ;;
     *) echo "Invalid option" >&2; show_help; exit 1 ;;
   esac
@@ -58,6 +55,7 @@ shift $((OPTIND - 1))
 
 # Validate dependencies
 command -v yt-dlp >/dev/null 2>&1 || { echo "yt-dlp required" >&2; exit 1; }
+command -v ffmpeg >/dev/null 2>&1 || { echo "ffmpeg required for audio/video processing" >&2; exit 1; }
 
 # Validate destination directory
 mkdir -p "$DEST_DIR" 2>/dev/null || true
@@ -85,17 +83,17 @@ fi
 # Time selection
 if $USE_START_TIME; then
   while :; do
-    read -rp "Start time [HH:MM:SS] (Enter for 00:00:00): " START_TIME
-    START_TIME=${START_TIME:-00:00:00}
+    read -rp "Start time [HH:MM:SS or seconds] (Enter for 0): " START_TIME
+    START_TIME=${START_TIME:-0}
     validate_time "$START_TIME" && break
     echo "Invalid time format" >&2
   done
 else
-  START_TIME="00:00:00"
+  START_TIME="0"
 fi
 
 while :; do
-  read -rp "End time [HH:MM:SS]: " END_TIME
+  read -rp "End time [HH:MM:SS, seconds, or 'inf' for end]: " END_TIME
   validate_time "$END_TIME" && break
   echo "Invalid time format" >&2
 done
@@ -116,12 +114,14 @@ else
 fi
 
 # Existing file check
-if [[ "$output_template" != *%* ]]; then  # Only check if static filename
-  if [ -e "${output_template%%\%*}"* ]; then
-    read -rp "File exists. Overwrite? [y/N] " overwrite
-    [[ "${overwrite,,}" =~ ^y ]] || exit 0
-  fi
+shopt -s nullglob
+check_path="${output_template/%\%(ext\)s/*}"
+files=($check_path)
+if [ ${#files[@]} -gt 0 ]; then
+  read -rp "File exists. Overwrite? [y/N] " overwrite
+  [[ "${overwrite,,}" =~ ^y ]] || exit 0
 fi
+shopt -u nullglob
 
 # Build command
 declare -a cmd=(
@@ -130,8 +130,20 @@ declare -a cmd=(
   --download-sections "*${START_TIME}-${END_TIME}"
   --force-overwrites
   -o "$output_template"
-  -- "$VIDEO_URL"
 )
+
+# Speed optimization: Use aria2c if available, otherwise check -m flag
+if command -v aria2c >/dev/null 2>&1; then
+  # aria2c provides multi-connection downloading (similar to IDM)
+  cmd+=(--downloader aria2c --downloader-args "aria2c:-c -x 16 -s 16 -k 1M")
+  # Also enable fragment concurrency for DASH/HLS streams
+  cmd+=(-N 8)
+elif $MULTIPART; then
+  # Fallback to yt-dlp's built-in multi-threaded downloader
+  cmd+=(-N 8)
+fi
+
+cmd+=(-- "$VIDEO_URL")
 
 # Execute download
 echo "Downloading..."

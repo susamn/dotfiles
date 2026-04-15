@@ -174,6 +174,10 @@ if [ -x "$(command -v minikube)" ]; then
 fi
 
 
+if [ -x "$(command -v gh)" ]; then
+  alias grev="$SCRIPTS_PATH/pr-review-gen.sh"
+fi
+
 
 if [ -x "$(command -v mvn)" ]; then
   alias mvn_sort="mvn com.github.ekryd.sortpom:sortpom-maven-plugin:2.15.0:sort \
@@ -185,3 +189,84 @@ if [ -x "$(command -v mvn)" ]; then
         -Dsort.sortProperties=true"
 fi
 
+
+# Walk upward to find project root + environment type
+find_project_env() {
+    local dir="$PWD"
+
+    while [ "$dir" != "/" ]; do
+        # 1. Check common venv folders
+        for name in ".venv" ".virtualenv" ".env"; do
+            if [ -x "$dir/$name/bin/python" ]; then
+                echo "venv:$dir/$name"
+                return 0
+            fi
+        done
+
+        # 2. Poetry project
+        if [ -f "$dir/pyproject.toml" ] && command -v poetry >/dev/null 2>&1; then
+            echo "poetry:$dir"
+            return 0
+        fi
+
+        # 3. Pipenv project
+        if [ -f "$dir/Pipfile" ] && command -v pipenv >/dev/null 2>&1; then
+            echo "pipenv:$dir"
+            return 0
+        fi
+
+        dir="$(dirname "$dir")"
+    done
+
+    return 1
+}
+
+# Python runner
+py() {
+    local result type path
+    result=$(find_project_env)
+
+    if [ -n "$result" ]; then
+        type="${result%%:*}"
+        path="${result#*:}"
+
+        case "$type" in
+            venv)
+                "$path/bin/python" "$@"
+                ;;
+            poetry)
+                (cd "$path" && poetry run python "$@")
+                ;;
+            pipenv)
+                (cd "$path" && pipenv run python "$@")
+                ;;
+        esac
+    else
+        python "$@"
+    fi
+}
+
+# Pip runner
+pyp() {
+    local result type path
+    result=$(find_project_env)
+
+    if [ -n "$result" ]; then
+        type="${result%%:*}"
+        path="${result#*:}"
+
+        case "$type" in
+            venv)
+                "$path/bin/pip" "$@"
+                ;;
+            poetry)
+                (cd "$path" && poetry run pip "$@")
+                ;;
+            pipenv)
+                (cd "$path" && pipenv run pip "$@")
+                ;;
+        esac
+    else
+        pip "$@"
+    fi
+}

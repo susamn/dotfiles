@@ -1,0 +1,18 @@
+# Agent configuration
+# Columns: <agent_name>  <skills_path>  [instruction_symlink]
+#
+#   skills_path        — where skill symlinks are deployed (~ expands to $HOME)
+#   instruction_symlink — path *relative to dotfiles root* for a symlink → AGENTS.md
+#                         Omit or use - if the agent reads AGENTS.md directly (e.g. codex)
+#
+# do-stow.sh reads this file to deploy both skill symlinks and instruction symlinks.
+# do-unstow.sh reads it to remove both.
+# Neither CLAUDE.md nor other instruction symlinks are committed to git — they are
+# generated artifacts, created on stow and removed on unstow.
+#
+# To add a new agent: uncomment or add a line, then run ./do-stow.sh
+
+claude   ~/.claude/skills   CLAUDE.md
+codex    ~/.codex/skills    -
+gemini   ~/.gemini/skills   GEMINI.md
+cursor   ~/.cursor/rules    .cursor/rules/dotfiles.md

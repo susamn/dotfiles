@@ -1,0 +1,36 @@
+# .stow-local-ignore
+# NOTE: This file REPLACES stow's built-in ignore list entirely.
+# Always replicate the important built-in defaults below.
+
+# --- stow built-in defaults (must be kept here since this file overrides them) ---
+CVS
+\.cvsignore
+\.svn
+\.git
+\.gitignore
+\.gitmodules
+_darcs
+\.hg
+\.bzr
+\.bzrignore
+RCS
+\.stow-local-ignore
+\.stow
+
+# --- skills: deployed separately via do-stow.sh symlinks, not as stow packages ---
+^skills$
+
+# --- agent instruction files ---
+# These are read by agents when working inside this repo (that's their purpose).
+# Stowing them to ~/ would make agents load dotfiles-specific context for every
+# project on the machine, which is too broad.
+^AGENTS\.md$
+^CLAUDE\.md$
+^GEMINI\.md$
+^\.cursor$
+
+# --- stow management scripts ---
+# These resolve DOTFILES_DIR from ${BASH_SOURCE[0]}. If stowed as ~/do-stow.sh,
+# that resolves to ~/ instead of ~/dotfiles/ and the scripts break.
+^do-stow\.sh$
+^do-unstow\.sh$

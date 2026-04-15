@@ -32,6 +32,7 @@ parse_agent_line() {
   AGENT_SKILLS_PATH="$(awk '{print $2}' <<< "$line")"
   AGENT_SKILLS_PATH="${AGENT_SKILLS_PATH/#\~/$HOME}"
   AGENT_INSTRUCTION_LINK="$(awk '{print $3}' <<< "$line")"
+  AGENT_INSTRUCTION_LINK="${AGENT_INSTRUCTION_LINK/#\~/$HOME}"
 }
 
 # ── deploy skill symlinks ─────────────────────────────────────────────────────
@@ -64,8 +65,9 @@ deploy_skills() {
 }
 
 # ── create instruction symlinks ───────────────────────────────────────────────
-# Creates <dotfiles>/<instruction_symlink> → AGENTS.md for each configured agent.
-# These are generated artifacts — not committed to git.
+# Creates a symlink at the agent's global instruction file path → AGENTS.md.
+# These live outside the dotfiles repo (e.g. ~/.claude/CLAUDE.md) so agents
+# pick them up from any working directory, not just when inside this repo.
 deploy_instruction_links() {
   if [[ ! -f "$AGENTS_FILE" ]]; then
     return
@@ -75,19 +77,16 @@ deploy_instruction_links() {
     [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
     parse_agent_line "$line"
 
-    # Skip if no instruction link defined or explicitly set to -
     [[ -z "$AGENT_INSTRUCTION_LINK" || "$AGENT_INSTRUCTION_LINK" == "-" ]] && continue
 
-    local link_path="$DOTFILES_DIR/$AGENT_INSTRUCTION_LINK"
     local link_dir
-    link_dir="$(dirname "$link_path")"
+    link_dir="$(dirname "$AGENT_INSTRUCTION_LINK")"
+    mkdir -p "$link_dir"
 
-    # Compute relative path from the link's directory back to AGENTS.md
     local rel_target
     rel_target="$(realpath --relative-to="$link_dir" "$DOTFILES_DIR/AGENTS.md")"
 
-    mkdir -p "$link_dir"
-    ln -sfn "$rel_target" "$link_path"
+    ln -sfn "$rel_target" "$AGENT_INSTRUCTION_LINK"
     echo "  [$AGENT_NAME] instruction: $AGENT_INSTRUCTION_LINK → $rel_target"
   done < "$AGENTS_FILE"
 }

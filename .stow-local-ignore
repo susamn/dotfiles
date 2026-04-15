@@ -20,14 +20,11 @@ RCS
 # --- skills: deployed separately via do-stow.sh symlinks, not as stow packages ---
 ^skills$
 
-# --- agent instruction files ---
-# These are read by agents when working inside this repo (that's their purpose).
-# Stowing them to ~/ would make agents load dotfiles-specific context for every
-# project on the machine, which is too broad.
+# --- agent guide ---
+# AGENTS.md lives in the repo root for agents working inside this repo.
+# Instruction symlinks for global use are created outside the repo by do-stow.sh
+# (e.g. ~/.claude/CLAUDE.md → dotfiles/AGENTS.md). Nothing to stow here.
 ^AGENTS\.md$
-^CLAUDE\.md$
-^GEMINI\.md$
-^\.cursor$
 
 # --- stow management scripts ---
 # These resolve DOTFILES_DIR from ${BASH_SOURCE[0]}. If stowed as ~/do-stow.sh,

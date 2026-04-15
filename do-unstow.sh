@@ -13,6 +13,7 @@ parse_agent_line() {
   AGENT_SKILLS_PATH="$(awk '{print $2}' <<< "$line")"
   AGENT_SKILLS_PATH="${AGENT_SKILLS_PATH/#\~/$HOME}"
   AGENT_INSTRUCTION_LINK="$(awk '{print $3}' <<< "$line")"
+  AGENT_INSTRUCTION_LINK="${AGENT_INSTRUCTION_LINK/#\~/$HOME}"
 }
 
 # ── remove instruction symlinks ───────────────────────────────────────────────
@@ -27,9 +28,8 @@ remove_instruction_links() {
 
     [[ -z "$AGENT_INSTRUCTION_LINK" || "$AGENT_INSTRUCTION_LINK" == "-" ]] && continue
 
-    local link_path="$DOTFILES_DIR/$AGENT_INSTRUCTION_LINK"
-    if [[ -L "$link_path" ]]; then
-      rm "$link_path"
+    if [[ -L "$AGENT_INSTRUCTION_LINK" ]]; then
+      rm "$AGENT_INSTRUCTION_LINK"
       echo "  [$AGENT_NAME] removed instruction: $AGENT_INSTRUCTION_LINK"
     fi
   done < "$AGENTS_FILE"

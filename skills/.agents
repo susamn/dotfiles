@@ -1,18 +1,17 @@
 # Agent configuration
 # Columns: <agent_name>  <skills_path>  [instruction_symlink]
 #
-#   skills_path        — where skill symlinks are deployed (~ expands to $HOME)
-#   instruction_symlink — path *relative to dotfiles root* for a symlink → AGENTS.md
-#                         Omit or use - if the agent reads AGENTS.md directly (e.g. codex)
+#   skills_path        — where skill symlinks are deployed
+#   instruction_symlink — ABSOLUTE path (~ expanded) where the agent reads its
+#                         global instruction file. do-stow.sh creates a symlink
+#                         there pointing back to AGENTS.md in this repo.
+#                         Use - if the agent reads AGENTS.md by walking up from
+#                         CWD (e.g. codex reads ~/AGENTS.md automatically).
 #
-# do-stow.sh reads this file to deploy both skill symlinks and instruction symlinks.
-# do-unstow.sh reads it to remove both.
-# Neither CLAUDE.md nor other instruction symlinks are committed to git — they are
-# generated artifacts, created on stow and removed on unstow.
-#
-# To add a new agent: uncomment or add a line, then run ./do-stow.sh
+# Cursor has no global instruction file — it reads .cursor/rules/ per-project only.
+# When working inside this repo, agents find AGENTS.md in the repo root directly.
 
-claude   ~/.claude/skills   CLAUDE.md
-codex    ~/.codex/skills    -
-gemini   ~/.gemini/skills   GEMINI.md
-cursor   ~/.cursor/rules    .cursor/rules/dotfiles.md
+claude   ~/.claude/skills   ~/.claude/CLAUDE.md
+codex    ~/.codex/skills    ~/AGENTS.md
+gemini   ~/.gemini/skills   ~/.gemini/GEMINI.md
+cursor   ~/.cursor/rules    -

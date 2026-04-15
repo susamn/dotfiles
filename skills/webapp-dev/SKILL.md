@@ -37,9 +37,10 @@ Select the testing tiers:
 - **E2E**: Playwright (Mandatory for UI).
 
 ### Phase 4: API-First Design
-1. Draft the **OpenAPI Schema** (`openapi.yaml`).
-2. Iterate with the user until the schema is **finalized**.
-3. Do NOT proceed to implementation until the schema is locked.
+1.  **Draft the OpenAPI Schema** (`openapi.yaml`).
+    -   *Recommended Workflow*: Trigger the **`openapi-schema-creator`** skill for a guided, entity-driven design process.
+2.  Iterate with the user until the schema is **finalized**.
+3.  Do NOT proceed to implementation until the schema is locked and saved.
 
 ### Phase 5: Modularity & Dependencies
 1. Identify the logical **Modules** (e.g., `auth`, `billing`, `core`).

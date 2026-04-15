@@ -30,6 +30,9 @@ script or tool. Invoke them when the user's request matches a trigger phrase.
 | Skill | Intent | Trigger examples |
 |---|---|---|
 | `pr-review` | code-review | "review this PR", "generate PR review prompt" |
+| `webapp-dev` | architecture | "start a new webapp", "design a modular application" |
+| `safe-coder` | execution | "implement feature", "work on module", "safe-coder" |
+| `openapi-schema-creator` | api-design | "create an OpenAPI schema", "design an API" |
 
 More skills will appear here as they are added to the dotfiles.
 

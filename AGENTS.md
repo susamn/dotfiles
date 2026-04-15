@@ -1,37 +1,17 @@
-# Dotfiles — Agent Guide
+# Agent Context
 
-This is a stow-managed dotfiles repository. When you are operating in this directory, use this guide to understand the structure and to manage skills correctly.
-
----
-
-## Repository layout
-
-```
-dotfiles/
-├── .config/          # app configs (Hyprland, kitty, nvim, waybar, rofi, …)
-├── workspace/        # shell scripts, tools, sdk, services
-│   ├── scripts/      # standalone shell/python scripts
-│   ├── tools/        # larger project-style tools
-│   ├── .variables.sh # exports $SCRIPTS_PATH, $TOOLS_PATH, $SERVICES_PATH, etc.
-│   └── .aliases.sh   # shell aliases (sourced at shell init)
-├── skills/           # canonical AI skill definitions (NOT stowed to ~)
-│   ├── .agents       # which agents receive skills and at what path
-│   └── <skill-name>/
-│       └── SKILL.md  # skill definition (YAML frontmatter + markdown body)
-├── do-stow.sh        # stow dotfiles + deploy skill symlinks + instruction symlinks
-├── do-unstow.sh      # remove all of the above + unstow dotfiles
-└── AGENTS.md         # this file — read by agents working inside this repo
-```
-
-**Important:** `skills/` is explicitly excluded from stow. It is deployed separately by `do-stow.sh` as symlinks into each configured agent's skill directory.
+This file gives you context about the user's environment and available tooling.
+It is managed by the user's dotfiles repo — you do not need to be inside that repo
+to use the skills and scripts described here.
 
 ---
 
-## Path variables (available in every shell)
+## Environment variables
 
-These are exported by `.bootstrap.sh` → `workspace/.variables.sh` on every shell start:
+These are exported in every shell session and must be used when referencing scripts
+or tools — never hardcode absolute paths.
 
-| Variable | Resolves to |
+| Variable | Path |
 |---|---|
 | `$WORKSPACE_PATH` | `~/workspace` |
 | `$SCRIPTS_PATH` | `~/workspace/scripts` |
@@ -40,239 +20,137 @@ These are exported by `.bootstrap.sh` → `workspace/.variables.sh` on every she
 | `$INSTALL_PATH` | `~/workspace/install` |
 | `$SDK_PATH` | `~/workspace/sdk` |
 
-**Always use these variables** when referencing scripts or tools in a SKILL.md — never hardcode paths.
+---
+
+## Available skills
+
+Skills are loaded from your agent's skills directory. Each skill wraps an existing
+script or tool. Invoke them when the user's request matches a trigger phrase.
+
+| Skill | Intent | Trigger examples |
+|---|---|---|
+| `pr-review` | code-review | "review this PR", "generate PR review prompt" |
+
+More skills will appear here as they are added to the dotfiles.
 
 ---
 
-## Stow workflow
+## Available scripts
+
+Located at `$SCRIPTS_PATH`. Invoke with `bash "$SCRIPTS_PATH/<script>"`.
+
+| Script | Alias | What it does |
+|---|---|---|
+| `pr-review-gen.sh` | `grev` | Generate a structured LLM-ready PR review prompt from a GitHub PR |
+| `git-stash-manager.sh` | `gsh` | Interactive git stash manager |
+| `git-hard-reset.sh` | `ghr` | Hard reset current branch with safety prompts |
+| `gch.sh` | `gch` | Interactive git checkout across branches |
+| `gitb.sh` | `gitb` | Git branch utilities |
+| `arch-system-manager.sh` | `asm` | Arch Linux system manager (update, boot safety, timeline) |
+| `ssl-debugger.sh` | — | Debug SSL/TLS certificates |
+| `jwtd.sh` | `jwtd` | Decode and inspect JWT tokens |
+| `generate-ssh-keys.sh` | `gsk` | Generate SSH key pairs |
+| `ytd.sh` | `ytd` | Download YouTube videos/audio via yt-dlp |
+| `video-merger.sh` | — | Merge video files |
+| `als.sh` | `als` | Search/browse shell aliases interactively |
+| `ffo.sh` | `ff` | Fuzzy file finder (fd + fzf) |
+| `uff.sh` | `uff` | Fuzzy file finder with preview |
+| `pkg-listing.sh` | `pkgs` | List installed packages |
+| `cht.sh` | `cht` | Cheatsheet lookup |
+
+## Available tools
+
+Located at `$TOOLS_PATH`. Each tool has a `quick-start.sh` entry point.
+
+| Tool | Alias | What it does |
+|---|---|---|
+| `media-trimmer/` | `mt` | Web UI for trimming audio/video files |
+| `api-testing-tool/` | `att` | API testing tool |
+| `performance-manager/` | `pfm` | System performance monitor |
+| `helpful-tools-v2/` | `ht2` | Collection of helpful utilities |
+| `file-explorer/` | — | Remote file explorer (SFTP) |
+
+---
+
+---
+
+## Dotfiles management
+
+> **Only relevant when you are explicitly helping the user manage their dotfiles**
+> (i.e. the user has asked you to add a skill, modify the stow setup, or work inside
+> `~/dotfiles/`). If you are helping with any other task, ignore this section.
+
+### Repository layout
+
+```
+~/dotfiles/
+├── .config/          # app configs (Hyprland, kitty, nvim, waybar, rofi, …)
+├── workspace/        # scripts, tools, sdk, services (stowed to ~/workspace/)
+├── skills/           # canonical skill definitions — NOT stowed to ~
+│   ├── .agents       # agent deployment config (skills path + instruction file)
+│   └── <skill-name>/
+│       └── SKILL.md
+├── do-stow.sh        # stow dotfiles + deploy skill and instruction symlinks
+├── do-unstow.sh      # reverse of do-stow.sh
+└── AGENTS.md         # this file
+```
+
+`skills/` is excluded from stow. `do-stow.sh` deploys skill symlinks to each
+agent's skills directory and creates instruction file symlinks (e.g.
+`~/.claude/CLAUDE.md`) outside the repo.
+
+### Stow commands
 
 ```bash
-# Full setup on a new machine (from the dotfiles dir):
-./do-stow.sh
-
-# Teardown:
-./do-unstow.sh
-
-# Manual stow — .stow-local-ignore handles all exclusions automatically:
-stow -vt ~ .
-stow -Dvt ~ .    # unstow
-
-# To resolve conflicts:
-stow -vt ~ . --adopt
+./do-stow.sh          # full setup
+./do-unstow.sh        # full teardown
+stow -vt ~ .          # manual stow (.stow-local-ignore handles exclusions)
+stow -Dvt ~ .         # manual unstow
+stow -vt ~ . --adopt  # resolve conflicts
 ```
 
-`.stow-local-ignore` excludes: `skills/`, agent guide files (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.cursor/`), and stow scripts (`do-stow.sh`, `do-unstow.sh`) from being deployed to `~/`. These files serve their purpose within the repo only.
+### SKILL.md schema
 
+```yaml
 ---
-
-## Skill system
-
-### How skills are deployed
-
-`skills/.agents` lists the target path for each agent:
-
-```
-claude   ~/.claude/skills
-# codex    ~/.codex/skills
-```
-
-`do-stow.sh` reads this file and creates:
-```
-~/<agent_skills_dir>/<skill_name>  →  <dotfiles>/skills/<skill_name>/
-```
-
-Each symlink points to the canonical skill folder in this repo. Adding a new agent: uncomment/add a line in `.agents`, then run `./do-stow.sh`.
-
-### Manually link a single skill (without running do-stow.sh)
-
-```bash
-DOTFILES="$(git -C . rev-parse --show-toplevel)"
-while IFS= read -r line; do
-  [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
-  target_path="$(awk '{print $2}' <<< "$line")"
-  target_path="${target_path/#\~/$HOME}"
-  mkdir -p "$target_path"
-  ln -sfn "$DOTFILES/skills/<skill-name>" "$target_path/<skill-name>"
-done < "$DOTFILES/skills/.agents"
-```
-
----
-
-## SKILL.md schema
-
-Every skill is a directory with a `SKILL.md` file:
-
-```markdown
----
-name: skill-name                   # kebab-case, matches directory name
-description: one-line summary      # used by agents to decide relevance
-version: 1.0.0                     # semver
-triggers:                          # natural-language phrases that activate this skill
-  - "phrase that should trigger this"
-intent: category                   # code-review | refactor | media | git | system | debug | …
-guardrails:                        # safety/scope constraints the agent must enforce
+name: skill-name
+description: one-line summary
+version: 1.0.0
+triggers:
+  - "natural language phrase"
+intent: code-review | git | system | debug | media | …
+guardrails:
   - Do not X
-  - Always confirm before Y
-resources:                         # scripts/tools this skill depends on, using path variables
-  - $SCRIPTS_PATH/some-script.sh
-  - $TOOLS_PATH/some-tool/quick-start.sh
-tools:                             # CLI tools required
+resources:
+  - $SCRIPTS_PATH/script-name.sh
+tools:
   - bash
-  - gh
 interface:
   input:
-    param_name: "type — description"
-    optional_param: "type? — description (? = optional)"
+    param: "type — description"
   output:
-    output_name: "type — description"
+    result: "type — description"
 ---
-
-## Markdown body
-
-Human- and agent-readable instructions. Include:
-- What this skill does (1–2 sentences)
-- Step-by-step execution guide using $SCRIPTS_PATH / $TOOLS_PATH variables
-- Any dependency or environment requirements
-- Expected output format
+Markdown body: step-by-step instructions for the agent.
 ```
 
-**Rules:**
-- Keep skills small and focused. One skill = one workflow.
-- Never put large prompt blobs in SKILL.md. The body should be instructions, not a prompt.
-- Use `$SCRIPTS_PATH`, `$TOOLS_PATH`, etc. — never hardcode paths.
-- Do not create new scripts. Reference existing ones from `workspace/scripts/` or `workspace/tools/`.
-- Do not create a `resources/` subdirectory. Scripts are already accessible via the path variables.
+### How to create a skill from an existing script
 
----
+1. `mkdir -p skills/<name>`
+2. Write `skills/<name>/SKILL.md` — reference the script as `$SCRIPTS_PATH/<script>.sh`
+3. Deploy: `./do-stow.sh` (or manually `ln -sfn "$PWD/skills/<name>" ~/.claude/skills/<name>`)
+4. `git add skills/<name>/ && git commit -m "skills: add <name>"`
 
-## How to create a new skill from an existing tool/script/alias
+Do not create new scripts. Do not copy scripts into the skill directory.
+Always reference existing scripts via `$SCRIPTS_PATH` or `$TOOLS_PATH`.
 
-### 1. Identify the source
+### Adding a new agent
 
-Check in order:
-- `workspace/scripts/` — standalone shell/python scripts
-- `workspace/tools/<name>/` — larger tools (look for `quick-start.sh` as the entry point)
-- `workspace/.aliases.sh` — aliases that wrap a script or tool
-
-Read the script header and `--help` output to understand its interface.
-
-### 2. Create the skill directory
-
-```bash
-mkdir -p skills/<name>
-```
-
-### 3. Write SKILL.md
-
-Use the schema above. Set:
-- `resources:` — list the script path using `$SCRIPTS_PATH` or `$TOOLS_PATH`
-- `triggers:` — what a user would naturally say to invoke this
-- `intent:` — semantic category
-- `guardrails:` — what the agent must never do
-- `interface.input` / `interface.output` — derived from the script's arguments and output
-
-In the markdown body, show execution like:
-```bash
-bash "$SCRIPTS_PATH/script-name.sh" [flags]
-# or for tools:
-bash "$TOOLS_PATH/tool-name/quick-start.sh" [flags]
-```
-
-### 4. Deploy the symlink for each agent
-
-```bash
-# Option A: re-run do-stow.sh (deploys all skills)
-./do-stow.sh
-
-# Option B: deploy just the new skill manually
-DOTFILES="$(git -C . rev-parse --show-toplevel)"
-while IFS= read -r line; do
-  [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
-  target_path="$(awk '{print $2}' <<< "$line")"
-  target_path="${target_path/#\~/$HOME}"
-  mkdir -p "$target_path"
-  ln -sfn "$DOTFILES/skills/<name>" "$target_path/<name>"
-done < "$DOTFILES/skills/.agents"
-```
-
-### 5. Commit
-
-```bash
-git add skills/<name>/
-git add skills/.agents   # only if .agents changed
-git commit -m "skills: add <name> skill"
-```
-
----
-
-## How to add a new agent
-
-1. Edit `skills/.agents` — add: `<agent>   <~/.agent/skills/path>`
-2. Run `./do-stow.sh` to deploy existing skills to the new agent
-3. Commit `skills/.agents`
-
----
-
-## Existing tools worth converting to skills
-
-These scripts in `workspace/scripts/` are strong candidates:
-
-| Script | Alias | Suggested skill name | Intent |
-|---|---|---|---|
-| `pr-review-gen.sh` | `grev` | `pr-review` ✅ (done) | code-review |
-| `git-stash-manager.sh` | `gsh` | `git-stash` | git |
-| `arch-system-manager.sh` | `asm` | `arch-maintenance` | system |
-| `ssl-debugger.sh` | — | `ssl-debug` | debug |
-| `jwtd.sh` | `jwtd` | `jwt-decode` | debug |
-| `video-merger.sh` / `ytd.sh` | `ytd` | `media` | media |
-| `generate-ssh-keys.sh` | `gsk` | `ssh-keygen` | system |
-
-Tools in `workspace/tools/`:
-
-| Entry point | Alias | Suggested skill name | Intent |
-|---|---|---|---|
-| `media-trimmer/quick-start.sh` | `mt` | `media-trim` | media |
-| `api-testing-tool/quick-start.sh` | `att` | `api-test` | debug |
-| `performance-manager/quick-start.sh` | `pfm` | `perf-monitor` | system |
-
----
-
-## What NOT to put in a skill
-
-- Entire prompt templates (keep them in a separate file if needed, referenced via `$SCRIPTS_PATH`)
-- Hardcoded absolute paths
-- Secrets or credentials
-- Logic that belongs in the script itself
-- New scripts — use what already exists in `workspace/`
-
----
-
-## Adding a new agent
-
-1. Edit `skills/.agents` — add a line with all three columns:
+Edit `skills/.agents` (three columns: name, skills path, instruction file path):
 
 ```
-# agent    skills_path          instruction_symlink
-gemini     ~/.gemini/skills     ~/.gemini/GEMINI.md
-codex      ~/.codex/skills      ~/AGENTS.md
-cursor     ~/.cursor/rules      -
+gemini   ~/.gemini/skills   ~/.gemini/GEMINI.md
+cursor   ~/.cursor/rules    -
 ```
 
-   - `skills_path` — where skill symlinks are deployed (`~` is expanded to `$HOME`)
-   - `instruction_symlink` — **absolute path** where the agent reads its global
-     instruction file. `do-stow.sh` creates a symlink there pointing back to
-     `AGENTS.md` in this repo. Use `-` if the agent has no global instruction
-     file (e.g. Cursor, which reads `.cursor/rules/` per-project only).
-
-2. Run `./do-stow.sh` — it creates the skill symlinks and the instruction symlink.
-
-3. Commit only `skills/.agents`.
-
-**Where instruction symlinks are created (outside this repo):**
-
-| Agent | Instruction file | Scope |
-|---|---|---|
-| Claude Code | `~/.claude/CLAUDE.md` | read from any working directory |
-| Codex | `~/AGENTS.md` | read by walking up from CWD |
-| Gemini CLI | `~/.gemini/GEMINI.md` | read from any working directory |
-| Cursor | — | per-project only (`.cursor/rules/`) |
+Then run `./do-stow.sh` and commit `skills/.agents`.

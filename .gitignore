@@ -31,3 +31,6 @@ workspace/tools/.claude
 *mpd.db
 *mpdstate
 *generated.aliases.sh
+.config/go/
+.config/JetBrains/
+workspace/sdk/repositories/*

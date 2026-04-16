@@ -113,7 +113,17 @@ deploy_instruction_links() {
     mkdir -p "$link_dir"
 
     local rel_target
-    rel_target="$(realpath --relative-to="$link_dir" "$DOTFILES_DIR/AGENTS.md")"
+    # macOS realpath doesn't support --relative-to. Use grealpath if available,
+    # or fallback to absolute path if we can't easily compute relative.
+    if command -v grealpath >/dev/null 2>&1; then
+      rel_target="$(grealpath --relative-to="$link_dir" "$DOTFILES_DIR/AGENTS.md")"
+    elif realpath --version >/dev/null 2>&1; then
+      # Likely GNU realpath
+      rel_target="$(realpath --relative-to="$link_dir" "$DOTFILES_DIR/AGENTS.md")"
+    else
+      # Fallback to absolute path
+      rel_target="$DOTFILES_DIR/AGENTS.md"
+    fi
 
     ln -sfn "$rel_target" "$AGENT_INSTRUCTION_LINK"
     entries+=("$AGENT_NAME")

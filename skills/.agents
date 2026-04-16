@@ -16,4 +16,4 @@ codex    ~/.codex/skills    ~/AGENTS.md
 gemini   ~/.gemini/skills   ~/.gemini/GEMINI.md
 cursor   ~/.cursor/rules    -
 copilot  ~/.copilot/skills  -
-agents   ~/.agents/skills   -
+# agents   ~/.agents/skills   -

@@ -22,6 +22,7 @@ remove_instruction_links() {
     return
   fi
 
+  local entries=()
   while IFS= read -r line || [[ -n "$line" ]]; do
     [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
     parse_agent_line "$line"
@@ -30,9 +31,13 @@ remove_instruction_links() {
 
     if [[ -L "$AGENT_INSTRUCTION_LINK" ]]; then
       rm "$AGENT_INSTRUCTION_LINK"
-      echo "  [$AGENT_NAME] removed instruction: $AGENT_INSTRUCTION_LINK"
+      entries+=("$AGENT_NAME")
     fi
   done < "$AGENTS_FILE"
+
+  local joined
+  joined="$(IFS=$','; echo "${entries[*]}" | sed 's/,/, /g')"
+  echo "[instructions] unlinked: $joined"
 }
 
 # ── remove skill symlinks ─────────────────────────────────────────────────────
@@ -42,28 +47,44 @@ remove_skills() {
     return
   fi
 
-  local removed=0
   shopt -s nullglob
 
+  # Collect active and disabled skill names (matching deploy_skills logic)
+  local skill_names=()
+  local disabled_names=()
+  for skill_dir in "$SKILLS_DIR"/*/; do
+    [[ -d "$skill_dir" ]] || continue
+    local name
+    name="$(basename "$skill_dir")"
+    if [[ "$name" == *.disabled ]]; then
+      disabled_names+=("${name%.disabled}")
+    else
+      skill_names+=("$name")
+    fi
+  done
+
+  local agent_names=()
   while IFS= read -r line || [[ -n "$line" ]]; do
     [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
     parse_agent_line "$line"
 
-    for skill_dir in "$SKILLS_DIR"/*/; do
-      [[ -d "$skill_dir" ]] || continue
-      local skill_name link
-      skill_name="$(basename "$skill_dir")"
-      link="$AGENT_SKILLS_PATH/$skill_name"
-
+    for skill_name in "${skill_names[@]}"; do
+      local link="$AGENT_SKILLS_PATH/$skill_name"
       if [[ -L "$link" ]]; then
         rm "$link"
-        echo "  [$AGENT_NAME] removed skill: $skill_name"
-        (( removed++ )) || true
       fi
     done
+
+    agent_names+=("$AGENT_NAME")
   done < "$AGENTS_FILE"
 
-  echo "[skills] $removed skill symlink(s) removed."
+  local skills_joined agents_joined
+  skills_joined="$(IFS=$','; echo "${skill_names[*]}" | sed 's/,/, /g')"
+  agents_joined="$(IFS=$','; echo "${agent_names[*]}" | sed 's/,/, /g')"
+
+  echo "[skills] removing: $skills_joined"
+  [[ ${#disabled_names[@]} -gt 0 ]] && echo "[skills] disabled: $(IFS=$','; echo "${disabled_names[*]}" | sed 's/,/, /g')"
+  echo "[skills] agents: $agents_joined"
 }
 
 # ── unstow packages ───────────────────────────────────────────────────────────

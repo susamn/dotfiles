@@ -33,6 +33,9 @@ script or tool. Invoke them when the user's request matches a trigger phrase.
 | `webapp-dev` | architecture | "start a new webapp", "design a modular application" |
 | `safe-coder` | execution | "implement feature", "work on module", "safe-coder" |
 | `openapi-schema-creator` | api-design | "create an OpenAPI schema", "design an API" |
+| `skill-creator` | meta | "create a new skill", "add a skill" |
+| `obsidian` | notes | "work with obsidian", "notes in obsidian" |
+| `model-usage` | metrics | "model usage", "cost data" |
 
 More skills will appear here as they are added to the dotfiles.
 
@@ -136,18 +139,6 @@ interface:
 ---
 Markdown body: step-by-step instructions for the agent.
 ```
-
-### How to create a skill from an existing script
-
-Skills in this repo are **cross-agent compatible**. When you create a skill here and run `./do-stow.sh`, it is automatically deployed to all agents listed in `skills/.agents` (e.g., Gemini, Claude, Cursor).
-
-1. `mkdir -p skills/<name>`
-2. Write `skills/<name>/SKILL.md` — reference the script as `$SCRIPTS_PATH/<script>.sh`
-3. Deploy: `./do-stow.sh`
-   - This script reads `skills/.agents` and creates symlinks for all skills in every agent's rules directory.
-4. `git add skills/<name>/ && git commit -m "skills: add <name>"`
-
-Do not create new scripts inside skill directories. Always reference existing scripts via `$SCRIPTS_PATH` or `$TOOLS_PATH` to maintain a single source of truth.
 
 ### Adding a new agent
 

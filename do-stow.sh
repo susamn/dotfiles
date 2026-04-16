@@ -44,11 +44,18 @@ deploy_skills() {
 
   shopt -s nullglob
 
-  # Collect skill names once
+  # Collect active and disabled skill names once
   local skill_names=()
+  local disabled_names=()
   for skill_dir in "$SKILLS_DIR"/*/; do
     [[ -d "$skill_dir" ]] || continue
-    skill_names+=("$(basename "$skill_dir")")
+    local name
+    name="$(basename "$skill_dir")"
+    if [[ "$name" == *.disabled ]]; then
+      disabled_names+=("${name%.disabled}")
+    else
+      skill_names+=("$name")
+    fi
   done
 
   local skills_joined
@@ -60,9 +67,20 @@ deploy_skills() {
     [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
     parse_agent_line "$line"
     mkdir -p "$AGENT_SKILLS_PATH"
+
+    # Remove symlinks for disabled skills
+    for disabled_name in "${disabled_names[@]}"; do
+      local link="$AGENT_SKILLS_PATH/$disabled_name"
+      if [[ -L "$link" ]]; then
+        rm "$link"
+      fi
+    done
+
+    # Create symlinks for active skills
     for skill_name in "${skill_names[@]}"; do
       ln -sfn "$SKILLS_DIR/$skill_name/" "$AGENT_SKILLS_PATH/$skill_name"
     done
+
     agent_names+=("$AGENT_NAME")
   done < "$AGENTS_FILE"
 
@@ -70,6 +88,7 @@ deploy_skills() {
   agents_joined="$(IFS=$','; echo "${agent_names[*]}" | sed 's/,/, /g')"
 
   echo "[skills] installing: $skills_joined"
+  [[ ${#disabled_names[@]} -gt 0 ]] && echo "[skills] disabled: $(IFS=$','; echo "${disabled_names[*]}" | sed 's/,/, /g')"
   echo "[skills] agents: $agents_joined"
 }
 

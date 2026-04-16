@@ -15,3 +15,5 @@ claude   ~/.claude/skills   ~/.claude/CLAUDE.md
 codex    ~/.codex/skills    ~/AGENTS.md
 gemini   ~/.gemini/skills   ~/.gemini/GEMINI.md
 cursor   ~/.cursor/rules    -
+copilot  ~/.copilot/skills  -
+agents   ~/.agents/skills   -

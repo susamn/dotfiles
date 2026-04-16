@@ -42,26 +42,35 @@ deploy_skills() {
     return
   fi
 
-  local skill_count=0
   shopt -s nullglob
 
+  # Collect skill names once
+  local skill_names=()
+  for skill_dir in "$SKILLS_DIR"/*/; do
+    [[ -d "$skill_dir" ]] || continue
+    skill_names+=("$(basename "$skill_dir")")
+  done
+
+  local skills_joined
+  skills_joined="$(IFS=$','; echo "${skill_names[*]}" | sed 's/,/, /g')"
+
+  # Deploy symlinks and collect agent names
+  local agent_names=()
   while IFS= read -r line || [[ -n "$line" ]]; do
     [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
     parse_agent_line "$line"
-
     mkdir -p "$AGENT_SKILLS_PATH"
-
-    for skill_dir in "$SKILLS_DIR"/*/; do
-      [[ -d "$skill_dir" ]] || continue
-      local skill_name
-      skill_name="$(basename "$skill_dir")"
-      ln -sfn "$skill_dir" "$AGENT_SKILLS_PATH/$skill_name"
-      echo "  [$AGENT_NAME] skill: $skill_name"
-      (( skill_count++ )) || true
+    for skill_name in "${skill_names[@]}"; do
+      ln -sfn "$SKILLS_DIR/$skill_name/" "$AGENT_SKILLS_PATH/$skill_name"
     done
+    agent_names+=("$AGENT_NAME")
   done < "$AGENTS_FILE"
 
-  echo "[skills] $skill_count skill symlink(s) deployed."
+  local agents_joined
+  agents_joined="$(IFS=$','; echo "${agent_names[*]}" | sed 's/,/, /g')"
+
+  echo "[skills] installing: $skills_joined"
+  echo "[skills] agents: $agents_joined"
 }
 
 # ── create instruction symlinks ───────────────────────────────────────────────
@@ -73,6 +82,7 @@ deploy_instruction_links() {
     return
   fi
 
+  local entries=()
   while IFS= read -r line || [[ -n "$line" ]]; do
     [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
     parse_agent_line "$line"
@@ -87,8 +97,12 @@ deploy_instruction_links() {
     rel_target="$(realpath --relative-to="$link_dir" "$DOTFILES_DIR/AGENTS.md")"
 
     ln -sfn "$rel_target" "$AGENT_INSTRUCTION_LINK"
-    echo "  [$AGENT_NAME] instruction: $AGENT_INSTRUCTION_LINK → $rel_target"
+    entries+=("$AGENT_NAME")
   done < "$AGENTS_FILE"
+
+  local joined
+  joined="$(IFS=$','; echo "${entries[*]}" | sed 's/,/, /g')"
+  echo "[instructions] linked: $joined"
 }
 
 stow_packages

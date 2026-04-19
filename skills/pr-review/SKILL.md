@@ -25,12 +25,14 @@ interface:
     pr_url: "string — full GitHub PR URL (e.g. https://github.com/owner/repo/pull/42)"
     story_file: "string? — optional path to a ticket or user story file for context"
   output:
-    review_file: "string — path to generated markdown file: <repo>_pr<number>_review.md"
+    prompts_dir: "string — path to generated directory containing prompt chunks: /tmp/pr-review/<randomid>/prompts/"
 ---
 
 ## What this skill does
 
-Runs `$SCRIPTS_PATH/pr-review-gen.sh` to produce a self-contained markdown file containing the PR diff, metadata, and a structured review prompt. The resulting file is ready to paste into any LLM for a thorough code review.
+Runs `$SCRIPTS_PATH/pr-review-gen.sh` to extract the PR diff, metadata, and a structured review prompt. 
+To handle LLM context limits, the diffs are split into multiple chunks (~100KB each max). The prompt chunks are stored in `/tmp/pr-review/<randomid>/prompts/` (e.g., `p1.txt`, `p2.txt`). 
+These are ready to be pasted into any LLM or iterated automatically by the `pr-review-ui` skill.
 
 ## Steps
 
@@ -42,7 +44,7 @@ Runs `$SCRIPTS_PATH/pr-review-gen.sh` to produce a self-contained markdown file 
 bash "$SCRIPTS_PATH/pr-review-gen.sh" [-s <story_file>]
 ```
 
-4. Report the output filename and line count to the user.
+4. Present the output prompts directory path (`/tmp/pr-review/<id>/prompts/`) to the user in the chat session.
 
 ## Dependencies
 
@@ -53,21 +55,23 @@ If either is missing, the script exits with a clear error message.
 
 ## Output format
 
-The generated file follows this structure:
+The generated files in the directory follow this structure:
 
 ```
 # PR Review: <title>
 ## Story / Ticket Context
 ## PR Description
 ## Commits
-## Changed Files
+## Changed Files (Entire PR)
+## Chunk Information (Files in this chunk)
 ## Diff
+  (chunk of up to ~100KB)
 ## Review Instructions   ← structured prompt with 9 review dimensions
 ## Summary template
 ```
 
 ## Notes
 
-- Output file is written to the **current working directory** where the agent invoked the script.
-- Large diffs (>500 KB) trigger a warning; consider splitting the PR in that case.
+- Output prompts are written to `/tmp/pr-review/<random-id>/prompts/` so that they stay isolated from the current workspace.
+- The `pr-review-ui` skill explicitly looks for this directory format to automatically process reviews chunk-by-chunk.
 - The review prompt covers: Correctness, Code Quality, Security, Performance, Resource Leaks, Concurrency, Test Coverage, Maintainability, and Dependency changes.

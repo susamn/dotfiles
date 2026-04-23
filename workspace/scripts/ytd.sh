@@ -93,7 +93,8 @@ else
 fi
 
 while :; do
-  read -rp "End time [HH:MM:SS, seconds, or 'inf' for end]: " END_TIME
+  read -rp "End time [HH:MM:SS, seconds, or 'inf' for end] (Enter for end): " END_TIME
+  END_TIME=${END_TIME:-inf}
   validate_time "$END_TIME" && break
   echo "Invalid time format" >&2
 done
@@ -116,10 +117,15 @@ fi
 # Existing file check
 shopt -s nullglob
 check_path="${output_template/%\%(ext\)s/*}"
-files=($check_path)
+# If check_path has no glob characters, nullglob won't filter it.
+# We check if the file actually exists.
+files=()
+for f in $check_path; do
+  [ -e "$f" ] && files+=("$f")
+done
 if [ ${#files[@]} -gt 0 ]; then
   read -rp "File exists. Overwrite? [y/N] " overwrite
-  [[ "${overwrite,,}" =~ ^y ]] || exit 0
+  [[ "$overwrite" =~ ^[Yy] ]] || exit 0
 fi
 shopt -u nullglob
 
@@ -129,6 +135,7 @@ declare -a cmd=(
   "${format_opts[@]}"
   --download-sections "*${START_TIME}-${END_TIME}"
   --force-overwrites
+  --downloader-args "ffmpeg:-allowed_extensions ALL"
   -o "$output_template"
 )
 

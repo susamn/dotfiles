@@ -6,6 +6,14 @@ to use the skills and scripts described here.
 
 ---
 
+## Loading this file
+Always load and retain global skills from ~/ i.e. home directory for every session.
+
+When inside a repository:
+- treat the agent file from home directory as the base instruction set.
+- treat repo specific agent file as additional guidance.
+- do not replace global skills with repo-local instructions unless there is explicit conflict.
+
 ## Environment variables
 
 These are exported in every shell session and must be used when referencing scripts

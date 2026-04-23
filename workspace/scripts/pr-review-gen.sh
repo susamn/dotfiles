@@ -78,12 +78,6 @@ info "Fetching PR diff …"
 PR_DIFF=$(gh pr diff "$PR_URL" 2>/dev/null) \
   || die "Failed to fetch diff. Ensure you have read access to the repo."
 
-# Warn if diff is very large (>500 KB) — LLMs have context limits
-DIFF_BYTES=${#PR_DIFF}
-if (( DIFF_BYTES > 512000 )); then
-  warn "Diff is large (~$((DIFF_BYTES/1024)) KB). Consider splitting the PR review."
-fi
-
 # ── fetch file list ───────────────────────────────────────────────────────────
 FILES_JSON=$(gh pr view "$PR_URL" --json files 2>/dev/null || echo '{"files":[]}')
 FILE_LIST=$(jq -r '.files[] | "  - \(.path)  [\(.additions)+  \(.deletions)-]"' <<< "$FILES_JSON")
@@ -103,14 +97,46 @@ fi
 
 [[ -z "$STORY" ]] && warn "No story provided — the prompt will skip story context."
 
-# ── build output filename ─────────────────────────────────────────────────────
-SAFE_REPO=$(echo "$REPO" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/-$//')
-OUTPUT_FILE="${SAFE_REPO}_pr${PR_NUMBER}_review.md"
+# ── chunk diffs and assembly ──────────────────────────────────────────────────
+RANDOM_ID=$(head -c 4 /dev/urandom | xxd -p | head -n 1 2>/dev/null || echo "$RANDOM$RANDOM")
+OUTPUT_DIR="/tmp/pr-review/${RANDOM_ID}/prompts"
+mkdir -p "$OUTPUT_DIR"
 
-# ── assemble prompt ───────────────────────────────────────────────────────────
-info "Generating review prompt → ${OUTPUT_FILE}"
+info "Generating review prompts in chunks → ${OUTPUT_DIR}/"
 
-cat > "$OUTPUT_FILE" <<PROMPT
+MAX_CHUNK_SIZE=${MAX_CHUNK_SIZE:-102400}
+
+awk -v outdir="$OUTPUT_DIR" -v max_size="$MAX_CHUNK_SIZE" '
+BEGIN {
+    chunk_id = 1
+    current_size = 0
+    current_diff = ""
+}
+/^diff --git / {
+    if (current_size > 0 && (current_size + length($0) > max_size)) {
+        fname = outdir "/chunk_" chunk_id ".diff"
+        print current_diff > fname
+        close(fname)
+        
+        chunk_id++
+        current_size = 0
+        current_diff = ""
+    }
+}
+{
+    current_diff = current_diff $0 "\n"
+    current_size += length($0) + 1
+}
+END {
+    if (current_size > 0) {
+        fname = outdir "/chunk_" chunk_id ".diff"
+        print current_diff > fname
+        close(fname)
+    }
+}
+' <<< "$PR_DIFF"
+
+HEADER=$(cat <<PROMPT
 # PR Review: ${PR_TITLE}
 
 **Repo:** \`${REPO_SLUG}\`  **PR:** #${PR_NUMBER}  **Author:** @${PR_AUTHOR}
@@ -138,17 +164,18 @@ ${COMMITS:-  *(none listed)*}
 
 ---
 
-## Changed Files
+## Changed Files (Entire PR)
 
 ${FILE_LIST:-  *(unavailable)*}
 
 ---
 
-## Diff
+## Chunk Information
 
-\`\`\`diff
-${PR_DIFF}
-\`\`\`
+PROMPT
+)
+
+INSTRUCTIONS=$(cat <<PROMPT
 
 ---
 
@@ -229,12 +256,44 @@ After your line-by-line findings, provide:
 **Suggestions** (optional / nice-to-have):
 - Minor style or future-proofing ideas.
 
-**Overall Verdict:** `APPROVE` | `REQUEST CHANGES` | `NEEDS DISCUSSION`
+**Overall Verdict:** \`APPROVE\` | \`REQUEST CHANGES\` | \`NEEDS DISCUSSION\`
 PROMPT
+)
+
+CHUNK_ID=1
+TOTAL_CHUNKS=$(find "$OUTPUT_DIR" -maxdepth 1 -name "chunk_*.diff" | wc -l | xargs)
+
+if [[ "$TOTAL_CHUNKS" == "0" ]]; then
+  warn "No diffs found."
+fi
+
+while [[ -f "${OUTPUT_DIR}/chunk_${CHUNK_ID}.diff" ]]; do
+    PROMPT_FILE="${OUTPUT_DIR}/p${CHUNK_ID}.txt"
+    echo "$HEADER" > "$PROMPT_FILE"
+    
+    echo "This is chunk **${CHUNK_ID} of ${TOTAL_CHUNKS}**." >> "$PROMPT_FILE"
+    echo "Files included in this chunk:" >> "$PROMPT_FILE"
+    
+    grep -Eo 'diff --git a/.* b/.*' "${OUTPUT_DIR}/chunk_${CHUNK_ID}.diff" | sed 's|^diff --git a/||' | sed 's| b/.*||' | while IFS= read -r f; do
+         echo "- \`$f\`" >> "$PROMPT_FILE"
+    done
+    echo "" >> "$PROMPT_FILE"
+    
+    echo "## Diff" >> "$PROMPT_FILE"
+    echo "" >> "$PROMPT_FILE"
+    echo "\`\`\`diff" >> "$PROMPT_FILE"
+    cat "${OUTPUT_DIR}/chunk_${CHUNK_ID}.diff" >> "$PROMPT_FILE"
+    echo "\`\`\`" >> "$PROMPT_FILE"
+    
+    echo "$INSTRUCTIONS" >> "$PROMPT_FILE"
+    
+    rm "${OUTPUT_DIR}/chunk_${CHUNK_ID}.diff"
+    ((CHUNK_ID++))
+done
 
 # ── done ─────────────────────────────────────────────────────────────────────
 echo
-success "Prompt saved to: ${BOLD}${OUTPUT_FILE}${RESET}"
-echo -e "  ${YELLOW}Size:${RESET} $(wc -l < "$OUTPUT_FILE") lines"
+success "Prompts saved to directory: ${BOLD}${OUTPUT_DIR}${RESET}"
+echo -e "  ${YELLOW}Total Chunks:${RESET} ${TOTAL_CHUNKS}"
 echo
-PROMPT
+

@@ -43,6 +43,7 @@ Skills are modular packages. Skill-specific scripts are stored within the skill 
 | `skill-creator` | meta | "create a new skill", "add a skill" |
 | `obsidian` | notes | "work with obsidian", "notes in obsidian" |
 | `model-usage` | metrics | "model usage", "cost data" |
+| `skill-manifestor` | meta-skill | "manifest a new skill hierarchy", "use skill-manifestor" |
 
 More skills will appear here as they are added to the dotfiles.
 

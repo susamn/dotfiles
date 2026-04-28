@@ -22,7 +22,7 @@ or tools — never hardcode absolute paths.
 | Variable | Path |
 |---|---|
 | `$WORKSPACE_PATH` | `~/workspace` |
-| `$SCRIPTS_PATH` | `~/workspace/scripts` |
+| `$SCRIPTS_PATH` | `~/workspace/scripts` (Global utilities only) |
 | `$TOOLS_PATH` | `~/workspace/tools` |
 | `$SERVICES_PATH` | `~/workspace/services` |
 | `$INSTALL_PATH` | `~/workspace/install` |
@@ -32,8 +32,7 @@ or tools — never hardcode absolute paths.
 
 ## Available skills
 
-Skills are loaded from your agent's skills directory. Each skill wraps an existing
-script or tool. Invoke them when the user's request matches a trigger phrase.
+Skills are modular packages. Skill-specific scripts are stored within the skill folder (e.g., `skills/name/scripts/`) to ensure encapsulation and minimize security blast radius.
 
 | Skill | Intent | Trigger examples |
 |---|---|---|
@@ -55,7 +54,6 @@ Located at `$SCRIPTS_PATH`. Invoke with `bash "$SCRIPTS_PATH/<script>"`.
 
 | Script | Alias | What it does |
 |---|---|---|
-| `pr-review-gen.sh` | `grev` | Generate a structured LLM-ready PR review prompt from a GitHub PR |
 | `git-stash-manager.sh` | `gsh` | Interactive git stash manager |
 | `git-hard-reset.sh` | `ghr` | Hard reset current branch with safety prompts |
 | `gch.sh` | `gch` | Interactive git checkout across branches |
@@ -136,7 +134,8 @@ intent: code-review | git | system | debug | media | …
 guardrails:
   - Do not X
 resources:
-  - $SCRIPTS_PATH/script-name.sh
+  - ./scripts/script-name.sh  # Relative to skill directory
+  - $TOOLS_PATH/tool-name     # Global tools
 tools:
   - bash
 interface:
@@ -145,7 +144,7 @@ interface:
   output:
     result: "type — description"
 ---
-Markdown body: step-by-step instructions for the agent.
+Markdown body: step-by-step instructions for the agent. Use <SKILL_PATH> placeholder for absolute paths.
 ```
 
 ### Adding a new agent

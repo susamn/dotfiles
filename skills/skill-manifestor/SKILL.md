@@ -64,7 +64,18 @@ This `SKILL.md` MUST contain the **Global Laws** for the domain, including:
    - `TODO.md`: A live task list. Items must be ticked off only upon completion and verification.
 3. **Global Coordination Files:**
    - `ARCHITECTURE.md`: Contains the project architecture, requirements, and high-level design.
-   - `DEPENDENCY.md`: Clearly defines inter-module dependencies. **Rule:** This file must be symlinked into every child module to ensure local context of the larger system.
+   - `DEPENDENCY.md`: Clearly defines inter-module dependencies. **Rule:** This file must be symlinked into every child module.
+   - `PROJECT_STATE.md`: Mandatory root file to track architectural decisions and progress. **Rule:** This file must be symlinked into every child module.
+     ```markdown
+     - **Phase**: [Current Phase]
+     - **Type**: [Fullstack/Frontend]
+     - **Stack**: [List of selected techs]
+     - **Modules**: [List of modules]
+     - **API Status**: [Draft/Finalized]
+
+     ## Module Updates
+     [Each module adds its high-level status and major changes here, only relevant and single line containing the above information so that it can be easily read by other modules for their Reference]
+     ```
 4. **Verification & Safety:**
    - **Test-Always Rule:** Run tests after every change.
    - **Test-Preservation:** NEVER delete test cases without explicit notification and justification.
@@ -79,7 +90,11 @@ This `SKILL.md` MUST contain the **Global Laws** for the domain, including:
 
 8. **Web Domain Mandate (OpenAPI):**
    - For any web-based project, an **OpenAPI Schema** MUST be used as the source of truth to bind backend and frontend.
-   - The schema acts as the "Contract" allowing transport and client layers to be developed and tested independently.
+   - **Contract-First Workflow:**
+     1. Use **skill:openapi-schema-creator** to design the schema.
+     2. **Iterate** with the user through design reviews until the schema is explicitly **finalized**.
+     3. **LOCK:** Do NOT proceed to implementation or code generation until the schema is locked and saved.
+   - The schema acts as the immutable "Contract" allowing transport and client layers to be developed and tested independently.
 
 #### B. Specialized & Nested Children
 These `SKILL.md` files focus on specific layers (e.g., `webapp-testing`) or sub-specializations (e.g., `webapp-testing-bdd`):

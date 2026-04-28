@@ -92,12 +92,14 @@ deploy_skills() {
   echo "[skills] agents: $agents_joined"
 }
 
-# ── create instruction symlinks ───────────────────────────────────────────────
-# Creates a symlink at the agent's global instruction file path → AGENTS.md.
-# These live outside the dotfiles repo (e.g. ~/.claude/CLAUDE.md) so agents
-# pick them up from any working directory, not just when inside this repo.
-deploy_instruction_links() {
-  if [[ ! -f "$AGENTS_FILE" ]]; then
+# ── generate instruction files ────────────────────────────────────────────────
+# Generates agent-specific instruction files from templates/AGENTS.md.template.
+# These live outside the dotfiles repo (e.g. ~/.claude/CLAUDE.md) and contain
+# agent-specific paths, allowing agents to identify their own context.
+deploy_instructions() {
+  local template="$DOTFILES_DIR/templates/AGENTS.md.template"
+  if [[ ! -f "$AGENTS_FILE" || ! -f "$template" ]]; then
+    echo "[instructions] Skipping: template or .agents file missing."
     return
   fi
 
@@ -112,28 +114,20 @@ deploy_instruction_links() {
     link_dir="$(dirname "$AGENT_INSTRUCTION_LINK")"
     mkdir -p "$link_dir"
 
-    local rel_target
-    # macOS realpath doesn't support --relative-to. Use grealpath if available,
-    # or fallback to absolute path if we can't easily compute relative.
-    if command -v grealpath >/dev/null 2>&1; then
-      rel_target="$(grealpath --relative-to="$link_dir" "$DOTFILES_DIR/AGENTS.md")"
-    elif realpath --version >/dev/null 2>&1; then
-      # Likely GNU realpath
-      rel_target="$(realpath --relative-to="$link_dir" "$DOTFILES_DIR/AGENTS.md")"
-    else
-      # Fallback to absolute path
-      rel_target="$DOTFILES_DIR/AGENTS.md"
-    fi
+    # Generate the file from template, replacing placeholders
+    # Use ~/ instead of absolute path for the instruction file content
+    local display_path="${AGENT_INSTRUCTION_LINK/$HOME/\~}"
+    rm -f "$AGENT_INSTRUCTION_LINK"
+    sed "s|{{INSTRUCTION_PATH}}|$display_path|g" "$template" > "$AGENT_INSTRUCTION_LINK"
 
-    ln -sfn "$rel_target" "$AGENT_INSTRUCTION_LINK"
     entries+=("$AGENT_NAME")
   done < "$AGENTS_FILE"
 
   local joined
   joined="$(IFS=$','; echo "${entries[*]}" | sed 's/,/, /g')"
-  echo "[instructions] linked: $joined"
+  echo "[instructions] generated: $joined"
 }
 
 stow_packages
 deploy_skills
-deploy_instruction_links
+deploy_instructions

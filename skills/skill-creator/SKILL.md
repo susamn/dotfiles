@@ -98,10 +98,11 @@ Keep SKILL.md under 500 lines. Split content when approaching this limit.
 1. **Understand** - Gather concrete usage examples
 2. **Plan** - Identify reusable scripts, references, assets
 3. **Initialize** - `mkdir -p ~/dotfiles/skills/<name>`
-4. **Edit** - Write `~/dotfiles/skills/<name>/SKILL.md` referencing scripts via `$SCRIPTS_PATH` or `$TOOLS_PATH`
-5. **Deploy** - Run `bash ~/dotfiles/do-stow.sh` — this symlinks the skill into every agent's skills directory (`~/.claude/skills/`, `~/.gemini/skills/`, `~/.copilot/skills/`, etc.) automatically
-6. **Commit** - `git add skills/<name>/ && git commit -m "skills: add <name>"`
-7. **Iterate** - Improve based on real usage
+4. **Edit** - Write `~/dotfiles/skills/<name>/SKILL.md` referencing scripts via `$SCRIPTS_PATH` or `$TOOLS_PATH`.
+5. **Register** - Add the new skill to the `## Available skills` table in `~/dotfiles/templates/AGENTS.md.template`.
+6. **Deploy** - Run `bash ~/dotfiles/do-stow.sh` — this generates agent-specific instruction files from the template and symlinks the skill into every agent's skills directory.
+7. **Commit** - `git add skills/<name>/ templates/AGENTS.md.template && git commit -m "skills: add <name>"`
+8. **Iterate** - Improve based on real usage
 
 ## What NOT to Include
 

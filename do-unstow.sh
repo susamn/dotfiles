@@ -16,8 +16,8 @@ parse_agent_line() {
   AGENT_INSTRUCTION_LINK="${AGENT_INSTRUCTION_LINK/#\~/$HOME}"
 }
 
-# ── remove instruction symlinks ───────────────────────────────────────────────
-remove_instruction_links() {
+# ── remove instruction files ──────────────────────────────────────────────────
+remove_instructions() {
   if [[ ! -f "$AGENTS_FILE" ]]; then
     return
   fi
@@ -29,7 +29,7 @@ remove_instruction_links() {
 
     [[ -z "$AGENT_INSTRUCTION_LINK" || "$AGENT_INSTRUCTION_LINK" == "-" ]] && continue
 
-    if [[ -L "$AGENT_INSTRUCTION_LINK" ]]; then
+    if [[ -f "$AGENT_INSTRUCTION_LINK" ]]; then
       rm "$AGENT_INSTRUCTION_LINK"
       entries+=("$AGENT_NAME")
     fi
@@ -37,7 +37,7 @@ remove_instruction_links() {
 
   local joined
   joined="$(IFS=$','; echo "${entries[*]}" | sed 's/,/, /g')"
-  echo "[instructions] unlinked: $joined"
+  echo "[instructions] removed: $joined"
 }
 
 # ── remove skill symlinks ─────────────────────────────────────────────────────
@@ -94,6 +94,6 @@ unstow_packages() {
   stow -Dvt ~ .
 }
 
-remove_instruction_links
+remove_instructions
 remove_skills
 unstow_packages

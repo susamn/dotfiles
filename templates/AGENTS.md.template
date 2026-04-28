@@ -7,10 +7,10 @@ to use the skills and scripts described here.
 ---
 
 ## Loading this file
-Always load and retain global skills from ~/ i.e. home directory for every session.
+Always load and retain global skills from {{INSTRUCTION_PATH}} for every session.
 
 When inside a repository:
-- treat the agent file from home directory as the base instruction set.
+- treat {{INSTRUCTION_PATH}} as the base instruction set.
 - treat repo specific agent file as additional guidance.
 - do not replace global skills with repo-local instructions unless there is explicit conflict.
 
@@ -40,6 +40,7 @@ Skills are modular packages. Skill-specific scripts are stored within the skill 
 | `safe-coder` | execution | "implement feature", "work on module", "safe-coder" |
 | `openapi-schema-creator` | api-design | "create an OpenAPI schema", "design an API" |
 | `skill-creator` | meta | "create a new skill", "add a skill" |
+| `music-tagger` | media | "update media tags", "batch tag songs" |
 | `obsidian` | notes | "work with obsidian", "notes in obsidian" |
 | `model-usage` | metrics | "model usage", "cost data" |
 | `skill-manifestor` | meta-skill | "manifest a new skill hierarchy", "use skill-manifestor" |

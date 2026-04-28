@@ -8,7 +8,7 @@ triggers:
   - "update artist metadata"
 intent: media
 resources:
-  - $SCRIPTS_PATH/batch-tagger.py
+  - ./scripts/batch-tagger.py
 tools:
   - ffmpeg
   - python3
@@ -37,7 +37,7 @@ This skill allows for efficient batch updating of media file metadata (especiall
 ## Commands
 
 \`\`\`bash
-python3 \$SCRIPTS_PATH/batch-tagger.py /path/to/media mapping.json
+python3 "<SKILL_PATH>/scripts/batch-tagger.py" /path/to/media mapping.json
 \`\`\`
 
 ## Guardrails

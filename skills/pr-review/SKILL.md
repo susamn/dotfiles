@@ -15,7 +15,7 @@ guardrails:
   - Do not include secrets, tokens, or credentials in the generated output
   - Warn if the diff exceeds ~500 KB (LLM context limits)
 resources:
-  - $SCRIPTS_PATH/pr-review-gen.sh
+  - ./scripts/pr-review-gen.sh
 tools:
   - bash
   - gh
@@ -30,7 +30,7 @@ interface:
 
 ## What this skill does
 
-Runs `$SCRIPTS_PATH/pr-review-gen.sh` to extract the PR diff, metadata, and a structured review prompt. 
+Runs the local `./scripts/pr-review-gen.sh` to extract the PR diff, metadata, and a structured review prompt. 
 To handle LLM context limits, the diffs are split into multiple chunks (~100KB each max). The prompt chunks are stored in `/tmp/pr-review/<randomid>/prompts/` (e.g., `p1.txt`, `p2.txt`). 
 These are ready to be pasted into any LLM or iterated automatically by the `pr-review-ui` skill.
 
@@ -41,7 +41,8 @@ These are ready to be pasted into any LLM or iterated automatically by the `pr-r
 3. Run:
 
 ```bash
-bash "$SCRIPTS_PATH/pr-review-gen.sh" [-s <story_file>]
+# Locate and run the skill-local script
+bash "<SKILL_PATH>/scripts/pr-review-gen.sh" [-s <story_file>]
 ```
 
 4. Present the output prompts directory path (`/tmp/pr-review/<id>/prompts/`) to the user in the chat session.

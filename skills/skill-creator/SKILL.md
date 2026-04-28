@@ -36,7 +36,7 @@ skill-name/
 │   ├── YAML frontmatter (name, description)
 │   └── Markdown instructions
 └── Bundled Resources (optional)
-    ├── scripts/      - Executable code, must be referenced via $SCRIPTS_PATH/
+    ├── scripts/      - Skill-specific scripts (preferred)
     ├── references/   - Documentation
     └── assets/       - Templates, images
 ```
@@ -56,28 +56,24 @@ intent: code-review | git | system | debug | media | ...
 guardrails:
   - Do not X
 resources:
-  - $SCRIPTS_PATH/script-name.sh
+  - ./scripts/script-name.sh  # Relative to skill directory
+  - $TOOLS_PATH/tool-name     # For global tools
 tools:
   - bash
-interface:
-  input:
-    param: "type — description"
-  output:
-    result: "type — description"
 ---
 ```
 
-The `description` is the primary triggering mechanism — include both what the skill does AND when to use it. `resources` must use `$SCRIPTS_PATH` or `$TOOLS_PATH` env vars (never hardcoded paths). Do not create new scripts inside skill directories; reference existing scripts via `$SCRIPTS_PATH`.
+The `description` is the primary triggering mechanism. Store skill-specific logic in `./scripts/` within the skill folder. Only use `$SCRIPTS_PATH` for truly global, shared utilities. This minimizes the "security blast radius" and makes skills portable.
 
 ### Body (Markdown)
 
-Instructions and guidance. Only loaded AFTER the skill triggers.
+Instructions and guidance. Use `<SKILL_PATH>` as a placeholder if you need to reference the absolute path to the skill's directory during execution.
 
 ## Bundled Resources
 
-### Scripts (`$SCRIPTS_PATH/`)
+### Scripts (`./scripts/`)
 
-Executable code for tasks requiring deterministic reliability.
+Executable code for tasks requiring deterministic reliability. Store these inside the skill directory for better security and portability.
 
 ### References (`references/`)
 

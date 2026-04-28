@@ -2,7 +2,7 @@
 name: model-usage
 description: Use CodexBar CLI local cost usage to summarize per-model usage for Codex or Claude, including the current (most recent) model or a full model breakdown. Trigger when asked for model-level usage/cost data from codexbar, or when you need a scriptable per-model summary from codexbar cost JSON.
 resources:
-  - $SCRIPTS_PATH/model_usage.py
+  - ./scripts/model_usage.py
 tools:
   - bash
   - python3
@@ -20,9 +20,9 @@ Get per-model usage cost from CodexBar's local cost logs. Supports "current mode
 2) Use the bundled script to summarize by model.
 
 ```bash
-python $SCRIPTS_PATH/model_usage.py --provider codex --mode current
-python $SCRIPTS_PATH/model_usage.py --provider codex --mode all
-python $SCRIPTS_PATH/model_usage.py --provider claude --mode all --format json --pretty
+python "<SKILL_PATH>/scripts/model_usage.py" --provider codex --mode current
+python "<SKILL_PATH>/scripts/model_usage.py" --provider codex --mode all
+python "<SKILL_PATH>/scripts/model_usage.py" --provider claude --mode all --format json --pretty
 ```
 
 ## Current model logic
@@ -37,8 +37,8 @@ python $SCRIPTS_PATH/model_usage.py --provider claude --mode all --format json -
 
 ```bash
 codexbar cost --provider codex --format json > /tmp/cost.json
-python $SCRIPTS_PATH/model_usage.py --input /tmp/cost.json --mode all
-cat /tmp/cost.json | python $SCRIPTS_PATH/model_usage.py --input - --mode current
+python "<SKILL_PATH>/scripts/model_usage.py" --input /tmp/cost.json --mode all
+cat /tmp/cost.json | python "<SKILL_PATH>/scripts/model_usage.py" --input - --mode current
 ```
 
 ## Output

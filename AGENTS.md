@@ -37,7 +37,6 @@ Skills are modular packages. Skill-specific scripts are stored within the skill 
 | Skill | Intent | Trigger examples |
 |---|---|---|
 | `pr-review` | code-review | "review this PR", "generate PR review prompt" |
-| `webapp-dev` | architecture | "start a new webapp", "design a modular application" |
 | `safe-coder` | execution | "implement feature", "work on module", "safe-coder" |
 | `openapi-schema-creator` | api-design | "create an OpenAPI schema", "design an API" |
 | `skill-creator` | meta | "create a new skill", "add a skill" |

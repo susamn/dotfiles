@@ -38,7 +38,7 @@ or tools — never hardcode absolute paths.
 
 ## Available skills
 
-Skills are modular packages. Skill-specific scripts are stored within the skill folder (e.g., `skills/name/scripts/`) to ensure encapsulation and minimize security blast radius.
+Skills are modular packages. Skill-specific scripts are stored within the skill folder (e.g., `skills/name/scripts/`) to ensure encapsulation and minimize security blast radius. Only enable scripts that are `Enabled` in the following table.
 
 | Skill | Intent | Trigger examples | Enabled |
 |---|---|---|---|
@@ -53,6 +53,7 @@ Skills are modular packages. Skill-specific scripts are stored within the skill 
 | `java-generic` | execution | "work on java project", "create java class" | Yes |
 | `python-generic` | execution | "work on python project", "create python script" | Yes |
 | `java-spring-framework-generic` | execution | "work on java spring framework project", "create java spring framework class" | Yes |
+| `java-vulnerability-manager` | execution | "fix vulnerabilities in java project", "run cve scan", "fix transitive dependency", "owasp dependency check" | Yes |
 
 More skills will appear here as they are added to the dotfiles.
 

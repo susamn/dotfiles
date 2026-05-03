@@ -56,6 +56,7 @@ Skills are modular packages. Skill-specific scripts are stored within the skill 
 | `python-generic` | execution | "work on python project", "create python script" | Yes |
 | `java-spring-framework-generic` | execution | "work on java spring framework project", "create java spring framework class" | Yes |
 | `java-vulnerability-manager` | execution | "fix vulnerabilities in java project", "run cve scan", "fix transitive dependency", "owasp dependency check" | Yes |
+| `ai-lsp-query` | execution | "find all references to", "who calls this function", "what type is this", "lsp query" | Yes |
 
 More skills will appear here as they are added to the dotfiles.
 
@@ -67,6 +68,7 @@ To ensure the correct specialized tools and guardrails are applied, agents **MUS
 - **Obsidian:** When tasked with working with obsidian, load the `obsidian` skill.
 - **Language/Framework Tasks:** When starting work on a specific language or framework (e.g., Java or Python), check the `{{AGENT_SKILLS_PATH}}/` directory and load the relevant generic skill (e.g., `java-generic`, `python-generic`) to establish baseline guardrails. Then load other relevant skills if any.
 - **Music Tasks:** When tasked with working with music (e.g. updating media tags), load the `music-tagger` skill.
+- **Semantic Code Intelligence:** When tasked with deep semantic codebase queries (e.g., finding references, determining type signatures, extracting call hierarchies), load the `ai-lsp-query` skill to gain precise, IDE-level codebase context.
 
 While loading skills, if there is any conflict between the skills, notify user and ask for clarification.
 

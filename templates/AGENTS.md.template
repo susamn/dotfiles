@@ -40,6 +40,8 @@ or tools — never hardcode absolute paths.
 
 Skills are modular packages. Skill-specific scripts are stored within the skill folder (e.g., `skills/name/scripts/`) to ensure encapsulation and minimize security blast radius. Only enable scripts that are `Enabled` in the following table.
 
+**Rule for accessing skill scripts:** All skill resources are located at `{{AGENT_SKILLS_PATH}}/<skill-name>/`. When a skill references a script like `<SKILL_PATH>/scripts/run.sh` or `./scripts/run.sh` or `scripts/run.sh`, you must execute it using its absolute path: `{{AGENT_SKILLS_PATH}}/<skill-name>/scripts/run.sh`.
+
 | Skill | Intent | Trigger examples | Enabled |
 |---|---|---|---|
 | `pr-review` | code-review | "review this PR", "generate PR review prompt" | Yes |

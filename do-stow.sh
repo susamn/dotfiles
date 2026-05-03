@@ -117,8 +117,9 @@ deploy_instructions() {
     # Generate the file from template, replacing placeholders
     # Use ~/ instead of absolute path for the instruction file content
     local display_path="${AGENT_INSTRUCTION_LINK/$HOME/\~}"
+    local skills_display_path="${AGENT_SKILLS_PATH/$HOME/\~}"
     rm -f "$AGENT_INSTRUCTION_LINK"
-    sed "s|{{INSTRUCTION_PATH}}|$display_path|g" "$template" > "$AGENT_INSTRUCTION_LINK"
+    sed -e "s|{{INSTRUCTION_PATH}}|$display_path|g" -e "s|{{AGENT_SKILLS_PATH}}|$skills_display_path|g" "$template" > "$AGENT_INSTRUCTION_LINK"
 
     entries+=("$AGENT_NAME")
   done < "$AGENTS_FILE"

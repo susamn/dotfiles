@@ -19,14 +19,20 @@ When inside a repository:
 These are exported in every shell session and must be used when referencing scripts
 or tools — never hardcode absolute paths.
 
-| Variable | Path |
-|---|---|
-| `$WORKSPACE_PATH` | `~/workspace` |
-| `$SCRIPTS_PATH` | `~/workspace/scripts` (Global utilities only) |
-| `$TOOLS_PATH` | `~/workspace/tools` |
-| `$SERVICES_PATH` | `~/workspace/services` |
-| `$INSTALL_PATH` | `~/workspace/install` |
-| `$SDK_PATH` | `~/workspace/sdk` |
+| Variable | Path | Notes |
+|---|---|---|
+| `$WORKSPACE_PATH` | `~/workspace` | The folder that contains codebase, scripts, tools, services, install, and sdk |
+| `$SCRIPTS_PATH` | `~/workspace/scripts` | Contains scripts and scripts must be invoked using this path |
+| `$TOOLS_PATH` | `~/workspace/tools` | Contains tools and tools must be invoked using this path |
+| `$SERVICES_PATH` | `~/workspace/services` | Contains services |
+| `$INSTALL_PATH` | `~/workspace/install` | Contains install scripts |
+| `$SDK_PATH` | `~/workspace/sdk` | Contains sdk |
+| `$M2_HOME` | `~/workspace/sdk/repositories/m2` | Contains maven cache |
+| `$CARGO_HOME` | `~/workspace/sdk/repositories/cargo` | Contains cargo cache |
+| `$NPM_CONFIG_CACHE` | `~/workspace/sdk/repositories/npm` | Contains npm cache |
+| `$PIP_CACHE_DIR` | `~/workspace/sdk/repositories/pip` | Contains pip cache |
+| `$GOPATH` | `~/workspace/sdk/repositories/gopath` | Contains go cache |
+
 
 ---
 
@@ -34,18 +40,32 @@ or tools — never hardcode absolute paths.
 
 Skills are modular packages. Skill-specific scripts are stored within the skill folder (e.g., `skills/name/scripts/`) to ensure encapsulation and minimize security blast radius.
 
-| Skill | Intent | Trigger examples |
-|---|---|---|
-| `pr-review` | code-review | "review this PR", "generate PR review prompt" |
-| `safe-coder` | execution | "implement feature", "work on module", "safe-coder" |
-| `openapi-schema-creator` | api-design | "create an OpenAPI schema", "design an API" |
-| `skill-creator` | meta | "create a new skill", "add a skill" |
-| `music-tagger` | media | "update media tags", "batch tag songs" |
-| `obsidian` | notes | "work with obsidian", "notes in obsidian" |
-| `model-usage` | metrics | "model usage", "cost data" |
-| `skill-manifestor` | meta-skill | "manifest a new skill hierarchy", "use skill-manifestor" |
+| Skill | Intent | Trigger examples | Enabled |
+|---|---|---|---|
+| `pr-review` | code-review | "review this PR", "generate PR review prompt" | Yes |
+| `safe-coder` | execution | "implement feature", "work on module", "safe-coder" | Yes |
+| `openapi-schema-creator` | api-design | "create an OpenAPI schema", "design an API" | Yes |
+| `skill-creator` | meta | "create a new skill", "add a skill" | Yes |
+| `music-tagger` | media | "update media tags", "batch tag songs" | Yes |
+| `obsidian` | notes | "work with obsidian", "notes in obsidian" | Yes |
+| `model-usage` | metrics | "model usage", "cost data" | No |
+| `skill-manifestor` | meta-skill | "manifest a new skill hierarchy", "use skill-manifestor" | No |
+| `dotfiles-management` | system | "manage dotfiles", "add a skill" | Yes |
+| `java-generic` | execution | "work on java project", "create java class" | Yes |
+| `python-generic` | execution | "work on python project", "create python script" | Yes |
 
 More skills will appear here as they are added to the dotfiles.
+
+### Skill Loading Scenarios
+To ensure the correct specialized tools and guardrails are applied, agents **MUST** automatically load and utilize the following skills under these specific scenarios:
+- **Dotfiles Management:** When working inside the `~/dotfiles/` directory, load the `dotfiles-management` skill.
+- **Skill Creation:** When tasked with creating a new skill or expanding the skill framework, load the `skill-creator` skill.
+- **Openapi Schema Creation:** When tasked with creating an OpenAPI schema, load the `openapi-schema-creator` skill.
+- **Obsidian:** When tasked with working with obsidian, load the `obsidian` skill.
+- **Language/Framework Tasks:** When starting work on a specific language or framework (e.g., Java or Python), check the `{{AGENT_SKILLS_PATH}}/` directory and load the relevant generic skill (e.g., `java-generic`, `python-generic`) to establish baseline guardrails. Then load other relevant skills if any.
+- **Music Tasks:** When tasked with working with music (e.g. updating media tags), load the `music-tagger` skill.
+
+While loading skills, if there is any conflict between the skills, notify user and ask for clarification.
 
 ---
 
@@ -85,76 +105,56 @@ Located at `$TOOLS_PATH`. Each tool has a `quick-start.sh` entry point.
 
 ---
 
----
+## Global Application Development Guidelines
 
-## Dotfiles management
+When creating a new application or modifying an existing project, adhere to the following universal rules regardless of platform, language, or framework:
 
-> **Only relevant when you are explicitly helping the user manage their dotfiles**
-> (i.e. the user has asked you to add a skill, modify the stow setup, or work inside
-> `~/dotfiles/`). If you are helping with any other task, ignore this section.
+### 1. Planning & Architecture
+- **Architecture First:** Always create an `ARCHITECTURE.md` to brainstorm ideas and outline the high-level design. Clarify any questions with the user *before* beginning implementation.
 
-### Repository layout
+### 2. Modularity & Documentation
+- **Strict Modularity:** The project must be modular. Logic must be encapsulated within designated module directories.
+- **Standard Documentation (Per Module):** Every module must contain:
+  - `CONTEXT.md`: Explicitly defines the module's primary responsibility and scope.
+  - `TODO.md`: A live task list. Items must be ticked off only upon completion and verification.
 
-```
-~/dotfiles/
-├── .config/          # app configs (Hyprland, kitty, nvim, waybar, rofi, …)
-├── workspace/        # scripts, tools, sdk, services (stowed to ~/workspace/)
-├── skills/           # canonical skill definitions — NOT stowed to ~
-│   ├── .agents       # agent deployment config (skills path + instruction file)
-│   └── <skill-name>/
-│       └── SKILL.md
-├── do-stow.sh        # stow dotfiles + deploy skill and instruction symlinks
-├── do-unstow.sh      # reverse of do-stow.sh
-└── AGENTS.md         # this file
-```
+### 3. Global Coordination Files
+These files must exist at the root of the project:
+- `ARCHITECTURE.md`: Contains the project architecture, requirements, and high-level design.
+- `DEPENDENCY.md`: Clearly defines inter-module dependencies. **Rule:** This file must be symlinked into every child module.
+- `PROJECT_STATE.md`: Mandatory root file to track architectural decisions and progress. **Rule:** This file must be symlinked into every child module.
+  ```markdown
+  - **Phase**: [Current Phase]
+  - **Type**: [Fullstack/Frontend]
+  - **Stack**: [List of selected techs]
+  - **Modules**: [List of modules]
+  - **API Status**: [Draft/Finalized]
+  
+  ## Module Updates
+  [Each module adds its high-level status and major changes here, only relevant and single line containing the above information so that it can be easily read by other modules for their Reference]
+  ```
 
-`skills/` is excluded from stow. `do-stow.sh` deploys skill symlinks to each
-agent's skills directory and creates instruction file symlinks (e.g.
-`~/.claude/CLAUDE.md`) outside the repo.
+### 4. Verification & Safety
+- **Test-Always Rule:** Run tests after every change.
+- **Test-Preservation:** NEVER delete test cases without explicit notification and justification.
 
-### Stow commands
+### 5. Execution Strategy
+- **Atomic Changes:** Work on one small item from the `TODO.md` at a time.
+- **Minimal PRs:** Never pack too many unrelated changes into a single PR/Commit.
 
-```bash
-./do-stow.sh          # full setup
-./do-unstow.sh        # full teardown
-stow -vt ~ .          # manual stow (.stow-local-ignore handles exclusions)
-stow -Dvt ~ .         # manual unstow
-stow -vt ~ . --adopt  # resolve conflicts
-```
+### 6. The "Contract First" Rule
+- Interface and API definitions must precede any implementation.
 
-### SKILL.md schema
+### 7. Web Domain Mandate (OpenAPI)
+For any web-based project, an **OpenAPI Schema** MUST be used as the source of truth to bind backend and frontend.
+- **Contract-First Workflow:**
+  1. Use the `openapi-schema-creator` skill to design the schema.
+  2. **Iterate** with the user through design reviews until the schema is explicitly **finalized**.
+  3. **LOCK:** Do NOT proceed to implementation or code generation until the schema is locked and saved.
+- The schema acts as the immutable "Contract" allowing transport and client layers to be developed and tested independently.
 
-```yaml
----
-name: skill-name
-description: one-line summary
-version: 1.0.0
-triggers:
-  - "natural language phrase"
-intent: code-review | git | system | debug | media | …
-guardrails:
-  - Do not X
-resources:
-  - ./scripts/script-name.sh  # Relative to skill directory
-  - $TOOLS_PATH/tool-name     # Global tools
-tools:
-  - bash
-interface:
-  input:
-    param: "type — description"
-  output:
-    result: "type — description"
----
-Markdown body: step-by-step instructions for the agent. Use <SKILL_PATH> placeholder for absolute paths.
-```
+### 8. Logging
+- Logging must be done properly. Every method call must have some sort of log to trace execution (use debug and info levels appropriately) for easier troubleshooting.
 
-### Adding a new agent
-
-Edit `skills/.agents` (three columns: name, skills path, instruction file path):
-
-```
-gemini   ~/.gemini/skills   ~/.gemini/GEMINI.md
-cursor   ~/.cursor/rules    -
-```
-
-Then run `./do-stow.sh` and commit `skills/.agents`.
+### 9. Skill Loading
+- When working on specific languages or frameworks, first check if there is skill available for it in the above list, then check the `{{AGENT_SKILLS_PATH}}/` directory and utilize any relevant skills on demand to assist with specialized tasks.

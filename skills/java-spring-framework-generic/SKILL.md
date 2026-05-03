@@ -22,7 +22,8 @@ guardrails:
   - "Do not use System.out.println. Use SLF4J (log.debug / log.info / log.warn / log.error) with parameterized messages."
   - "Never hardcode secrets, passwords, or API keys. Use application properties bound to @ConfigurationProperties beans, backed by environment variables or a secrets manager."
   - "Always validate incoming request payloads using Jakarta Bean Validation (@Valid / @Validated). Reject invalid input at the controller boundary — never in the service layer."
-  - "Check for an existing OpenAPI / springdoc configuration before adding dependencies or customizing API docs."
+  - "When starting a new app, ALWAYS check if an OpenAPI schema is available. If yes, build the API around it. If starting from scratch, ALWAYS provide an OpenAPI schema for the APIs before implementation."
+  - "Always use MockMvc for testing REST controllers."
   - "Check for SDKMAN environment variables (JAVA_HOME, JAVA21_HOME, SDKMAN_CANDIDATES_DIR) and use them when present."
   - "Always run builds via the project wrapper (./mvnw or ./gradlew), never with a globally installed tool."
 tools:
@@ -50,6 +51,7 @@ interface:
 
 #### Starting a Project
 - Use [start.spring.io](https://start.spring.io) (or the IntelliJ / VS Code Spring Initializr plugin) for new projects. Do not assemble BOMs manually.
+- **Contract First:** Always check if there is an existing OpenAPI schema available. If yes, build the API around it. If starting from scratch, always design and provide an OpenAPI schema for the APIs first.
 - Select dependencies deliberately — avoid pulling in starters you won't use (they add auto-configuration and startup overhead).
 
 #### Recommended Starter Set (web API)
@@ -508,6 +510,8 @@ class OrderServiceTest {
 ```
 
 #### Slice Tests — Controller (`@WebMvcTest`)
+- **Always use MockMvc** for testing REST controllers to verify HTTP mappings, validation, and JSON serialization.
+
 ```java
 @WebMvcTest(OrderController.class)
 class OrderControllerTest {

@@ -15,6 +15,7 @@ transient/
 configuration.el
 .ssh/id_ed25519
 .ssh/id_ed25519.pub
+.aws/credentials
 .ssh/known_hosts*
 workspace/tools/helpful-tools/helpful-tools.log
 workspace/tools/helpful-tools/helpful-tools.pid

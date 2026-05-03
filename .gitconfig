@@ -56,3 +56,11 @@
 
 [commit]
         gpgsign = false # set to true if you want to sign commits by default
+[filter "lfs"]
+	required = true
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+[user]
+	name = Supratim Samanta
+	email = supratim.iee23.ju2005@gmail.com

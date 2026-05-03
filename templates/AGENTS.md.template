@@ -43,7 +43,6 @@ Skills are modular packages. Skill-specific scripts are stored within the skill 
 | Skill | Intent | Trigger examples | Enabled |
 |---|---|---|---|
 | `pr-review` | code-review | "review this PR", "generate PR review prompt" | Yes |
-| `safe-coder` | execution | "implement feature", "work on module", "safe-coder" | Yes |
 | `openapi-schema-creator` | api-design | "create an OpenAPI schema", "design an API" | Yes |
 | `skill-creator` | meta | "create a new skill", "add a skill" | Yes |
 | `music-tagger` | media | "update media tags", "batch tag songs" | Yes |
@@ -117,6 +116,7 @@ When creating a new application or modifying an existing project, adhere to the 
 - **Standard Documentation (Per Module):** Every module must contain:
   - `CONTEXT.md`: Explicitly defines the module's primary responsibility and scope.
   - `TODO.md`: A live task list. Items must be ticked off only upon completion and verification.
+- **Scaffolding New Modules:** When creating a new module, you must initialize it with a `CONTEXT.md`, a `TODO.md`, and a dedicated `tests/` directory. Before making code changes, always read the module's `CONTEXT.md`, `TODO.md`, and the global `DEPENDENCY.md`.
 
 ### 3. Global Coordination Files
 These files must exist at the root of the project:
@@ -135,8 +135,9 @@ These files must exist at the root of the project:
   ```
 
 ### 4. Verification & Safety
-- **Test-Always Rule:** Run tests after every change.
+- **Test-Always Rule:** Run tests after every change. For every change, you MUST create or update test cases.
 - **Test-Preservation:** NEVER delete test cases without explicit notification and justification.
+- **CVE Audit:** Before completing a task, check dependencies for active vulnerabilities (e.g., `npm audit`, `pip-audit`, `safety check`) and report any active CVEs to the user immediately.
 
 ### 5. Execution Strategy
 - **Atomic Changes:** Work on one small item from the `TODO.md` at a time.

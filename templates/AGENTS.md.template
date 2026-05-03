@@ -52,6 +52,7 @@ Skills are modular packages. Skill-specific scripts are stored within the skill 
 | `dotfiles-management` | system | "manage dotfiles", "add a skill" | Yes |
 | `java-generic` | execution | "work on java project", "create java class" | Yes |
 | `python-generic` | execution | "work on python project", "create python script" | Yes |
+| `java-spring-framework-generic` | execution | "work on java spring framework project", "create java spring framework class" | Yes |
 
 More skills will appear here as they are added to the dotfiles.
 

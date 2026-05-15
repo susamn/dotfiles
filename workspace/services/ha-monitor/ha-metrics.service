@@ -1,0 +1,6 @@
+[Unit]
+Description=Push metrics to Home Assistant via MQTT
+
+[Service]
+Type=oneshot
+ExecStart=%h/workspace/services/ha-monitor/ha-metrics-push.sh

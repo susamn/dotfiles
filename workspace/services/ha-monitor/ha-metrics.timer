@@ -1,0 +1,11 @@
+[Unit]
+Description=HA metrics push every 30s
+After=network-online.target
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=30s
+AccuracySec=5s
+
+[Install]
+WantedBy=timers.target

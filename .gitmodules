@@ -10,3 +10,6 @@
 [submodule "workspace/tools/performance-manager"]
 	path = workspace/tools/performance-manager
 	url = git@github.com:susamn/performance-manager.git
+[submodule "skills"]
+	path = skills
+	url = git@github.com:susamn/skills.git

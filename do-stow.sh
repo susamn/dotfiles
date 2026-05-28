@@ -93,11 +93,11 @@ deploy_skills() {
 }
 
 # ── generate instruction files ────────────────────────────────────────────────
-# Generates agent-specific instruction files from templates/AGENTS.md.template.
+# Generates agent-specific instruction files from skills/AGENTS-TEMPLATE.md.
 # These live outside the dotfiles repo (e.g. ~/.claude/CLAUDE.md) and contain
 # agent-specific paths, allowing agents to identify their own context.
 deploy_instructions() {
-  local template="$DOTFILES_DIR/templates/AGENTS.md.template"
+  local template="$SKILLS_DIR/AGENTS-TEMPLATE.md"
   if [[ ! -f "$AGENTS_FILE" || ! -f "$template" ]]; then
     echo "[instructions] Skipping: template or .agents file missing."
     return

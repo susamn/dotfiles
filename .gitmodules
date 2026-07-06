@@ -13,3 +13,6 @@
 [submodule "skills"]
 	path = skills
 	url = git@github.com:susamn/skills.git
+[submodule "workspace/tools/linux-system-manager"]
+	path = workspace/tools/linux-system-manager
+	url = git@github.com:susamn/linux-system-manager.git

@@ -108,9 +108,9 @@ fi
 if [ -x "$(command -v fzf)" ]; then
   source <(fzf --zsh)
   alias fze="fzf --exact"
-  #alias als="alias|fzf"
   alias _als_script="$SCRIPTS_PATH/als.sh"
   alias als="alias|_als_script -m"
+  alias rclc="$SCRIPTS_PATH/rclone-config-manager.sh"
   if [ -x "$(command -v fd)" ]; then
     alias ff="$SCRIPTS_PATH/ffo.sh"
     alias ffo="$SCRIPTS_PATH/ffo.sh -o"

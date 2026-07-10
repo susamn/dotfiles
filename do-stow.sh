@@ -6,22 +6,48 @@ DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILLS_DIR="$DOTFILES_DIR/skills"
 AGENTS_FILE="$SKILLS_DIR/.agents"
 
+# ── stow ignore configurations ───────────────────────────────────────────────
+STOW_IGNORE_FLAGS=()
+get_stow_ignore_flags() {
+  local flags=()
+  flags+=("--ignore=\.ignored")
+  if [[ -f "$DOTFILES_DIR/.ignored" ]]; then
+    while IFS= read -r line || [[ -n "$line" ]]; do
+      # Skip empty lines and comments
+      [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+      line=$(echo "$line" | xargs)
+      
+      # Convert glob pattern to regex pattern
+      local escaped
+      escaped="${line//./\.}"
+      escaped="${escaped//\*/.*}"
+      
+      if [[ "$escaped" == */ ]]; then
+        flags+=("--ignore=^${escaped%/}($|/)")
+      else
+        flags+=("--ignore=^${escaped}$")
+      fi
+    done < "$DOTFILES_DIR/.ignored"
+  fi
+  STOW_IGNORE_FLAGS=("${flags[@]}")
+}
+
 # ── stow packages ─────────────────────────────────────────────────────────────
-# Exclusions are handled by .stow-local-ignore — no --ignore flags needed.
 stow_packages() {
   cd "$DOTFILES_DIR"
+  get_stow_ignore_flags
 
   echo "[stow] Checking for conflicts..."
-  if stow -nvt ~ . 2>&1 | grep -q "existing target"; then
+  if stow "${STOW_IGNORE_FLAGS[@]}" -nvt ~ . 2>&1 | grep -q "existing target"; then
     echo ""
     echo "Conflicts detected! Aborting."
     echo "Resolve manually, or re-run with --adopt:"
-    echo "  stow -vt ~ . --adopt"
+    echo "  stow ${STOW_IGNORE_FLAGS[@]} -vt ~ . --adopt"
     exit 1
   fi
 
   echo "[stow] Stowing dotfiles..."
-  stow -vt ~ .
+  stow "${STOW_IGNORE_FLAGS[@]}" -vt ~ .
 }
 
 # ── parse .agents line ────────────────────────────────────────────────────────

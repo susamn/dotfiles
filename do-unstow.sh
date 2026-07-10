@@ -87,11 +87,38 @@ remove_skills() {
   echo "[skills] agents: $agents_joined"
 }
 
+# ── stow ignore configurations ───────────────────────────────────────────────
+STOW_IGNORE_FLAGS=()
+get_stow_ignore_flags() {
+  local flags=()
+  flags+=("--ignore=\.ignored")
+  if [[ -f "$DOTFILES_DIR/.ignored" ]]; then
+    while IFS= read -r line || [[ -n "$line" ]]; do
+      # Skip empty lines and comments
+      [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+      line=$(echo "$line" | xargs)
+      
+      # Convert glob pattern to regex pattern
+      local escaped
+      escaped="${line//./\.}"
+      escaped="${escaped//\*/.*}"
+      
+      if [[ "$escaped" == */ ]]; then
+        flags+=("--ignore=^${escaped%/}($|/)")
+      else
+        flags+=("--ignore=^${escaped}$")
+      fi
+    done < "$DOTFILES_DIR/.ignored"
+  fi
+  STOW_IGNORE_FLAGS=("${flags[@]}")
+}
+
 # ── unstow packages ───────────────────────────────────────────────────────────
 unstow_packages() {
   cd "$DOTFILES_DIR"
+  get_stow_ignore_flags
   echo "[stow] Unstowing dotfiles..."
-  stow -Dvt ~ .
+  stow "${STOW_IGNORE_FLAGS[@]}" -Dvt ~ .
 }
 
 remove_instructions

@@ -31,9 +31,10 @@ pnv() {
 
 if [ -f /etc/os-release ] && grep -qi "arch" /etc/os-release; then
   alias asm="$SCRIPTS_PATH/arch-system-manager.sh"
-  if [ -d "$TOOLS_PATH/linux-system-manager" ]; then
-    alias lsm="$TOOLS_PATH/linux-system-manager/linux-system-manager.sh"
-  fi
+fi
+
+if [ -d "$TOOLS_PATH/linux-system-manager" ]; then
+  alias lsm="$TOOLS_PATH/linux-system-manager/linux-system-manager.sh"
 fi
 
 if [ -x "$(command -v yt-dlp)" ]; then

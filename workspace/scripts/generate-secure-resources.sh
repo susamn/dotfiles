@@ -6,9 +6,9 @@ set -euo pipefail
 export GPG_TTY=$(tty 2>/dev/null || echo "")
 
 # --- Utilities ---
-log_info() { echo "✅ $1"; }
-log_warn() { echo "⚠️  $1"; }
-log_err()  { echo "❌ $1"; exit 1; }
+log_info() { echo -e "✅ $1"; }
+log_warn() { echo -e "⚠️  $1"; }
+log_err()  { echo -e "❌ $1"; exit 1; }
 
 create_backup() {
     local file="$1"
@@ -56,14 +56,49 @@ reload_properties
 
 handle_list() {
     echo ""
-    echo "--- Configured Secure Resources ---"
+    echo -e "\033[1;36m=========================================================================================================\033[0m"
+    printf " \033[1;37m%-4s %-28s %-32s  %-21s %-10s\033[0m\n" \
+        "ID" \
+        "Secured File (GPG)" \
+        "Target Decryption Path" \
+        "Last Updated" \
+        "Status"
+    echo -e "\033[1;36m---------------------------------------------------------------------------------------------------------\033[0m"
+    
     if [[ ${#keys[@]} -eq 0 ]]; then
-        echo "No secure resources configured."
+        echo "   No secure resources configured."
+        echo -e "\033[1;36m=========================================================================================================\033[0m"
         return
     fi
+    
     for i in "${!keys[@]}"; do
-        printf "%2d) %s  ->  %s\n" "$((i+1))" "${keys[i]}" "${targets[i]}"
+        local key="${keys[i]}"
+        local target="${targets[i]}"
+        local enc_file="$SECURED_DIR/$key"
+        
+        # Get last updated date using python3
+        local last_updated="Unknown"
+        if [[ -f "$enc_file" ]]; then
+            last_updated=$(python3 -c "import os, datetime; print(datetime.datetime.fromtimestamp(os.path.getmtime('$enc_file')).strftime('%Y-%m-%d %H:%M:%S'))" 2>/dev/null || echo "Unknown")
+        fi
+        
+        # Display target with ~ for readability
+        local target_display="${target/#$HOME/\~}"
+        
+        # Check status (does plaintext target file exist?)
+        local status="\033[1;33m🔒 Locked\033[0m"
+        if [[ -f "$target" ]]; then
+            status="\033[1;32m🔓 Decrypted\033[0m"
+        fi
+        
+        printf " \033[1;32m%-4d\033[0m %-28s %-32s  %-21s %b\n" \
+            "$((i+1))" \
+            "$key" \
+            "$target_display" \
+            "$last_updated" \
+            "$status"
     done
+    echo -e "\033[1;36m=========================================================================================================\033[0m"
 }
 
 handle_decrypt() {
@@ -343,14 +378,12 @@ show_main_menu() {
                 ;;
             2)
                 echo ""
-                echo "--- Select Resource to Decrypt ---"
+                echo -e "\033[1;34m--- Select Resource to Decrypt ---\033[0m"
                 if [[ ${#keys[@]} -eq 0 ]]; then
                     echo "No secure resources configured."
                     continue
                 fi
-                for i in "${!keys[@]}"; do
-                    printf "%2d) %s  ->  %s\n" "$((i+1))" "${keys[i]}" "${targets[i]}"
-                done
+                handle_list
                 echo " q) Back"
                 echo -n "Choice: "
                 read -r choice
@@ -371,14 +404,12 @@ show_main_menu() {
                 ;;
             4)
                 echo ""
-                echo "--- Select Resource to Verify ---"
+                echo -e "\033[1;34m--- Select Resource to Verify ---\033[0m"
                 if [[ ${#keys[@]} -eq 0 ]]; then
                     echo "No secure resources configured."
                     continue
                 fi
-                for i in "${!keys[@]}"; do
-                    printf "%2d) %s  ->  %s\n" "$((i+1))" "${keys[i]}" "${targets[i]}"
-                done
+                handle_list
                 echo " q) Back"
                 echo -n "Choice: "
                 read -r choice
@@ -396,14 +427,12 @@ show_main_menu() {
                 ;;
             5)
                 echo ""
-                echo "--- Select Resource to Change Passphrase ---"
+                echo -e "\033[1;34m--- Select Resource to Change Passphrase ---\033[0m"
                 if [[ ${#keys[@]} -eq 0 ]]; then
                     echo "No secure resources configured."
                     continue
                 fi
-                for i in "${!keys[@]}"; do
-                    printf "%2d) %s  ->  %s\n" "$((i+1))" "${keys[i]}" "${targets[i]}"
-                done
+                handle_list
                 echo " q) Back"
                 echo -n "Choice: "
                 read -r choice
@@ -421,14 +450,12 @@ show_main_menu() {
                 ;;
             6)
                 echo ""
-                echo "--- Select Resource to Delete ---"
+                echo -e "\033[1;34m--- Select Resource to Delete ---\033[0m"
                 if [[ ${#keys[@]} -eq 0 ]]; then
                     echo "No secure resources configured."
                     continue
                 fi
-                for i in "${!keys[@]}"; do
-                    printf "%2d) %s  ->  %s\n" "$((i+1))" "${keys[i]}" "${targets[i]}"
-                done
+                handle_list
                 echo " q) Back"
                 echo -n "Choice: "
                 read -r choice

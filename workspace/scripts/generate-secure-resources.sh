@@ -150,12 +150,6 @@ handle_encrypt() {
         return
     fi
     
-    echo -n "Enter the target path where this file should be decrypted when restoring (e.g., ~/.ssh/id_ed25519) [default: $source_file]: "
-    read -r target_path
-    if [[ -z "$target_path" ]]; then
-        target_path="$source_file"
-    fi
-    
     # Suggest a default GPG filename based on the source filename
     local default_gpg="$(basename "$source_file").gpg"
     echo -n "Enter the GPG filename to save in .config/_secured/ [default: $default_gpg]: "
@@ -168,6 +162,12 @@ handle_encrypt() {
     if [[ "$gpg_name" == */* ]]; then
         log_warn "GPG filename cannot contain slashes (no folders allowed): $gpg_name"
         return
+    fi
+
+    echo -n "Enter the target path where this file should be decrypted when restoring (e.g., ~/.ssh/id_ed25519) [default: $source_file]: "
+    read -r target_path
+    if [[ -z "$target_path" ]]; then
+        target_path="$source_file"
     fi
     
     local enc_file="$SECURED_DIR/$gpg_name"

@@ -110,7 +110,7 @@ handle_decrypt() {
     
     log_info "Decrypting '$key' to '$target'..."
     # Use loopback mode to prompt cleanly in terminal standard input
-    if gpg --quiet --batch --yes --pinentry-mode loopback --decrypt --output "$target" < "$enc_file"; then
+    if gpg --quiet --yes --pinentry-mode loopback --decrypt --output "$target" < "$enc_file"; then
         log_info "Decryption successful!"
         
         # Set proper permissions
@@ -226,6 +226,70 @@ handle_encrypt() {
     fi
 }
 
+handle_verify() {
+    local idx="$1"
+    local key="${keys[idx]}"
+    local enc_file="$SECURED_DIR/$key"
+    
+    if [[ ! -f "$enc_file" ]]; then
+        log_err "Encrypted GPG file not found: $enc_file"
+    fi
+    
+    echo "🔒 Enter passphrase to verify for '$key':"
+    if gpg --quiet --pinentry-mode loopback --decrypt < "$enc_file" > /dev/null; then
+        log_info "Passphrase is correct!"
+    else
+        log_warn "Passphrase is incorrect or decryption failed."
+    fi
+}
+
+handle_change_passphrase() {
+    local idx="$1"
+    local key="${keys[idx]}"
+    local enc_file="$SECURED_DIR/$key"
+    
+    if [[ ! -f "$enc_file" ]]; then
+        log_err "Encrypted GPG file not found: $enc_file"
+    fi
+    
+    local tmp_plain
+    local tmp_cipher
+    tmp_plain=$(mktemp)
+    tmp_cipher=$(mktemp)
+    
+    # Ensure cleanup of temp files even on script termination/exit
+    trap 'rm -f "$tmp_plain" "$tmp_cipher"' EXIT INT TERM
+    
+    echo "🔒 Enter current passphrase to decrypt '$key':"
+    if ! gpg --quiet --yes --pinentry-mode loopback --decrypt --output "$tmp_plain" < "$enc_file"; then
+        log_err "Decryption failed. Passphrase may be incorrect."
+    fi
+    
+    echo ""
+    echo "🔐 Enter new passphrase to encrypt '$key':"
+    if ! gpg --symmetric --cipher-algo AES256 --pinentry-mode loopback --output "$tmp_cipher" "$tmp_plain"; then
+        log_err "Encryption failed."
+    fi
+    
+    # Verify the new cipher file is valid before replacing the old one
+    if ! gpg --quiet --pinentry-mode loopback --decrypt < "$tmp_cipher" > /dev/null; then
+        log_err "Verification of the new passphrase failed. Reverting changes."
+    fi
+    
+    # Replace the old file
+    create_backup "$enc_file"
+    rm -f "$enc_file"
+    mv "$tmp_cipher" "$enc_file"
+    
+    # Clean up plaintext temp file
+    rm -f "$tmp_plain"
+    
+    # Reset trap
+    trap - EXIT INT TERM
+    
+    log_info "Passphrase changed successfully for '$key'!"
+}
+
 handle_delete() {
     local idx="$1"
     local key="${keys[idx]}"
@@ -275,8 +339,10 @@ show_main_menu() {
         echo "1. List secure resources"
         echo "2. Decrypt secure resource"
         echo "3. Encrypt secure resource"
-        echo "4. Delete secure resource"
-        echo "5. Exit"
+        echo "4. Verify GPG passphrase"
+        echo "5. Change GPG passphrase"
+        echo "6. Delete secure resource"
+        echo "7. Exit"
         echo -n "Select action: "
         read -r action
         
@@ -314,6 +380,56 @@ show_main_menu() {
                 ;;
             4)
                 echo ""
+                echo "--- Select Resource to Verify ---"
+                if [[ ${#keys[@]} -eq 0 ]]; then
+                    echo "No secure resources configured."
+                    continue
+                fi
+                for i in "${!keys[@]}"; do
+                    printf "%2d) %s  ->  %s\n" "$((i+1))" "${keys[i]}" "${targets[i]}"
+                done
+                echo " q) Back"
+                echo -n "Choice: "
+                read -r choice
+                
+                if [[ "$choice" == "q" ]]; then
+                    continue
+                fi
+                
+                if ! [[ "$choice" =~ ^[0-9]+$ ]] || (( choice < 1 || choice > ${#keys[@]} )); then
+                    log_warn "Invalid choice"
+                    continue
+                fi
+                
+                handle_verify "$((choice-1))"
+                ;;
+            5)
+                echo ""
+                echo "--- Select Resource to Change Passphrase ---"
+                if [[ ${#keys[@]} -eq 0 ]]; then
+                    echo "No secure resources configured."
+                    continue
+                fi
+                for i in "${!keys[@]}"; do
+                    printf "%2d) %s  ->  %s\n" "$((i+1))" "${keys[i]}" "${targets[i]}"
+                done
+                echo " q) Back"
+                echo -n "Choice: "
+                read -r choice
+                
+                if [[ "$choice" == "q" ]]; then
+                    continue
+                fi
+                
+                if ! [[ "$choice" =~ ^[0-9]+$ ]] || (( choice < 1 || choice > ${#keys[@]} )); then
+                    log_warn "Invalid choice"
+                    continue
+                fi
+                
+                handle_change_passphrase "$((choice-1))"
+                ;;
+            6)
+                echo ""
                 echo "--- Select Resource to Delete ---"
                 if [[ ${#keys[@]} -eq 0 ]]; then
                     echo "No secure resources configured."
@@ -337,7 +453,7 @@ show_main_menu() {
                 
                 handle_delete "$((choice-1))"
                 ;;
-            5)
+            7)
                 exit 0
                 ;;
             *)

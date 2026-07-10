@@ -1,12 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -euo pipefail
 
-# Ensure password prompt works on macOS
-export GPG_TTY=$(tty)
+# Ensure password prompt works on macOS/Linux terminal
+export GPG_TTY=$(tty 2>/dev/null || echo "")
 
 # --- Utilities ---
-
 log_info() { echo "✅ $1"; }
 log_warn() { echo "⚠️  $1"; }
 log_err()  { echo "❌ $1"; exit 1; }
@@ -20,243 +19,334 @@ create_backup() {
     fi
 }
 
-decrypt_file() {
-    local src="$1"
-    local dest="$2"
-    gpg --quiet --batch --yes --decrypt --output "$dest" < "$src"
+# Find the physical directory of this script to resolve the dotfiles root
+get_script_dir() {
+    local target="${BASH_SOURCE[0]}"
+    while [ -h "$target" ]; do
+        local dir
+        dir="$(cd -P "$(dirname "$target")" && pwd)"
+        target="$(readlink "$target")"
+        [[ $target != /* ]] && target="$dir/$target"
+    done
+    echo "$(cd -P "$(dirname "$target")" && pwd)"
+}
+SCRIPT_DIR="$(get_script_dir)"
+DOTFILES_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+SECURED_DIR="$DOTFILES_DIR/.config/_secured"
+PROPERTIES_FILE="$SECURED_DIR/locations.properties"
+
+if [[ ! -f "$PROPERTIES_FILE" ]]; then
+    log_err "Properties file not found at: $PROPERTIES_FILE"
+fi
+
+keys=()
+targets=()
+
+reload_properties() {
+    keys=()
+    targets=()
+    while IFS='=' read -r key value || [[ -n "$key" ]]; do
+        # Strip whitespace
+        key=$(echo "$key" | xargs)
+        [[ -z "$key" || "$key" =~ ^# ]] && continue
+        
+        # If no '=' was found on the line, IFS won't split, making value empty
+        if [[ -z "$value" ]]; then
+            continue
+        fi
+        value=$(echo "$value" | xargs)
+        
+        # Expand ~ to $HOME
+        value="${value/#\~/$HOME}"
+        
+        keys+=("$key")
+        targets+=("$value")
+    done < "$PROPERTIES_FILE"
 }
 
-encrypt_file() {
-    local src="$1"
-    local dest="$2"
-    gpg --symmetric --cipher-algo AES256 --output "$dest" "$src"
+# Initial load
+reload_properties
+
+handle_list() {
+    echo ""
+    echo "--- Configured Secure Resources ---"
+    if [[ ${#keys[@]} -eq 0 ]]; then
+        echo "No secure resources configured."
+        return
+    fi
+    for i in "${!keys[@]}"; do
+        printf "%2d) %s  ->  %s\n" "$((i+1))" "${keys[i]}" "${targets[i]}"
+    done
 }
 
-# --- Resource Handlers ---
-
-handle_ssh() {
-    echo "--- SSH Key Management ---"
-    echo "1. Decrypt Private Keys (id_ed25519.private.gpg)"
-    echo "2. Decrypt Public Keys (id_ed25519.public.gpg)"
-    echo "3. Modify/Regenerate Keys"
-    echo "4. Back"
-    echo -n "Select action: "
-    read -r action
-
-    case "$action" in
-        1|2)
-            local mode="private"
-            [[ "$action" == "2" ]] && mode="public"
-            
-            local enc_priv="id_ed25519.${mode}.gpg"
-            local enc_pub="id_ed25519.pub.${mode}.gpg"
-            
-            cd ~/.ssh || log_err "Could not cd to ~/.ssh"
-            
-            if [[ -f "id_ed25519" && -f "id_ed25519.pub" ]]; then
-                log_warn "Decrypted keys already exist. Overwrite? [yes/no]"
-                read -r confirm
-                [[ "$confirm" != "yes" ]] && return
-            fi
-
-            log_info "Decrypting '$mode' keys..."
-            decrypt_file "$enc_priv" "id_ed25519"
-            decrypt_file "$enc_pub" "id_ed25519.pub"
-
-            chmod 600 id_ed25519
-            chmod 644 id_ed25519.pub
-            log_info "Keys written to ~/.ssh/"
-
-            if [[ "$mode" == "private" ]]; then
-                log_info "Testing SSH authentication with GitHub..."
-                if ssh -o StrictHostKeyChecking=accept-new -i id_ed25519 -T git@github.com 2>&1 | grep -q "successfully authenticated"; then
-                    log_info "GitHub authentication succeeded!"
-                else
-                    log_warn "GitHub authentication failed or network issue."
-                fi
-            fi
-            ;;
-        3)
-            # Porting the 'modify' logic
-            log_info "Choose mode to modify (private/public): "
-            read -r mode
-            [[ "$mode" != "private" && "$mode" != "public" ]] && { log_warn "Invalid mode"; return; }
-
-            local enc_priv="id_ed25519.${mode}.gpg"
-            local enc_pub="id_ed25519.pub.${mode}.gpg"
-
-            cd ~/.ssh || log_err "Could not cd to ~/.ssh"
-            
-            local priv_tmp=$(mktemp)
-            local pub_tmp=$(mktemp)
-            trap 'rm -f "$priv_tmp" "$pub_tmp"' RETURN EXIT
-
-            decrypt_file "$enc_priv" "$priv_tmp"
-            decrypt_file "$enc_pub" "$pub_tmp"
-
-            echo "📋 Actions for $mode keys:"
-            echo "  1. Change passphrase"
-            echo "  2. Regenerate public key from private"
-            echo -n "Enter choice (1, 2, or 1,2): "
-            read -r choice
-
-            IFS=',' read -ra options <<< "$choice"
-            for opt in "${options[@]}"; do
-                case "$opt" in
-                    1)
-                        create_backup "$enc_priv"
-                        ssh-keygen -p -f "$priv_tmp"
-                        encrypt_file "$priv_tmp" "$enc_priv"
-                        log_info "Passphrase updated."
-                        ;;
-                    2)
-                        create_backup "$enc_pub"
-                        ssh-keygen -y -f "$priv_tmp" > "$pub_tmp"
-                        encrypt_file "$pub_tmp" "$enc_pub"
-                        log_info "Public key regenerated."
-                        ;;
-                esac
-            done
-            ;;
-        4) return ;;
-        *) log_warn "Invalid option" ;;
-    esac
-}
-
-handle_aws() {
-    echo "--- AWS Credential Management ---"
-    echo "1. Decrypt AWS Credentials (~/.aws/*.gpg -> plaintext)"
-    echo "2. Encrypt AWS Credentials (plaintext -> ~/.aws/*.gpg)"
-    echo "3. Change GPG Passphrase"
-    echo "4. Back"
-    echo -n "Select action: "
-    read -r action
-
-    local files=("credentials" "config")
-    local aws_dir="$HOME/.aws"
-    mkdir -p "$aws_dir"
-    cd "$aws_dir" || log_err "Could not cd to $aws_dir"
-
-    case "$action" in
-        1)
-            for f in "${files[@]}"; do
-                if [[ -f "$f.gpg" ]]; then
-                    log_info "Decrypting $f.gpg..."
-                    decrypt_file "$f.gpg" "$f"
-                    chmod 600 "$f"
-                else
-                    log_warn "$f.gpg not found, skipping."
-                fi
-            done
-            ;;
-        2)
-            for f in "${files[@]}"; do
-                if [[ -f "$f" ]]; then
-                    log_info "Encrypting $f..."
-                    create_backup "$f.gpg"
-                    encrypt_file "$f" "$f.gpg"
-                    log_info "Encrypted to $f.gpg. You can now delete the plaintext $f."
-                else
-                    log_warn "$f not found, skipping."
-                fi
-            done
-            ;;
-        3)
-            for f in "${files[@]}"; do
-                if [[ -f "$f.gpg" ]]; then
-                    log_info "Changing passphrase for $f.gpg..."
-                    local tmp=$(mktemp)
-                    trap 'rm -f "$tmp"' RETURN EXIT
-                    decrypt_file "$f.gpg" "$tmp"
-                    create_backup "$f.gpg"
-                    encrypt_file "$tmp" "$f.gpg"
-                    log_info "Passphrase updated for $f.gpg"
-                fi
-            done
-            ;;
-        4) return ;;
-        *) log_warn "Invalid option" ;;
-    esac
-}
-
-handle_hosts() {
-    echo "--- Local Host Mapping Management ---"
-    echo "1. Decrypt Hosts (~/.local_hosts.gpg -> plaintext)"
-    echo "2. Encrypt Hosts (plaintext -> ~/.local_hosts.gpg)"
-    echo "3. Change GPG Passphrase"
-    echo "4. Back"
-    echo -n "Select action: "
-    read -r action
-
-    local file="$HOME/.local_hosts"
-    local enc_file="$file.gpg"
-
-    case "$action" in
-        1)
-            if [[ -f "$enc_file" ]]; then
-                log_info "Decrypting $enc_file..."
-                decrypt_file "$enc_file" "$file"
-                chmod 600 "$file"
+handle_decrypt() {
+    local idx="$1"
+    local key="${keys[idx]}"
+    local target="${targets[idx]}"
+    local enc_file="$SECURED_DIR/$key"
+    
+    if [[ -z "$target" ]]; then
+        log_err "Target decryption path is empty."
+    fi
+    
+    if [[ -d "$target" ]]; then
+        log_err "Target path is a directory: $target"
+    fi
+    
+    if [[ ! -f "$enc_file" ]]; then
+        log_err "Encrypted GPG file not found: $enc_file"
+    fi
+    
+    local target_dir
+    target_dir="$(dirname "$target")"
+    mkdir -p "$target_dir"
+    
+    if [[ -f "$target" ]]; then
+        log_warn "Target file '$target' already exists. Overwrite? [yes/no]"
+        read -r confirm
+        [[ "$confirm" != "yes" ]] && { echo "❌ Decryption aborted."; return; }
+        create_backup "$target"
+    fi
+    
+    log_info "Decrypting '$key' to '$target'..."
+    # Use loopback mode to prompt cleanly in terminal standard input
+    if gpg --quiet --batch --yes --pinentry-mode loopback --decrypt --output "$target" < "$enc_file"; then
+        log_info "Decryption successful!"
+        
+        # Set proper permissions
+        if [[ "$key" == *private* || "$key" == *credentials* ]]; then
+            chmod 600 "$target"
+        elif [[ "$key" == *pub* || "$key" == *public* ]]; then
+            chmod 644 "$target"
+        else
+            chmod 600 "$target"
+        fi
+        
+        # Post-decryption SSH check
+        if [[ "$target" == */.ssh/id_ed25519 ]]; then
+            log_info "Testing SSH authentication with GitHub..."
+            if ssh -o StrictHostKeyChecking=accept-new -i "$target" -T git@github.com 2>&1 | grep -q "successfully authenticated"; then
+                log_info "GitHub authentication succeeded!"
             else
-                log_err "$enc_file not found."
+                log_warn "GitHub authentication failed or network issue."
             fi
-            ;;
-        2)
-            if [[ -f "$file" ]]; then
-                log_info "Encrypting $file..."
-                create_backup "$enc_file"
-                encrypt_file "$file" "$enc_file"
-                log_info "Encrypted to $enc_file. You can now delete the plaintext $file."
-            else
-                log_err "$file not found."
-            fi
-            ;;
-        3)
-            if [[ -f "$enc_file" ]]; then
-                log_info "Changing passphrase for $enc_file..."
-                local tmp=$(mktemp)
-                trap 'rm -f "$tmp"' RETURN EXIT
-                decrypt_file "$enc_file" "$tmp"
-                create_backup "$enc_file"
-                encrypt_file "$tmp" "$enc_file"
-                log_info "Passphrase updated for $enc_file"
-            else
-                log_err "$enc_file not found."
-            fi
-            ;;
-        4) return ;;
-        *) log_warn "Invalid option" ;;
-    esac
+        fi
+    else
+        log_err "Decryption failed."
+    fi
 }
 
-# --- Main Menu ---
+handle_encrypt() {
+    echo ""
+    echo "--- Encrypt a Plaintext File ---"
+    echo -n "Enter the absolute path of the plaintext file to encrypt: "
+    read -r source_file
+    
+    # Expand ~ to $HOME
+    source_file="${source_file/#\~/$HOME}"
+    
+    if [[ ! -f "$source_file" ]]; then
+        log_warn "Plaintext file not found at: $source_file"
+        return
+    fi
+    
+    echo -n "Enter the target path where this file should be decrypted when restoring (e.g., ~/.ssh/id_ed25519) [default: $source_file]: "
+    read -r target_path
+    if [[ -z "$target_path" ]]; then
+        target_path="$source_file"
+    fi
+    
+    # Suggest a default GPG filename based on the source filename
+    local default_gpg="$(basename "$source_file").gpg"
+    echo -n "Enter the GPG filename to save in .config/_secured/ [default: $default_gpg]: "
+    read -r gpg_name
+    if [[ -z "$gpg_name" ]]; then
+        gpg_name="$default_gpg"
+    fi
+    
+    # Security check: prevent directory traversal
+    if [[ "$gpg_name" == */* ]]; then
+        log_warn "GPG filename cannot contain slashes (no folders allowed): $gpg_name"
+        return
+    fi
+    
+    local enc_file="$SECURED_DIR/$gpg_name"
+    if [[ -f "$enc_file" ]]; then
+        log_warn "Encrypted GPG file '$gpg_name' already exists. Overwrite? [yes/no]"
+        read -r confirm
+        [[ "$confirm" != "yes" ]] && { echo "❌ Encryption aborted."; return; }
+        create_backup "$enc_file"
+    fi
+    
+    log_info "Encrypting '$source_file' to '$enc_file'..."
+    # Use loopback mode to securely prompt for passphrase in standard input
+    if gpg --symmetric --cipher-algo AES256 --pinentry-mode loopback --output "$enc_file" "$source_file"; then
+        log_info "Encryption successful!"
+        
+        # Update locations.properties with the new mapping
+        local temp_prop
+        temp_prop=$(mktemp)
+        local updated=false
+        
+        # Process existing properties
+        while IFS='=' read -r key value || [[ -n "$key" ]]; do
+            local clean_key=$(echo "$key" | xargs)
+            # Preserve comments and empty lines
+            if [[ -z "$clean_key" || "$clean_key" =~ ^# ]]; then
+                echo "$key" >> "$temp_prop"
+                continue
+            fi
+            local clean_val=$(echo "$value" | xargs)
+            
+            if [[ "$clean_key" == "$gpg_name" ]]; then
+                local display_val="${target_path/#$HOME/\~}"
+                echo "$clean_key=$display_val" >> "$temp_prop"
+                updated=true
+            else
+                echo "$clean_key=$clean_val" >> "$temp_prop"
+            fi
+        done < "$PROPERTIES_FILE"
+        
+        if [[ "$updated" == "false" ]]; then
+            local display_val="${target_path/#$HOME/\~}"
+            echo "$gpg_name=$display_val" >> "$temp_prop"
+        fi
+        
+        mv "$temp_prop" "$PROPERTIES_FILE"
+        chmod 644 "$PROPERTIES_FILE"
+        log_info "Updated locations.properties: $gpg_name -> $target_path"
+        log_warn "You can now safely delete the plaintext file: $source_file"
+        
+        # Reload key/target configurations
+        reload_properties
+    else
+        # Cleanup temp file on failure
+        [[ -f "${temp_prop:-}" ]] && rm -f "$temp_prop"
+        log_err "Encryption failed."
+    fi
+}
+
+handle_delete() {
+    local idx="$1"
+    local key="${keys[idx]}"
+    local target="${targets[idx]}"
+    local enc_file="$SECURED_DIR/$key"
+    
+    echo "⚠️  Are you sure you want to delete '$key' and its mapping to '$target'? This will physically remove the GPG file. [yes/no]"
+    read -r confirm
+    [[ "$confirm" != "yes" ]] && { echo "❌ Deletion aborted."; return; }
+    
+    # 1. Delete the GPG file if it exists
+    if [[ -f "$enc_file" ]]; then
+        rm -f "$enc_file"
+        log_info "Deleted encrypted file: $key"
+    else
+        log_warn "Encrypted GPG file did not exist at: $enc_file"
+    fi
+    
+    # 2. Update locations.properties to remove the key mapping
+    local temp_prop
+    temp_prop=$(mktemp)
+    while IFS='=' read -r prop_key prop_val || [[ -n "$prop_key" ]]; do
+        local clean_key=$(echo "$prop_key" | xargs)
+        if [[ -z "$clean_key" || "$clean_key" =~ ^# ]]; then
+            echo "$prop_key" >> "$temp_prop"
+            continue
+        fi
+        
+        if [[ "$clean_key" != "$key" ]]; then
+            echo "$prop_key=$prop_val" >> "$temp_prop"
+        fi
+    done < "$PROPERTIES_FILE"
+    
+    mv "$temp_prop" "$PROPERTIES_FILE"
+    chmod 644 "$PROPERTIES_FILE"
+    log_info "Removed mapping for $key from locations.properties"
+    
+    # 3. Reload properties
+    reload_properties
+}
 
 show_main_menu() {
     while true; do
         echo "-----------------------------------"
         echo "🔐 SECURE RESOURCE MANAGER"
         echo "-----------------------------------"
-        echo "1. SSH Keys"
-        echo "2. AWS Credentials"
-        echo "3. Host Mappings"
-        echo "4. Exit"
-        echo -n "Select resource: "
-        read -r choice
-
-        case "$choice" in
-            1) handle_ssh ;;
-            2) handle_aws ;;
-            3) handle_hosts ;;
-            4) exit 0 ;;
-            *) log_warn "Invalid option" ;;
+        echo "1. List secure resources"
+        echo "2. Decrypt secure resource"
+        echo "3. Encrypt secure resource"
+        echo "4. Delete secure resource"
+        echo "5. Exit"
+        echo -n "Select action: "
+        read -r action
+        
+        case "$action" in
+            1)
+                handle_list
+                ;;
+            2)
+                echo ""
+                echo "--- Select Resource to Decrypt ---"
+                if [[ ${#keys[@]} -eq 0 ]]; then
+                    echo "No secure resources configured."
+                    continue
+                fi
+                for i in "${!keys[@]}"; do
+                    printf "%2d) %s  ->  %s\n" "$((i+1))" "${keys[i]}" "${targets[i]}"
+                done
+                echo " q) Back"
+                echo -n "Choice: "
+                read -r choice
+                
+                if [[ "$choice" == "q" ]]; then
+                    continue
+                fi
+                
+                if ! [[ "$choice" =~ ^[0-9]+$ ]] || (( choice < 1 || choice > ${#keys[@]} )); then
+                    log_warn "Invalid choice"
+                    continue
+                fi
+                
+                handle_decrypt "$((choice-1))"
+                ;;
+            3)
+                handle_encrypt
+                ;;
+            4)
+                echo ""
+                echo "--- Select Resource to Delete ---"
+                if [[ ${#keys[@]} -eq 0 ]]; then
+                    echo "No secure resources configured."
+                    continue
+                fi
+                for i in "${!keys[@]}"; do
+                    printf "%2d) %s  ->  %s\n" "$((i+1))" "${keys[i]}" "${targets[i]}"
+                done
+                echo " q) Back"
+                echo -n "Choice: "
+                read -r choice
+                
+                if [[ "$choice" == "q" ]]; then
+                    continue
+                fi
+                
+                if ! [[ "$choice" =~ ^[0-9]+$ ]] || (( choice < 1 || choice > ${#keys[@]} )); then
+                    log_warn "Invalid choice"
+                    continue
+                fi
+                
+                handle_delete "$((choice-1))"
+                ;;
+            5)
+                exit 0
+                ;;
+            *)
+                log_warn "Invalid option"
+                ;;
         esac
+        echo ""
     done
 }
 
 # Entry Point
-if [[ $# -eq 0 ]]; then
-    show_main_menu
-else
-    # Future: handle CLI flags here if needed
-    log_err "Usage: $0 (Interactive mode only for now)"
-fi
+show_main_menu

@@ -19,20 +19,7 @@ create_backup() {
     fi
 }
 
-# Find the physical directory of this script to resolve the dotfiles root
-get_script_dir() {
-    local target="${BASH_SOURCE[0]}"
-    while [ -h "$target" ]; do
-        local dir
-        dir="$(cd -P "$(dirname "$target")" && pwd)"
-        target="$(readlink "$target")"
-        [[ $target != /* ]] && target="$dir/$target"
-    done
-    echo "$(cd -P "$(dirname "$target")" && pwd)"
-}
-SCRIPT_DIR="$(get_script_dir)"
-DOTFILES_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
-SECURED_DIR="$DOTFILES_DIR/.config/_secured"
+SECURED_DIR="$HOME/.config/_secured"
 PROPERTIES_FILE="$SECURED_DIR/locations.properties"
 
 if [[ ! -f "$PROPERTIES_FILE" ]]; then
@@ -152,7 +139,7 @@ handle_encrypt() {
     
     # Suggest a default GPG filename based on the source filename
     local default_gpg="$(basename "$source_file").gpg"
-    echo -n "Enter the GPG filename to save in .config/_secured/ [default: $default_gpg]: "
+    echo -n "Enter the GPG filename to save in ~/.config/_secured/ [default: $default_gpg]: "
     read -r gpg_name
     if [[ -z "$gpg_name" ]]; then
         gpg_name="$default_gpg"
@@ -212,7 +199,9 @@ handle_encrypt() {
             echo "$gpg_name=$display_val" >> "$temp_prop"
         fi
         
-        mv "$temp_prop" "$PROPERTIES_FILE"
+        # Overwrite symlinked properties file without destroying the symlink
+        cat "$temp_prop" > "$PROPERTIES_FILE"
+        rm -f "$temp_prop"
         chmod 644 "$PROPERTIES_FILE"
         log_info "Updated locations.properties: $gpg_name -> $target_path"
         log_warn "You can now safely delete the plaintext file: $source_file"
@@ -323,7 +312,9 @@ handle_delete() {
         fi
     done < "$PROPERTIES_FILE"
     
-    mv "$temp_prop" "$PROPERTIES_FILE"
+    # Overwrite symlinked properties file without destroying the symlink
+    cat "$temp_prop" > "$PROPERTIES_FILE"
+    rm -f "$temp_prop"
     chmod 644 "$PROPERTIES_FILE"
     log_info "Removed mapping for $key from locations.properties"
     

@@ -1,4 +1,3 @@
 # Files and directories ignored by do-stow.sh and do-unstow.sh
-.config/_secured/
 .ignored
 .ssh/

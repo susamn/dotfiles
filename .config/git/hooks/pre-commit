@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# ~/.config/git/hooks/pre-commit
+# Global Git pre-commit hook stowed from dotfiles
+
+set -euo pipefail
+
+# ── 1. Check if ~/.gituser file exists in the home directory ──────────────────
+if [[ ! -f "$HOME/.gituser" ]]; then
+    echo -e "❌ \033[1;31mGit commit blocked:\033[0m ~/.gituser file not found in home directory!"
+    exit 1
+fi
+
+# ── 2. Check if git user.name and user.email are configured ───────────────────
+NAME=$(git config --get user.name || echo "")
+EMAIL=$(git config --get user.email || echo "")
+
+if [[ -z "$NAME" ]]; then
+    echo -e "❌ \033[1;31mGit commit blocked:\033[0m 'user.name' is not configured."
+    echo -e "   Please configure it using:"
+    echo -e "     git config --global user.name \"Your Name\""
+    echo -e "   or for this repository only:"
+    echo -e "     git config user.name \"Your Name\""
+    exit 1
+fi
+
+if [[ -z "$EMAIL" ]]; then
+    echo -e "❌ \033[1;31mGit commit blocked:\033[0m 'user.email' is not configured."
+    echo -e "   Please configure it using:"
+    echo -e "     git config --global user.email \"your.email@example.com\""
+    echo -e "   or for this repository only:"
+    echo -e "     git config user.email \"your.email@example.com\""
+    exit 1
+fi
+
+# ── 3. Chain to repository-local pre-commit hook if it exists ─────────────────
+GIT_DIR=$(git rev-parse --git-common-dir 2>/dev/null || echo "")
+if [[ -n "$GIT_DIR" ]]; then
+    LOCAL_HOOK="$GIT_DIR/hooks/$(basename "$0")"
+    if [[ -f "$LOCAL_HOOK" && -x "$LOCAL_HOOK" ]]; then
+        exec "$LOCAL_HOOK" "$@"
+    fi
+fi

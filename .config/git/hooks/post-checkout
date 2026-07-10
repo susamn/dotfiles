@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# ~/.config/git/hooks/post-checkout
+# Global Git post-checkout hook stowed from dotfiles
+
+set -euo pipefail
+
+# ── 1. Pull main branch automatically if checked out ──────────────────────────
+# post-checkout receives three parameters: <ref_prev> <ref_new> <flag_branch_checkout>
+FLAG_BRANCH_CHECKOUT="${3:-1}"
+
+if [[ "$FLAG_BRANCH_CHECKOUT" -eq 1 ]]; then
+    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+    if [[ "$CURRENT_BRANCH" == "main" ]]; then
+        echo -e "🔄 \033[1;34mDetected checkout to main. Auto-pulling changes...\033[0m"
+        # Only pull if a remote tracking branch exists
+        if git rev-parse --abbrev-ref --symbolic-full-name @{u} >/dev/null 2>&1; then
+            git pull || echo -e "⚠️  \033[1;33mAuto-pull failed. Please check network/remote manually.\033[0m"
+        fi
+    fi
+fi
+
+# ── 2. Chain to repository-local post-checkout hook if it exists ──────────────
+GIT_DIR=$(git rev-parse --git-common-dir 2>/dev/null || echo "")
+if [[ -n "$GIT_DIR" ]]; then
+    LOCAL_HOOK="$GIT_DIR/hooks/$(basename "$0")"
+    if [[ -f "$LOCAL_HOOK" && -x "$LOCAL_HOOK" ]]; then
+        exec "$LOCAL_HOOK" "$@"
+    fi
+fi

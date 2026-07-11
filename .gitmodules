@@ -16,3 +16,6 @@
 [submodule "workspace/tools/linux-system-manager"]
 	path = workspace/tools/linux-system-manager
 	url = git@github.com:susamn/linux-system-manager.git
+[submodule ".config/_secured"]
+	path = .config/_secured
+	url = git@github.com:susamn/_secured.git

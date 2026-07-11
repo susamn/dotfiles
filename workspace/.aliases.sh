@@ -158,6 +158,11 @@ if [ -x "$(command -v git)" ]; then
     alias gassume='git update-index --assume-unchanged'
     alias gunassume='git update-index --no-assume-unchanged'
     alias gassumed="git ls-files -v | grep '^[a-z]'"
+    alias gsub='git submodule'
+    alias gsubi='git submodule init'
+    alias gsubu='git submodule update --init --recursive'
+    alias gsubs='git submodule sync --recursive'
+    alias gsubst='git submodule status --recursive'
 fi
 
 # kubernates aliases

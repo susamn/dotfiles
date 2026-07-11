@@ -23,6 +23,9 @@
 	assume = !git update-index --assume-unchanged
 	unassume = !git update-index --no-assume-unchanged
 	assumed = !git ls-files -v | grep \"^[a-z]\"
+	subup = submodule update --init --recursive
+	subsync = submodule sync --recursive
+	substatus = submodule status --recursive
 
 
 

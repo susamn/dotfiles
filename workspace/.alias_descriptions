@@ -26,3 +26,5 @@ gsubi=Initialize git submodules
 gsubu=Update git submodules recursively and initialize if needed
 gsubs=Sync git submodules recursively
 gsubst=Show git submodules status recursively
+agm=Agent, skill, and MCP server manager for dotfiles
+

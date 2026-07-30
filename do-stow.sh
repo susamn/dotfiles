@@ -155,6 +155,16 @@ deploy_instructions() {
   echo "[instructions] generated: $joined"
 }
 
+# ── deploy mcp configs ────────────────────────────────────────────────────────
+deploy_mcp() {
+  if [[ -x "$DOTFILES_DIR/workspace/scripts/agm.sh" ]]; then
+    echo "[mcp] Syncing MCP configurations..."
+    "$DOTFILES_DIR/workspace/scripts/agm.sh" sync
+  fi
+}
+
 stow_packages
 deploy_skills
 deploy_instructions
+deploy_mcp
+

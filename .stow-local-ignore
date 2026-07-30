@@ -21,9 +21,9 @@ RCS
 ^skills$
 
 # --- agent guide ---
-# AGENTS.md lives in the repo root for agents working inside this repo.
-# Instruction symlinks for global use are created outside the repo by do-stow.sh
-# (e.g. ~/.claude/CLAUDE.md → dotfiles/AGENTS.md). Nothing to stow here.
+# Agent instruction files are GENERATED (not symlinked) outside the repo by
+# do-stow.sh from skills/AGENTS-TEMPLATE.md — e.g. ~/.claude/CLAUDE.md. Nothing
+# to stow here. This entry is retained in case an AGENTS.md is added at the root.
 ^AGENTS\.md$
 
 # --- stow management scripts ---

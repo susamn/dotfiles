@@ -19,3 +19,6 @@
 [submodule ".config/_secured"]
 	path = .config/_secured
 	url = git@github.com:susamn/_secured.git
+[submodule "workspace/tools/mosaic"]
+	path = workspace/tools/mosaic
+	url = git@github.com:susamn/mosiac.git

@@ -18,4 +18,5 @@ Nice=19
 IOSchedulingClass=idle
 
 [Install]
-WantedBy=default.target
+WantedBy=default.target personal-services.target
+

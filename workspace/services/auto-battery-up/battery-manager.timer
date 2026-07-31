@@ -9,4 +9,5 @@ OnUnitActiveSec=2min
 Unit=battery-manager.service
 
 [Install]
-WantedBy=timers.target
+WantedBy=timers.target personal-services.target
+

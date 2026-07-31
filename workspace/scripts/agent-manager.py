@@ -11,27 +11,31 @@ import shlex
 import argparse
 from pathlib import Path
 
+# Marker that identifies a directory as the dotfiles root
+DOTFILES_MARKER = Path("workspace") / "aistuff" / "skills"
+
 # Paths resolution following physical symlinks
 def get_dotfiles_dir() -> Path:
     if "DOTFILES_DIR" in os.environ:
         env_p = Path(os.environ["DOTFILES_DIR"]).resolve()
-        if (env_p / "skills").exists():
+        if (env_p / DOTFILES_MARKER).exists():
             return env_p
     # Resolve script location following physical symlinks
     script_p = Path(__file__).resolve()
     candidate = script_p.parents[2]
-    if (candidate / "skills").exists():
+    if (candidate / DOTFILES_MARKER).exists():
         return candidate
     # Fallback to ~/dotfiles
     home_p = Path.home() / "dotfiles"
-    if (home_p / "skills").exists():
+    if (home_p / DOTFILES_MARKER).exists():
         return home_p
     return candidate
 
 DOTFILES_DIR = get_dotfiles_dir()
-SKILLS_DIR = DOTFILES_DIR / "skills"
+AISTUFF_DIR = DOTFILES_DIR / "workspace" / "aistuff"
+SKILLS_DIR = AISTUFF_DIR / "skills"
 AGENTS_FILE = SKILLS_DIR / ".agents"
-MCP_DIR = DOTFILES_DIR / "mcp"
+MCP_DIR = AISTUFF_DIR / "mcp"
 CANONICAL_MCP_FILE = MCP_DIR / "mcp-servers.json"
 MCP_PROMPTS_DIR = MCP_DIR / "prompts"
 

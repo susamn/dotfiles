@@ -3,7 +3,8 @@
 set -euo pipefail
 
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SKILLS_DIR="$DOTFILES_DIR/skills"
+AISTUFF_DIR="$DOTFILES_DIR/workspace/aistuff"
+SKILLS_DIR="$AISTUFF_DIR/skills"
 AGENTS_FILE="$SKILLS_DIR/.agents"
 
 # ── stow ignore configurations ───────────────────────────────────────────────

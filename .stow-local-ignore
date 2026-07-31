@@ -17,13 +17,17 @@ RCS
 \.stow-local-ignore
 \.stow
 
-# --- skills: deployed separately via do-stow.sh symlinks, not as stow packages ---
-^skills$
+# --- aistuff: agent assets, not stow packages ---
+# workspace/aistuff/skills is deployed via do-stow.sh symlinks; workspace/aistuff/mcp is merged into
+# each agent's config by agm.sh. Neither belongs in the stow tree.
+^aistuff$
+^workspace/aistuff$
 
 # --- agent guide ---
 # Agent instruction files are GENERATED (not symlinked) outside the repo by
-# do-stow.sh from skills/AGENTS-TEMPLATE.md — e.g. ~/.claude/CLAUDE.md. Nothing
-# to stow here. This entry is retained in case an AGENTS.md is added at the root.
+# do-stow.sh from workspace/aistuff/skills/AGENTS-TEMPLATE.md — e.g. ~/.claude/CLAUDE.md.
+# Nothing to stow here. This entry is retained in case an AGENTS.md is added at
+# the root.
 ^AGENTS\.md$
 
 # --- stow management scripts ---

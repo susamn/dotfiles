@@ -8,4 +8,5 @@ OnUnitActiveSec=30s
 AccuracySec=5s
 
 [Install]
-WantedBy=timers.target
+WantedBy=timers.target personal-services.target
+

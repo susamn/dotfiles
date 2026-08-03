@@ -1,9 +1,0 @@
-[user]
-    name = Supratim Samanta
-    email =
-
-[core]
-    editor = vim
-
-[commit]
-    gpgsign = true 

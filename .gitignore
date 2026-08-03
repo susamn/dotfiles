@@ -29,6 +29,8 @@ workspace/tools/.claude
 **/.idea/
 *.log
 *.pid
+mpd.conf
+sticker.sql
 *mpd.db
 *mpdstate
 *generated.aliases.sh

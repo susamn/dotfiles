@@ -7,7 +7,7 @@ pkgs=Shows the required platform and brew packages
 o=Opens any resource in the default app in mac or linux
 gsec=Generates secure resources which are encrypted with GPG
 ht=Helpful tools kit, every developer's swiss army knife
-mt=Media trimmer tool, trim audio and video from local or from youtube
+mtrm=Media trimmer tool, trim audio and video from local or from youtube
 att=API testing tool, an opensource Insomnia replica
 ytd=Youtube downloader in terminal, easy and fast
 gs=Git status in a concise fasion
@@ -28,4 +28,8 @@ gsubs=Sync git submodules recursively
 gsubst=Show git submodules status recursively
 agm=Agent, skill, and MCP server manager for dotfiles
 mpdc=Regenerate mpd.conf from ~/.config/mpd/mpd.conf.bak (fzf-pick the tracks/playlists rclone-sync profiles), manage the mpd daemon, and query tracks/playlists
+mtx=MPD Tui player - enlarged with vim motions
+mt=MPD Tui mini player - small, inline and only what is needed
+mtp=Search playlists and play with MPD Tui player
+mtt=Search tracks and play with MPD Tui player
 

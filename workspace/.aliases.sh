@@ -52,11 +52,6 @@ if [ -x "$(command -v mpd)" ] && [ -x "$(command -v playerctl)" ] ; then
   alias mp="$SCRIPTS_PATH/media-play-manager.sh"
 fi
 
-# mpdtui aliases
-# mtx -> full lazygit-style panel TUI for MPD
-# mt  -> lightweight inline MPD status line/player
-# mtp -> fuzzy-search playlists; Enter clears the queue and plays it
-# mtt -> fuzzy-search tracks; Enter adds it to the queue and plays it
 if [ -x "$(command -v mpdtui)" ]; then
   alias mtx="mpdtui"
   alias mt="mpdtui --mini"

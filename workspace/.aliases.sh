@@ -15,7 +15,7 @@ alias agm="$SCRIPTS_PATH/agm.sh"
 alias ht2="$TOOLS_PATH/helpful-tools-v2/quick-start.sh"
 alias mosiac="$TOOLS_PATH/mosiac/quick-start.sh"
 alias pfm="$TOOLS_PATH/performance-manager/quick-start.sh"
-alias mt="$TOOLS_PATH/media-trimmer/quick-start.sh"
+alias mtrm="$TOOLS_PATH/media-trimmer/quick-start.sh"
 alias att="$TOOLS_PATH/api-testing-tool/quick-start.sh"
 
 pnv() {
@@ -50,6 +50,13 @@ fi
 
 if [ -x "$(command -v mpd)" ] && [ -x "$(command -v playerctl)" ] ; then
   alias mp="$SCRIPTS_PATH/media-play-manager.sh"
+fi
+
+if [ -x "$(command -v mpdtui)" ]; then
+  alias mtx="mpdtui"
+  alias mt="mpdtui --mini"
+  alias mtp="mpdtui -p"
+  alias mtt="mpdtui -t"
 fi
 
 if [ -x "$(command -v bat)" ]; then

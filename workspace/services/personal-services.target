@@ -1,6 +1,0 @@
-[Unit]
-Description=Personal Application Services & Timers Target (user scope)
-Documentation=https://github.com/susamn/linux-system-manager
-
-[Install]
-WantedBy=default.target

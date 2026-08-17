@@ -53,29 +53,43 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Validate every shipped unit
-      # systemd-analyze catches malformed directives. Template units cannot be
-      # verified without an instance name, so they are checked by instantiating
-      # them against a throwaway name rather than being skipped outright.
+    - name: Stage the units as they are actually installed
+      # systemd-analyze verifies a unit as written, but these are not installed
+      # as written: @USER@ is substituted from SUDO_USER at install time, and the
+      # engines are copied to /usr/local/bin. Verifying the raw source therefore
+      # fails on two things that are correct by design -- an invalid username and
+      # missing binaries. Reproduce the installed shape instead, so the check
+      # validates what actually lands on a machine.
       run: |
-        rc=0
+        mkdir -p /tmp/units
         for unit in workspace/services/*.service workspace/services/*.timer \
                     workspace/services/*.target; do
           [ -e "$unit" ] || continue
-          case "$unit" in
-            *@.service|*@.timer)
-              inst="${unit%@.*}@ci.${unit##*.}"
-              cp "$unit" "/tmp/$(basename "$inst")"
-              if ! systemd-analyze verify "/tmp/$(basename "$inst")" 2>/tmp/err; then
-                echo "::error file=$unit::$(cat /tmp/err)"; rc=1
-              fi
-              ;;
-            *)
-              if ! systemd-analyze verify "$unit" 2>/tmp/err; then
-                echo "::error file=$unit::$(cat /tmp/err)"; rc=1
-              fi
-              ;;
-          esac
+          name=$(basename "$unit")
+          # Template units need an instance name to be verifiable at all.
+          case "$name" in *@.service|*@.timer) name="${name%@.*}@ci.${name##*.}" ;; esac
+          sed "s/@USER@/root/g" "$unit" > "/tmp/units/$name"
+        done
+
+        # Stub every referenced binary so ExecStart resolves. Paths are read from
+        # the units rather than hardcoded, so a new engine cannot be forgotten.
+        grep -hoE '^Exec(Start|StopPost|StartPre)=-?[^ ]+' workspace/services/*.service \
+          | sed 's/^Exec[A-Za-z]*=-\?//' | sort -u \
+          | while read -r bin; do
+              sudo mkdir -p "$(dirname "$bin")"
+              printf '#!/bin/sh\nexit 0\n' | sudo tee "$bin" >/dev/null
+              sudo chmod +x "$bin"
+            done
+
+    - name: Validate every shipped unit
+      run: |
+        rc=0
+        for unit in /tmp/units/*; do
+          [ -e "$unit" ] || continue
+          if ! systemd-analyze verify "$unit" 2>/tmp/err; then
+            echo "::error file=workspace/services/$(basename "$unit")::$(cat /tmp/err)"
+            rc=1
+          fi
         done
         exit $rc
 

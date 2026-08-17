@@ -1,0 +1,35 @@
+#!/home/susamn/workspace/services/op-vault-broker/client-lib/.venv/bin/python
+"""opv - fetch a secret from op-vault-broker. Must be run as root (sudo opv ...)."""
+
+from __future__ import annotations
+
+import argparse
+import os
+import sys
+
+from opvaultclient import DEFAULT_SOCKET_PATH, OpVaultClient, OpVaultError
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(prog="opv", description="Fetch a secret from op-vault-broker")
+    parser.add_argument("item", help="1Password item name or ID")
+    parser.add_argument("--field", default="password", help="field to fetch (default: password)")
+    parser.add_argument("--socket", default=DEFAULT_SOCKET_PATH, help="broker socket path")
+    args = parser.parse_args()
+
+    if os.geteuid() != 0:
+        print("opv: must be run as root, e.g.: sudo opv <item>", file=sys.stderr)
+        sys.exit(1)
+
+    client = OpVaultClient(socket_path=args.socket)
+    try:
+        value = client.get(args.item, field=args.field)
+    except OpVaultError as exc:
+        print(f"opv: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    print(value)
+
+
+if __name__ == "__main__":
+    main()

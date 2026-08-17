@@ -1,0 +1,28 @@
+[Unit]
+Description=Rclone Mount Service for profile %i
+Documentation=https://rclone.org/commands/rclone_mount/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/rclone-mount.sh %i
+
+# rclone-mount.sh execs rclone, so `systemctl stop` delivers SIGTERM straight to
+# it and rclone exits 143 (128 + SIGTERM) after unmounting cleanly. Without this,
+# systemd records every normal shutdown as a failure -- which made healthy mounts
+# appear under "Failed Personal Services" after any ordinary stop or reboot.
+SuccessExitStatus=143 SIGTERM
+
+# If rclone dies without unmounting, the mountpoint is left as a stale FUSE entry
+# that reports "Transport endpoint is not connected" and blocks the next mount.
+# The leading '-' marks failure as acceptable: there is usually nothing to unmount.
+ExecStopPost=-/usr/local/bin/rclone-mount.sh --unmount %i
+
+Restart=on-failure
+RestartSec=10s
+TimeoutStopSec=30s
+User=@USER@
+
+[Install]
+WantedBy=default.target personal-services.target

@@ -1,0 +1,6 @@
+[Unit]
+Description=Personal Application Services & Timers Target
+Documentation=https://github.com/susamn/linux-system-manager
+
+[Install]
+WantedBy=multi-user.target

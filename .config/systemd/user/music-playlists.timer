@@ -1,0 +1,11 @@
+[Unit]
+Description=Music Playlists Sync Timer - every 3 minutes
+Requires=music-playlists.service
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=3min
+Unit=music-playlists.service
+
+[Install]
+WantedBy=timers.target personal-services.target

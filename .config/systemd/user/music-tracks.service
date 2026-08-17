@@ -1,0 +1,15 @@
+[Unit]
+Description=Music Tracks Sync - pull audio library from gdrive
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=%h/.config/music-sync/tracks.env
+ExecStart=/usr/local/bin/rclone-sync.sh ${MUSIC_SYNC_PROFILE}
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=music-tracks-sync
+
+[Install]
+WantedBy=default.target personal-services.target

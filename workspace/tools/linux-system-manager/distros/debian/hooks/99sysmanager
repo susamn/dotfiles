@@ -1,0 +1,6 @@
+// APT configuration for sys-manager package timeline and boot checks
+
+// Run package timeline logger after package operations
+DPkg::Post-Invoke {
+    "/usr/local/bin/debian-package-timeline.sh";
+};

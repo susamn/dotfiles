@@ -45,3 +45,4 @@ skills/**/*.private.md
 
 # Agent instruction symlinks are created outside this repo (e.g. ~/.claude/CLAUDE.md)
 # by do-stow.sh — nothing to ignore here
+workspace/scripts/__pycache__/

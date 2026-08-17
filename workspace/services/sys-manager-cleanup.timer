@@ -1,0 +1,11 @@
+[Unit]
+Description=Run weekly cleanup of old system manager backups
+
+[Timer]
+OnCalendar=weekly
+Persistent=true
+RandomizedDelaySec=1h
+Unit=sys-manager-cleanup.service
+
+[Install]
+WantedBy=timers.target personal-services.target

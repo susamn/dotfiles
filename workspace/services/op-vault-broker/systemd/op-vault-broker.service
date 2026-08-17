@@ -1,0 +1,45 @@
+[Unit]
+Description=op-vault-broker - single-vault 1Password secret broker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/home/susamn/workspace/services/op-vault-broker/broker/.venv/bin/python -m op_vault_broker
+Restart=on-failure
+RestartSec=2
+
+# Identity: no static system user, no home dir, no shell.
+DynamicUser=yes
+
+# Runtime socket dir (/run/op-vault-broker), config dir (/etc/op-vault-broker),
+# and the encrypted service-account token, decrypted into a private tmpfs
+# credential dir that only this unit's processes can read.
+RuntimeDirectory=op-vault-broker
+RuntimeDirectoryMode=0755
+ConfigurationDirectory=op-vault-broker
+LoadCredentialEncrypted=op-token:op-vault-broker.token
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectClock=true
+ProtectHostname=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+PrivateDevices=true
+PrivateTmp=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+CapabilityBoundingSet=
+SystemCallFilter=@system-service
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target personal-services.target

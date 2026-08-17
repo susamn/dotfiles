@@ -1,0 +1,202 @@
+name: linux-system-manager
+
+on:
+  push:
+    branches: [ main ]
+    paths: &tool_paths
+      - 'workspace/tools/linux-system-manager/**'
+      - 'workspace/services/**'
+      - '.github/workflows/linux-system-manager.yml'
+  pull_request:
+    branches: [ main ]
+    paths: *tool_paths
+
+# Absorbed from the standalone susamn/linux-system-manager repo. The tool now
+# lives at workspace/tools/linux-system-manager and its unit files at
+# workspace/services ($SERVICES_PATH), so every path below is repo-relative to
+# dotfiles rather than to the tool.
+defaults:
+  run:
+    working-directory: workspace/tools/linux-system-manager
+
+# A second push to the same PR makes the first run irrelevant.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run ShellCheck
+        # SC2155 (declare-and-assign masks the exit status) fires ~77 times across
+        # the tree. It is real -- `local x=$(cmd)` swallows cmd's failure, which is
+        # the same silent-failure class this suite exists to catch -- but fixing it
+        # is a separate mechanical change. Excluded here so the gate is meaningful
+        # today rather than permanently red; remove the exclusion once addressed.
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y shellcheck
+          shellcheck --version
+          shellcheck --severity=warning --exclude=SC2155 --format=gcc \
+            distros/*/*.sh ../../services/*.sh
+
+  syntax:
+    name: Shell & unit-file syntax
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse every script by interpreter
+        # Dispatch on the shebang, not the extension. linux-system-manager.sh is a
+        # Python program despite its name, so an extension-based sweep would either
+        # fail on it or need a hardcoded exclusion that rots.
+        run: |
+          rc=0
+          while IFS= read -r -d '' script; do
+            shebang=$(head -1 "$script")
+            case "$shebang" in
+              *bash*|*/sh)
+                if ! bash -n "$script"; then
+                  echo "::error file=$script::bash -n failed"
+                  rc=1
+                fi
+                ;;
+              *python*)
+                if ! python3 -m py_compile "$script"; then
+                  echo "::error file=$script::python syntax error"
+                  rc=1
+                fi
+                ;;
+              *)
+                echo "::warning file=$script::unrecognised shebang: $shebang"
+                ;;
+            esac
+          done < <({ find . \( -name '*.sh' -o -name '*.py' \) -print0; find ../../services -maxdepth 1 \( -name '*.sh' -o -name '*.py' \) -print0; })
+          exit $rc
+
+      - name: Check scripts declare a shebang and are executable
+        run: |
+          rc=0
+          while IFS= read -r -d '' script; do
+            if ! head -c2 "$script" | grep -q '#!'; then
+              echo "::error file=$script::missing shebang"
+              rc=1
+            fi
+            if [ ! -x "$script" ]; then
+              echo "::error file=$script::not executable (git mode should be 100755)"
+              rc=1
+            fi
+          done < <({ find distros -name '*.sh' -print0; find ../../services -maxdepth 1 -name '*.sh' -print0; })
+          exit $rc
+
+      - name: Validate systemd unit files
+        # systemd-analyze verify catches malformed directives and, critically,
+        # would have flagged the cleanup unit whose ExecStart relied on a glob
+        # that systemd never expands.
+        run: |
+          rc=0
+          for unit in ../../services/*.service ../../services/*.timer; do
+            [ -e "$unit" ] || continue
+            # Template units cannot be verified without an instance name.
+            case "$unit" in *@.service|*@.timer) continue ;; esac
+            if ! systemd-analyze verify "$unit" 2>&1 | tee /tmp/verify.log; then
+              rc=1
+            fi
+            if grep -q . /tmp/verify.log; then
+              echo "::warning file=$unit::$(cat /tmp/verify.log)"
+            fi
+          done
+          exit $rc
+
+      - name: Reject globs in ExecStart
+        run: |
+          if grep -n 'ExecStart=.*\*' ../../services/*.service; then
+            echo "::error::systemd does not expand globs in ExecStart"
+            exit 1
+          fi
+
+  test:
+    name: Tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.9', '3.11', '3.13']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Run test suite
+        # Discovery rather than a single file, so new test_*.py modules are picked
+        # up automatically instead of silently never running.
+        run: python3 -m unittest discover -s . -p 'test_*.py' -v
+
+  distro-smoke:
+    name: Smoke (${{ matrix.distro }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [arch, debian]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect distro from a synthetic os-release
+        # Proves the runner resolves this distro's directory without needing to
+        # actually be running on it.
+        run: |
+          printf 'ID=%s\nNAME="CI %s"\n' "${{ matrix.distro }}" "${{ matrix.distro }}" > /tmp/os-release
+          OS_RELEASE_PATH=/tmp/os-release python3 - <<'PY'
+          import os, types
+          src = open('linux-system-manager.sh').read()
+          mod = types.ModuleType('m'); mod.__file__ = os.path.abspath('linux-system-manager.sh')
+          exec(compile(src, mod.__file__, 'exec'), mod.__dict__)
+          distro_id, name = mod.detect_distro()
+          assert distro_id == os.environ.get('EXPECTED'), (distro_id, name)
+          print(f"resolved {distro_id} ({name})")
+          PY
+        env:
+          EXPECTED: ${{ matrix.distro }}
+
+      - name: Run --help on every script that supports it
+        # Catches unbound variables and parse errors on startup: this is how the
+        # `${USER}` crash under `set -u` would have been caught.
+        run: |
+          rc=0
+          for script in distros/${{ matrix.distro }}/*.sh; do
+            if grep -q -- '--help' "$script"; then
+              if ! env -i /bin/bash "$script" --help >/dev/null 2>/tmp/err; then
+                echo "::error file=$script::--help failed in a minimal environment"
+                cat /tmp/err
+                rc=1
+              fi
+            fi
+          done
+          exit $rc
+
+      - name: Verify cleanup script never deletes the backup root
+        run: |
+          root=$(mktemp -d)
+          mkdir -p "$root/u1/.boot-backups/boot-backup-old"
+          mkdir -p "$root/u1/.boot-backups/boot-backup-new"
+          touch -d '90 days ago' "$root/u1/.boot-backups" "$root/u1/.boot-backups/boot-backup-old"
+          ../../services/cleanup-backups.sh --home-root "$root"
+          test -d "$root/u1/.boot-backups" \
+            || { echo "::error::backup root was deleted"; exit 1; }
+          test -d "$root/u1/.boot-backups/boot-backup-new" \
+            || { echo "::error::recent backup was deleted"; exit 1; }
+          test ! -d "$root/u1/.boot-backups/boot-backup-old" \
+            || { echo "::error::aged backup was not pruned"; exit 1; }
+          echo "cleanup scoping verified"

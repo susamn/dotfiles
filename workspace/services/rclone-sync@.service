@@ -1,0 +1,9 @@
+[Unit]
+Description=Rclone Sync Service for profile %i
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/rclone-sync.sh %i
+User=@USER@

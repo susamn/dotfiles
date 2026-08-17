@@ -1,0 +1,242 @@
+{
+  "distro_id": "debian",
+  "distro_name": "Debian / Ubuntu",
+  "sections": [
+    {
+      "id": "1",
+      "title": "Boot Management",
+      "items": [
+        {
+          "key": "a",
+          "label": "Quick Safety Check",
+          "exec": "check_boot.sh",
+          "args": ["--quick-banner"]
+        },
+        {
+          "key": "b",
+          "label": "Boot Process Help",
+          "exec": "boot_help.sh"
+        },
+        {
+          "key": "1",
+          "label": "View GRUB Configuration",
+          "exec": "view_grub.sh"
+        },
+        {
+          "key": "2",
+          "label": "Run Boot Safety Check",
+          "exec": "check_boot.sh"
+        },
+        {
+          "key": "3",
+          "label": "Auto-Fix Boot Issues [modifies system]",
+          "exec": "check_boot.sh",
+          "args": ["--auto-fix"]
+        },
+        {
+          "key": "4",
+          "label": "Create Boot Backup",
+          "exec": "backup_boot.sh"
+        },
+        {
+          "key": "5",
+          "label": "List Backups",
+          "exec": "backup_boot.sh",
+          "args": ["--list"]
+        },
+        {
+          "key": "6",
+          "label": "Restore from Backup [modifies system]",
+          "exec": "backup_boot.sh",
+          "args": ["--restore"]
+        },
+        {
+          "key": "7",
+          "label": "View Timeshift Snapshots",
+          "exec": "view_timeshift.sh"
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "title": "Update Management",
+      "items": [
+        {
+          "key": "1",
+          "label": "Preview Pending Updates",
+          "exec": "pre_upgrade.sh"
+        },
+        {
+          "key": "2",
+          "label": "Analyze Package",
+          "exec": "analyze_package.sh"
+        },
+        {
+          "key": "3",
+          "label": "Complete Upgrade Workflow",
+          "exec": "upgrade_workflow.sh"
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "title": "Package Timeline",
+      "items": [
+        {
+          "key": "1",
+          "label": "View Complete Timeline",
+          "exec": "timeline.sh",
+          "args": ["--view"]
+        },
+        {
+          "key": "2",
+          "label": "View Recent Activity (Last 50)",
+          "exec": "timeline.sh",
+          "args": ["--recent"]
+        },
+        {
+          "key": "3",
+          "label": "Search Timeline",
+          "exec": "timeline.sh",
+          "args": ["--search"]
+        }
+      ]
+    },
+    {
+      "id": "4",
+      "title": "Services & Scripts",
+      "items": [
+        {
+          "key": "1",
+          "label": "Active Systemd Services",
+          "exec": "services_scripts.sh",
+          "args": ["--active"]
+        },
+        {
+          "key": "2",
+          "label": "Failed Services",
+          "exec": "services_scripts.sh",
+          "args": ["--failed"]
+        },
+        {
+          "key": "3",
+          "label": "Systemd Timers",
+          "exec": "services_scripts.sh",
+          "args": ["--timers"]
+        },
+        {
+          "key": "4",
+          "label": "Cron Jobs",
+          "exec": "services_scripts.sh",
+          "args": ["--cron"]
+        },
+        {
+          "key": "5",
+          "label": "User Scripts & Tools",
+          "exec": "services_scripts.sh",
+          "args": ["--user-scripts"]
+        },
+        {
+          "key": "6",
+          "label": "Enabled Services",
+          "exec": "services_scripts.sh",
+          "args": ["--enabled"]
+        },
+        {
+          "key": "7",
+          "label": "Recent Service Changes",
+          "exec": "services_scripts.sh",
+          "args": ["--recent-changes"]
+        }
+      ]
+    },
+    {
+      "id": "5",
+      "title": "Personal Services & Timers",
+      "items": [
+        {
+          "key": "1",
+          "label": "Active Personal Services",
+          "exec": "services_scripts.sh",
+          "args": ["--active-personal"]
+        },
+        {
+          "key": "2",
+          "label": "Failed Personal Services",
+          "exec": "services_scripts.sh",
+          "args": ["--failed-personal"]
+        },
+        {
+          "key": "3",
+          "label": "Manage Personal Services (Start/Stop/Toggle)",
+          "exec": "services_scripts.sh",
+          "args": ["--manage-personal"]
+        }
+      ]
+    },
+    {
+      "id": "6",
+      "title": "Cloud Sync Management",
+      "items": [
+        {
+          "key": "1",
+          "label": "List Sync Profiles & Status",
+          "exec": "cloud_sync.sh",
+          "args": ["--list"]
+        },
+        {
+          "key": "2",
+          "label": "Create New Sync Profile",
+          "exec": "cloud_sync.sh",
+          "args": ["--create"]
+        },
+        {
+          "key": "3",
+          "label": "Edit/Manage Sync Profile",
+          "exec": "cloud_sync.sh",
+          "args": ["--manage"]
+        },
+        {
+          "key": "4",
+          "label": "View Sync Logs",
+          "exec": "cloud_sync.sh",
+          "args": ["--logs"]
+        }
+      ]
+    },
+    {
+      "id": "7",
+      "title": "Network Discovery & Mapping",
+      "items": [
+        {
+          "key": "a",
+          "label": "Open Network Auditor Toolset",
+          "exec": "network_auditor.py"
+        }
+      ]
+    },
+    {
+      "id": "8",
+      "title": "BPF Tools",
+      "items": [
+        {
+          "key": "a",
+          "label": "Check BPF Readiness",
+          "exec": "bpf_check.sh"
+        },
+        {
+          "key": "b",
+          "label": "Install BCC & bpftrace [modifies system]",
+          "exec": "bpf_setup.sh"
+        },
+        {
+          "key": "c",
+          "label": "Open BPF Trace Actions",
+          "exec": "bpf_trace.sh",
+          "requires": "bpf"
+        }
+      ]
+    }
+  ]
+}
+

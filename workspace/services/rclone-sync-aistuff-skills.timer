@@ -1,0 +1,10 @@
+[Unit]
+Description=Rclone Sync 1-Min Timer for aistuff-skills
+
+[Timer]
+OnCalendar=*:0/1
+Persistent=true
+Unit=rclone-sync@aistuff-skills.service
+
+[Install]
+WantedBy=timers.target personal-services.target

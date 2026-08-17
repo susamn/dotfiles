@@ -1,0 +1,20 @@
+[Unit]
+Description=Clean up old boot backups and rotate timeline logs
+Documentation=man:find(1)
+
+[Service]
+Type=oneshot
+# Must be a script, not an inline find: systemd does not expand globs in ExecStart.
+ExecStart=/usr/local/bin/sys-manager-cleanup-backups.sh
+User=root
+Environment=RETENTION_DAYS=30
+
+# This unit deletes files, so keep its reach as small as the job allows.
+ProtectSystem=strict
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+PrivateDevices=true
+PrivateNetwork=true
+NoNewPrivileges=true
+ReadWritePaths=/home /root

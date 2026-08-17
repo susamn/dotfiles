@@ -1,0 +1,18 @@
+[Trigger]
+Operation = Upgrade
+Operation = Install
+Type = Package
+Target = linux
+Target = linux-lts
+Target = linux-zen
+Target = linux-hardened
+Target = grub
+Target = mkinitcpio
+Target = systemd
+
+[Action]
+Description = Running boot safety check...
+When = PostTransaction
+Exec = /usr/local/bin/arch-boot-check.sh
+Depends = coreutils
+Depends = pacman

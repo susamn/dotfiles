@@ -36,6 +36,49 @@ user_home() {
     fi
 }
 
+# Resolve where a NEW profile should be written.
+#
+# Profiles are configuration and belong in the dotfiles repo, stowed into
+# ~/.config. Writing straight to ~/.config/rclone-sync-profiles produces a real
+# file sitting among stow symlinks: it works today and is silently absent on the
+# next machine, which is the failure this resolver exists to prevent.
+#
+# Resolution order, most explicit first. Falls back to the plain home directory
+# so the tool still works outside a dotfiles checkout.
+lsm_repo_profiles_dir() {
+    local home="$1" sub="$2" candidate existing target
+
+    if [[ -n "${DOTFILES_DIR:-}" && -d "$DOTFILES_DIR" ]]; then
+        echo "$DOTFILES_DIR/$sub"; return 0
+    fi
+
+    # Follow an already-stowed profile back to whatever repo owns it.
+    for existing in "$home/$sub"/*.conf; do
+        [[ -L "$existing" ]] || continue
+        target="$(readlink -f "$existing" 2>/dev/null)" || continue
+        candidate="${target%/*}"
+        [[ -d "$candidate" ]] && { echo "$candidate"; return 0; }
+    done
+
+    # In-tree case: this script lives at <repo>/workspace/tools/<tool>/distros/<id>.
+    candidate="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../../../../.." 2>/dev/null && pwd)"
+    [[ -n "$candidate" && -d "$candidate/$sub" ]] && { echo "$candidate/$sub"; return 0; }
+
+    echo "$home/$sub"
+}
+
+# Link a repo-held profile into ~/.config so it is usable immediately, in the
+# same relative form stow would produce. A later do-stow.sh run is then a no-op
+# rather than a conflict.
+lsm_link_profile() {
+    local repo_file="$1" live_dir="$2" user="$3" name
+    name="$(basename "$repo_file")"
+    [[ "$repo_file" == "$live_dir/$name" ]] && return 0   # not repo-backed
+    sudo -u "$user" -H mkdir -p "$live_dir"
+    sudo -u "$user" -H ln -sfn "$(realpath --relative-to="$live_dir" "$repo_file")" \
+        "$live_dir/$name"
+}
+
 PROFILE_SUBDIR=".config/rclone-sync-profiles"
 
 # Search order: the invoking user's home first, then root's. Deduplicated so that
@@ -329,7 +372,10 @@ case "$action" in
         fi
 
         USER_HOME=$(eval echo "~$USER")
-        profiles_dir="$USER_HOME/.config/rclone-sync-profiles"
+        # Live location (what rclone-sync.sh reads) vs repo location (where the
+        # file is actually kept). They differ whenever dotfiles owns the config.
+        live_profiles_dir="$USER_HOME/.config/rclone-sync-profiles"
+        profiles_dir="$(lsm_repo_profiles_dir "$USER_HOME" "$PROFILE_SUBDIR")"
         conf_file="$profiles_dir/${PROFILE}.conf"
 
         # 3. Detect rclone remotes
@@ -465,9 +511,12 @@ case "$action" in
             fi
         fi
 
-        # Ensure directory exists in user home
+        # Ensure the destination exists (repo dir when dotfiles-managed)
         if [[ ! -d "$profiles_dir" ]]; then
             sudo -u "$USER" -H mkdir -p "$profiles_dir"
+        fi
+        if [[ "$profiles_dir" != "$live_profiles_dir" ]]; then
+            echo -e "${BLUE}Writing to the dotfiles repo:${NC} $profiles_dir"
         fi
 
         # Write Config File
@@ -483,6 +532,10 @@ SCHEDULE="$SCHEDULE"
 RCLONE_OPTS="$RCLONE_OPTS"
 EOF
         sudo -u "$USER" -H chmod 600 "$conf_file"
+        lsm_link_profile "$conf_file" "$live_profiles_dir" "$USER"
+        if [[ "$profiles_dir" != "$live_profiles_dir" ]]; then
+            echo -e "${GREEN}✓${NC} Linked into $live_profiles_dir — commit it in your dotfiles repo."
+        fi
         echo -e "  ${GREEN}✓ Created config: $conf_file (tracked by dotfiles)${NC}"
 
         if [[ "$SYNC_TYPE" != "mount" ]]; then

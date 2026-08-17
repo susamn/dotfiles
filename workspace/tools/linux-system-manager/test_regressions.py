@@ -802,6 +802,70 @@ class TestInteractiveInstaller(unittest.TestCase):
         self.assertEqual(p('0', 10), set())
         self.assertEqual(sorted(p('1-99', 3)), [1, 2, 3])
 
+class TestProfileCreationLocation(unittest.TestCase):
+    """Section 62 wrote new profiles straight to ~/.config/rclone-sync-profiles,
+    producing a real file among stow symlinks: it worked on the machine that
+    created it and was silently missing on the next one."""
+
+    def setUp(self):
+        self.script = os.path.join(SCRIPT_DIR, 'distros', 'arch', 'cloud_sync.sh')
+        if not os.path.isfile(self.script):
+            self.skipTest("cloud_sync.sh not found")
+        with open(self.script) as f:
+            self.body = f.read()
+
+    def _resolver(self, home, env=None, source='/nonexistent/distros/arch/x.sh'):
+        harness = textwrap.dedent(f"""\
+            source <(sed -n '/^lsm_repo_profiles_dir/,/^}}/p' {self.script})
+            BASH_SOURCE=("{source}")
+            lsm_repo_profiles_dir "{home}" ".config/rclone-sync-profiles"
+        """)
+        full = {k: v for k, v in os.environ.items() if k != 'DOTFILES_DIR'}
+        full.update(env or {})
+        res = subprocess.run([BASH, '-c', harness], capture_output=True,
+                             text=True, env=full)
+        return res.stdout.strip()
+
+    def test_creation_uses_the_resolver_not_a_hardcoded_home_path(self):
+        self.assertIn('lsm_repo_profiles_dir', self.body)
+        self.assertIn('live_profiles_dir', self.body,
+                      "the live and repo locations must be tracked separately")
+
+    def test_dotfiles_dir_env_wins(self):
+        with tempfile.TemporaryDirectory() as t:
+            repo = os.path.join(t, 'repo')
+            os.makedirs(os.path.join(repo, '.config/rclone-sync-profiles'))
+            got = self._resolver(os.path.join(t, 'home'), {'DOTFILES_DIR': repo})
+            self.assertEqual(got, os.path.join(repo, '.config/rclone-sync-profiles'))
+
+    def test_follows_an_existing_stowed_profile_back_to_its_repo(self):
+        with tempfile.TemporaryDirectory() as t:
+            live = os.path.join(t, 'home/.config/rclone-sync-profiles')
+            repo = os.path.join(t, 'repo/.config/rclone-sync-profiles')
+            os.makedirs(live); os.makedirs(repo)
+            open(os.path.join(repo, 'x.conf'), 'w').close()
+            os.symlink('../../../repo/.config/rclone-sync-profiles/x.conf',
+                       os.path.join(live, 'x.conf'))
+            self.assertEqual(self._resolver(os.path.join(t, 'home')), repo)
+
+    def test_falls_back_to_home_outside_a_dotfiles_checkout(self):
+        """The tool must still work when it is not living inside a repo."""
+        with tempfile.TemporaryDirectory() as t:
+            home = os.path.join(t, 'home')
+            os.makedirs(os.path.join(home, '.config/rclone-sync-profiles'))
+            self.assertEqual(self._resolver(home),
+                             os.path.join(home, '.config/rclone-sync-profiles'))
+
+    def test_broken_stow_link_does_not_resolve_to_a_missing_dir(self):
+        """readlink -f happily returns a path that does not exist; the resolver
+        must reject it rather than write into nowhere."""
+        with tempfile.TemporaryDirectory() as t:
+            home = os.path.join(t, 'home')
+            live = os.path.join(home, '.config/rclone-sync-profiles')
+            os.makedirs(live)
+            os.symlink('../../../gone/x.conf', os.path.join(live, 'x.conf'))
+            self.assertEqual(self._resolver(home), live)
+
 
 if __name__ == '__main__':
     unittest.main()

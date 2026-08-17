@@ -80,6 +80,18 @@ lsm_unit_names() {
     }'
 }
 
+# A oneshot service driven by a timer is represented by that timer: it sits
+# inactive between runs by design, so listing it alongside its timer reports a
+# healthy sync as "stopped". Returns 0 when the unit is triggered by a timer
+# that is itself in the listing.
+lsm_is_timer_triggered() {
+    local scope="$1" unit="$2"
+    [[ "$unit" == *.service ]] || return 1
+    local trig
+    trig=$(lsm_systemctl "$scope" show "$unit" -p TriggeredBy --value 2>/dev/null)
+    [[ -n "$trig" ]]
+}
+
 # Emits one NUL-terminated "<scope><TAB><unit-name>" record per personal unit,
 # gathered from both managers' personal-services.target plus the repo's own
 # services/ (system) and services/user/ (user) source directories. The source
@@ -244,6 +256,7 @@ case "$action" in
 
                 if [[ ${#instances[@]} -gt 0 ]]; then
                     for inst in "${instances[@]}"; do
+                        lsm_is_timer_triggered "$scope" "$inst" && continue
                         state=$(lsm_systemctl "$scope" is-active "$inst" 2>/dev/null || echo "inactive")
                         if [[ "$state" == "active" ]]; then
                             echo -e "  ${GREEN}●${NC} [$tag] $inst (${GREEN}active/running${NC})"
@@ -255,6 +268,7 @@ case "$action" in
                     echo -e "  ${BLUE}ℹ${NC} [$tag] $name (No active instances)"
                 fi
             else
+                lsm_is_timer_triggered "$scope" "$name" && continue
                 state=$(lsm_systemctl "$scope" is-active "$name" 2>/dev/null || echo "inactive")
                 if [[ "$state" == "active" ]]; then
                     echo -e "  ${GREEN}●${NC} [$tag] $name (${GREEN}active/running${NC})"

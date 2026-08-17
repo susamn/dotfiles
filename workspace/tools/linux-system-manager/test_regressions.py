@@ -706,6 +706,42 @@ class TestTemplateInstanceGlob(unittest.TestCase):
             ['rclone-sync@a.service', 'rclone-sync@b.service'],
             f"timer instance leaked into the .service template match: {res.stdout!r}")
 
+class TestTimerTriggeredServiceNoise(unittest.TestCase):
+    """A Type=oneshot service driven by a timer is inactive between runs by
+    design. Listing it beside its own timer reported every healthy sync as
+    "inactive/stopped", which reads as broken."""
+
+    def setUp(self):
+        self.script = os.path.join(SCRIPT_DIR, 'distros', 'arch',
+                                   'services_scripts.sh')
+        if not os.path.isfile(self.script):
+            self.skipTest("services_scripts.sh not found")
+        with open(self.script) as f:
+            self.body = f.read()
+
+    def test_status_listing_filters_timer_triggered_services(self):
+        self.assertIn('lsm_is_timer_triggered', self.body,
+                      "the status listing must suppress timer-driven oneshots")
+
+    def test_failed_listing_does_NOT_filter_them(self):
+        """A failed oneshot is exactly what --failed-personal exists to surface;
+        applying the same filter there would hide real breakage."""
+        failed_block = self.body[self.body.index('--failed-personal'):
+                                 self.body.index('--manage-personal')]
+        self.assertNotIn('lsm_is_timer_triggered', failed_block)
+
+    def test_manage_listing_does_NOT_filter_them(self):
+        """You must still be able to trigger a oneshot by hand."""
+        manage_block = self.body[self.body.index('--manage-personal'):]
+        self.assertNotIn('lsm_is_timer_triggered', manage_block)
+
+    def test_unscheduled_oneshot_is_still_shown(self):
+        """The filter keys on TriggeredBy, which is empty when the timer is
+        disabled -- so a oneshot nobody schedules stays visible rather than
+        silently vanishing from the listing."""
+        self.assertIn('TriggeredBy', self.body)
+        self.assertIn('[[ -n "$trig" ]]', self.body)
+
 
 if __name__ == '__main__':
     unittest.main()

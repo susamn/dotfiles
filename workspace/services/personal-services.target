@@ -1,5 +1,5 @@
 [Unit]
-Description=Personal Application Services & Timers Target
+Description=Personal Application Services & Timers Target (system scope)
 Documentation=https://github.com/susamn/linux-system-manager
 
 [Install]

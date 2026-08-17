@@ -867,5 +867,116 @@ class TestProfileCreationLocation(unittest.TestCase):
             self.assertEqual(self._resolver(home), live)
 
 
+class TestTimerActivatedCrossReference(unittest.TestCase):
+    """A timer-driven `Type=oneshot` service is hidden from the Section 5 status
+    listing because it sits inactive between runs by design. Hiding it entirely
+    left no answer to "where is the service?", so the timer's row now carries a
+    marker and the unit it activates is detailed below.
+
+    The marker generator increments a global counter. Read back through $( ), that
+    increment happens in a subshell and is discarded -- every timer is labelled
+    (A) and every row points at the same detail line. This shipped, and was only
+    visible because two timers happened to be listed together.
+    """
+
+    def _services_script(self):
+        path = os.path.join(SCRIPT_DIR, 'distros', 'arch', 'services_scripts.sh')
+        if not os.path.isfile(path):
+            self.skipTest("services_scripts.sh not found")
+        return path
+
+    def _body(self):
+        with open(self._services_script()) as f:
+            return f.read()
+
+    @staticmethod
+    def _extract_function(body, name):
+        """The function exactly as shipped: from its definition to the closing
+        brace in column 0. Testing a re-typed copy would not catch a drift."""
+        start = body.index('%s() {' % name)
+        end = body.index('\n}\n', start) + len('\n}\n')
+        return body[start:end]
+
+    def test_marker_is_not_read_through_command_substitution(self):
+        import re
+        self.assertIsNone(
+            re.search(r'\$\(\s*lsm_next_marker', self._body()),
+            "lsm_next_marker increments a global counter; reading its result "
+            "through $( ) runs that increment in a subshell, so every marker "
+            "comes back as (A)")
+
+    def test_marker_sequence_is_unique_and_survives_past_z(self):
+        harness = self._extract_function(self._body(), 'lsm_next_marker') + textwrap.dedent("""
+            set -euo pipefail
+            LSM_MARKER_IDX=0
+            for _ in {1..30}; do
+                lsm_next_marker
+                printf '%s\\n' "$LSM_MARKER"
+            done
+        """)
+        res = subprocess.run([BASH, '-c', harness], capture_output=True, text=True)
+        self.assertEqual(res.returncode, 0, res.stderr)
+
+        markers = res.stdout.split()
+        self.assertEqual(markers[:3], ['A', 'B', 'C'])
+        self.assertEqual(len(markers), 30)
+        self.assertEqual(len(set(markers)), 30,
+                         "a reused marker points two timers at one detail line; "
+                         "got: %r" % markers)
+
+    def test_hidden_oneshot_is_accounted_for_not_dropped(self):
+        body = self._body()
+        start = body.index('--active-personal)')
+        end = body.index('--failed-personal)')
+        self.assertIn(
+            'lsm_print_triggered_section', body[start:end],
+            "the status view filters out timer-driven oneshots, so it must also "
+            "print the section that accounts for them")
+
+
+class TestDistroParity(unittest.TestCase):
+    """Capability scripts are duplicated per distro. Most genuinely differ --
+    pacman is not apt -- but the distro-blind ones must stay byte-identical, or a
+    fix applied to one copy ships the original bug on the other distro.
+
+    This list is the set that is distro-blind today. Making one of them
+    distro-specific is a real decision: remove it here deliberately rather than
+    letting the copies drift apart silently.
+    """
+
+    DISTRO_BLIND = [
+        'boot_help.sh',
+        'cloud_sync.sh',
+        'install_services.sh',
+        'services_scripts.sh',
+        'view_grub.sh',
+    ]
+
+    def test_distro_blind_scripts_are_identical_across_distros(self):
+        import hashlib
+        distros_dir = os.path.join(SCRIPT_DIR, 'distros')
+        if not os.path.isdir(distros_dir):
+            self.skipTest("no distros directory")
+        distros = sorted(d for d in os.listdir(distros_dir)
+                         if os.path.isdir(os.path.join(distros_dir, d))
+                         and d not in ('common', '__pycache__'))
+        if len(distros) < 2:
+            self.skipTest("only one distro present")
+
+        for script in self.DISTRO_BLIND:
+            digests = {}
+            for distro in distros:
+                path = os.path.join(distros_dir, distro, script)
+                if not os.path.isfile(path):
+                    continue
+                with open(path, 'rb') as f:
+                    digests[distro] = hashlib.sha256(f.read()).hexdigest()
+            if len(digests) < 2:
+                continue
+            self.assertEqual(
+                len(set(digests.values())), 1,
+                "%s has drifted between distros: %s" % (script, digests))
+
+
 if __name__ == '__main__':
     unittest.main()

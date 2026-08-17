@@ -92,6 +92,102 @@ lsm_is_timer_triggered() {
     [[ -n "$trig" ]]
 }
 
+# Hidden units are not discarded, they are cross-referenced: the timer's row gets
+# a marker and the unit it activates is detailed in a section below. Without this
+# a timer-driven sync had no representation at all beyond its timer, and "where is
+# the service?" is a fair question to ask of a status view.
+LSM_DEFERRED=()
+LSM_MARKER_IDX=0
+
+# A..Z, then A2..Z2 and so on. Reusing a marker in a long listing would point two
+# timers at one detail line, which is worse than an ugly marker.
+#
+# Sets LSM_MARKER rather than echoing it: read through $( ), the counter would be
+# incremented inside a subshell and every marker would come back as (A).
+LSM_MARKER=""
+lsm_next_marker() {
+    local i="$LSM_MARKER_IDX" letter round
+    letter=$(printf "\\$(printf '%03o' $(( 65 + i % 26 )))")
+    round=$(( i / 26 ))
+    LSM_MARKER_IDX=$(( i + 1 ))
+    if (( round == 0 )); then
+        LSM_MARKER="$letter"
+    else
+        LSM_MARKER="${letter}$(( round + 1 ))"
+    fi
+}
+
+# One row of the main listing. A timer whose activated unit is hidden by
+# lsm_is_timer_triggered picks up a marker and queues that unit for the detail
+# section; everything else prints exactly as before.
+lsm_print_unit_row() {
+    local scope="$1" unit="$2" tag="$3"
+    local state ref="" activated marker
+
+    if [[ "$unit" == *.timer ]]; then
+        activated=$(lsm_systemctl "$scope" show "$unit" -p Unit --value 2>/dev/null || true)
+        if [[ -n "$activated" ]] && lsm_is_timer_triggered "$scope" "$activated"; then
+            lsm_next_marker
+            marker="$LSM_MARKER"
+            LSM_DEFERRED+=("$marker	$scope	$activated	$unit")
+            ref=" ${BLUE}──activates──▶${NC} ${YELLOW}($marker)${NC}"
+        fi
+    fi
+
+    state=$(lsm_systemctl "$scope" is-active "$unit" 2>/dev/null || echo "inactive")
+    if [[ "$state" == "active" ]]; then
+        echo -e "  ${GREEN}●${NC} [$tag] $unit (${GREEN}active/running${NC})$ref"
+    else
+        echo -e "  ${RED}○${NC} [$tag] $unit (${RED}inactive/stopped${NC})$ref"
+    fi
+}
+
+# The cross-referenced section. Nothing is printed when no timer-driven unit was
+# hidden, so a listing without timers looks exactly as it did before.
+#
+# Each property is queried on its own: `show -p A -p B --value` returns values in
+# systemd's own order, not the order of the arguments, so batching them silently
+# transposes the fields.
+lsm_print_triggered_section() {
+    (( ${#LSM_DEFERRED[@]} > 0 )) || return 0
+
+    echo ""
+    echo -e "${CYAN}Timer-activated units:${NC}"
+    echo -e "  ${BLUE}Type=oneshot — inactive between runs by design. The timer above is what${NC}"
+    echo -e "  ${BLUE}runs on a schedule; these are what it runs.${NC}"
+    echo ""
+
+    local rec marker scope unit timer tag active result last next detail
+    for rec in "${LSM_DEFERRED[@]}"; do
+        marker="${rec%%	*}"; rec="${rec#*	}"
+        scope="${rec%%	*}";  rec="${rec#*	}"
+        unit="${rec%%	*}"
+        timer="${rec#*	}"
+        tag="$(lsm_scope_label "$scope")"
+
+        active=$(lsm_systemctl "$scope" show "$unit" -p ActiveState --value 2>/dev/null || true)
+        result=$(lsm_systemctl "$scope" show "$unit" -p Result --value 2>/dev/null || true)
+        last=$(lsm_systemctl "$scope" show "$unit" -p ExecMainStartTimestamp --value 2>/dev/null || true)
+        next=$(lsm_systemctl "$scope" show "$timer" -p NextElapseUSecRealtime --value 2>/dev/null || true)
+
+        case "$active" in
+            active|activating|reloading)
+                detail="${GREEN}● running now${NC}" ;;
+            failed)
+                detail="${RED}✗ last run FAILED (${result:-unknown})${NC}${last:+ at $last}" ;;
+            *)
+                if [[ -z "$last" ]]; then
+                    detail="${YELLOW}○ never run${NC}"
+                else
+                    detail="${GREEN}✓ last run ok${NC} at $last"
+                fi ;;
+        esac
+
+        echo -e "  ${YELLOW}($marker)${NC} [$tag] $unit"
+        echo -e "      $detail${next:+ ${BLUE}·${NC} next $next}"
+    done
+}
+
 # Emits one NUL-terminated "<scope><TAB><unit-name>" record per personal unit,
 # gathered from both managers' personal-services.target plus the repo's own
 # services/ (system) and services/user/ (user) source directories. The source
@@ -257,26 +353,17 @@ case "$action" in
                 if [[ ${#instances[@]} -gt 0 ]]; then
                     for inst in "${instances[@]}"; do
                         lsm_is_timer_triggered "$scope" "$inst" && continue
-                        state=$(lsm_systemctl "$scope" is-active "$inst" 2>/dev/null || echo "inactive")
-                        if [[ "$state" == "active" ]]; then
-                            echo -e "  ${GREEN}●${NC} [$tag] $inst (${GREEN}active/running${NC})"
-                        else
-                            echo -e "  ${RED}○${NC} [$tag] $inst (${RED}inactive/stopped${NC})"
-                        fi
+                        lsm_print_unit_row "$scope" "$inst" "$tag"
                     done
                 else
                     echo -e "  ${BLUE}ℹ${NC} [$tag] $name (No active instances)"
                 fi
             else
                 lsm_is_timer_triggered "$scope" "$name" && continue
-                state=$(lsm_systemctl "$scope" is-active "$name" 2>/dev/null || echo "inactive")
-                if [[ "$state" == "active" ]]; then
-                    echo -e "  ${GREEN}●${NC} [$tag] $name (${GREEN}active/running${NC})"
-                else
-                    echo -e "  ${RED}○${NC} [$tag] $name (${RED}inactive/stopped${NC})"
-                fi
+                lsm_print_unit_row "$scope" "$name" "$tag"
             fi
         done < <(collect_personal_units)
+        lsm_print_triggered_section
         ;;
     --failed-personal)
         echo -e "${CYAN}Failed Personal Services & Timers Check:${NC}"

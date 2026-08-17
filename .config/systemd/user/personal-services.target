@@ -1,1 +1,15 @@
-../../../workspace/tools/linux-system-manager/services/user/personal-services.target
+# The grouping for this user's own background services and timers.
+#
+# Owned here, in dotfiles, because which services count as "personal" is this
+# user's configuration -- not something a tool should decide. linux-system-manager
+# only *queries* this target by name (Section 5) to discover what to display and
+# manage; it neither ships nor installs it.
+#
+# WantedBy=default.target, not multi-user.target: multi-user.target does not
+# exist in the user manager, and a user unit wanting it enables without error
+# and then silently never activates.
+[Unit]
+Description=Personal Application Services & Timers Target
+
+[Install]
+WantedBy=default.target

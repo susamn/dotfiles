@@ -156,10 +156,28 @@ SKILL_DIR="$REPO/workspace/aistuff/skills/dotfiles-management"
   assert_success "workspace/aistuff must never be stowed into \$HOME"
 }
 
+# ── CI configuration ─────────────────────────────────────────────────────────
+
+@test "no workflow checks out every submodule" {
+  # `submodules: true` fetches .config/_secured, which is private. The runner
+  # cannot clone it and aborts the entire checkout before a single test runs.
+  # Fetch the specific submodules a job needs instead.
+  for wf in "$REPO"/.github/workflows/*.yml; do
+    [ -e "$wf" ] || continue
+    if grep -E '^\s*submodules:\s*(true|recursive)\s*$' "$wf" >/dev/null; then
+      fail "$(basename "$wf") checks out all submodules; one of them is private"
+    fi
+  done
+  true
+}
+
 # ── skill references ─────────────────────────────────────────────────────────
 
 @test "every dotfiles-management reference is routed from SKILL.md" {
   # A reference nothing points at is one an agent never reads.
+  # Skips rather than fails when the skills submodule is not checked out: CI
+  # deliberately does not fetch every submodule, because one of them is private.
+  [ -f "$SKILL_DIR/SKILL.md" ] || skip "skills submodule not checked out"
   [ -d "$SKILL_DIR/references" ] || skip "no references directory"
   for ref in "$SKILL_DIR/references"/*.md; do
     local name
@@ -170,6 +188,7 @@ SKILL_DIR="$REPO/workspace/aistuff/skills/dotfiles-management"
 }
 
 @test "SKILL.md stays within the authoring budget" {
+  [ -f "$SKILL_DIR/SKILL.md" ] || skip "skills submodule not checked out"
   run bash -c "wc -l < '$SKILL_DIR/SKILL.md'"
   assert_success
   [ "$output" -le 200 ] || fail "SKILL.md is $output lines; the ceiling is 200"

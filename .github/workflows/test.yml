@@ -17,11 +17,23 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      # NOT submodules: true. That fetches every submodule including
+      # .config/_secured, which is private and aborts the whole checkout on a
+      # runner. Only the two bats helpers are actually required.
       with:
-        # bats-support and bats-assert are submodules under workspace/tests, and
-        # the configuration invariants read the skills submodule. Without this the
-        # suite fails at `load` rather than reporting a real result.
-        submodules: true
+        submodules: false
+
+    - name: Fetch the bats helpers
+      run: |
+        git submodule update --init --depth 1 \
+          workspace/tests/test_helper/bats-support \
+          workspace/tests/test_helper/bats-assert
+
+    - name: Fetch the skills submodule (optional)
+      # Only the skill-reference cases need it, and they skip when it is absent,
+      # so a private or unavailable submodule must not fail the suite.
+      continue-on-error: true
+      run: git submodule update --init --depth 1 workspace/aistuff
 
     - name: Install bats-core
       run: |

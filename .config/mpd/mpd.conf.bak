@@ -2,7 +2,13 @@
 music_directory    "/home/susamn/Music/susamn-music-collection"
 
 # Database and log files
-playlist_directory "/home/susamn/Music/susamn-music-playlists"
+#
+# Playlists are no longer synced from Drive: they live in the music-metadata git
+# repo, cloned wherever you like. Nothing in this repo can know that path, so the
+# template ships a placeholder and `mpdc configure` asks for it. An unsubstituted
+# placeholder reaching mpd.conf means configure was never run -- MPD then fails
+# loudly rather than quietly serving zero playlists.
+playlist_directory "@PLAYLIST_DIR@"
 db_file            "~/.local/share/mpd/mpd.db"
 log_file           "~/.local/share/mpd/mpd.log"
 pid_file           "~/.local/share/mpd/mpd.pid"

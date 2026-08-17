@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # mpd-configurer.sh — generates/updates ~/.config/mpd/mpd.conf from a
 # hand-maintained ~/.config/mpd/mpd.conf.bak template (kept in version
-# control) plus two rclone-sync profiles (picked interactively via fzf, or
-# typed if fzf isn't available): only music_directory/playlist_directory get
-# overwritten, everything else in the template is kept as-is. Also manages
-# the mpd user daemon and queries it for tracks/playlists/stats via mpc.
+# control) plus the tracks rclone-sync profile (picked interactively via fzf, or
+# typed if fzf isn't available) and a playlists directory that is asked for --
+# playlists come from the music-metadata git repo, not from a sync profile.
+# Only music_directory/playlist_directory get overwritten, everything else in
+# the template is kept as-is. Also manages the mpd user daemon and queries it
+# for tracks/playlists/stats via mpc.
 #
 # Visual style matches linux-system-manager.sh (same palette/header/icons) —
 # single flat script, no menu engine.
@@ -13,6 +15,13 @@ set -euo pipefail
 PROFILES_DIR="$HOME/.config/rclone-sync-profiles"
 MPD_DIR="$HOME/.config/mpd"
 MPD_CONF="$MPD_DIR/mpd.conf"
+
+# Playlists come from the music-metadata git repo, not an rclone profile, so
+# there is no profile to read their path out of -- configure asks for it. The
+# template ships this placeholder rather than a real path, so an unconfigured
+# mpd.conf fails loudly instead of quietly serving zero playlists.
+PLAYLIST_PLACEHOLDER='@PLAYLIST_DIR@'
+DEFAULT_PLAYLIST_DIR="$HOME/Music/music-metadata/playlists"
 
 # --- Palette (matches linux-system-manager.sh) ---
 # $'...' (ANSI-C quoting) so \033 is a real escape byte in the variable
@@ -107,6 +116,58 @@ select_profile() {
     echo "$choice"
 }
 
+# The playlist_directory already in mpd.conf, so that re-running configure is a
+# single Enter. Stays empty when there is no config yet, when it still holds the
+# placeholder, or when it names a directory that no longer exists -- offering a
+# path back that is already wrong just invites Enter to be pressed through it.
+current_playlist_dir() {
+    [[ -f "$MPD_CONF" ]] || return 0
+    local value
+    value="$(grep -E '^playlist_directory[[:space:]]' "$MPD_CONF" | head -1 \
+             | sed -E 's/^playlist_directory[[:space:]]+"(.*)".*/\1/')"
+    [[ "$value" == "$PLAYLIST_PLACEHOLDER" ]] && return 0
+    [[ -d "$value" ]] || return 0
+    printf '%s' "$value"
+}
+
+# Sets PLAYLIST_DIR. Assigns to a global rather than echoing a value back through
+# command substitution: `read -e` drives readline, and readline's echo of the
+# edited line would end up captured along with the answer.
+PLAYLIST_DIR=""
+select_playlist_dir() {
+    local default choice
+    default="$(current_playlist_dir)"
+    [[ -n "$default" ]] || default="$DEFAULT_PLAYLIST_DIR"
+
+    echo -e "${DIM}Playlists live in the music-metadata git clone. Give the path to its${NC}" >&2
+    echo -e "${DIM}playlists/ directory -- it must already exist; configure never creates it.${NC}" >&2
+    echo -en "${PRIMARY}Playlists directory:${NC} " >&2
+    read -r -e -i "$default" choice
+
+    choice="${choice/#\~/$HOME}"   # readline does not expand a typed ~
+    choice="${choice%/}"
+
+    if [[ -z "$choice" ]]; then
+        err "No playlists directory given."
+        exit 1
+    fi
+    # Deliberately not mkdir -p: a typo would become a real empty directory and
+    # MPD would then report no playlists, with nothing anywhere saying why.
+    if [[ ! -d "$choice" ]]; then
+        err "Not a directory: $choice"
+        err "Clone the music-metadata repo first, then re-run."
+        exit 1
+    fi
+
+    local count
+    count=$(find "$choice" -maxdepth 1 -name '*.m3u' 2>/dev/null | wc -l)
+    if (( count == 0 )); then
+        warn "$choice contains no .m3u files — MPD will show no playlists."
+    fi
+
+    PLAYLIST_DIR="$choice"
+}
+
 generate_conf() {
     print_header "🎵 MPD Configure"
 
@@ -118,22 +179,24 @@ generate_conf() {
         exit 1
     fi
 
-    local tracks_profile playlists_profile
+    local tracks_profile
     tracks_profile="$(select_profile "Select TRACKS sync profile")"
-    playlists_profile="$(select_profile "Select PLAYLISTS sync profile")"
 
     local music_dir playlist_dir
     music_dir="$(profile_field "$tracks_profile" LOCAL_PATH)"
-    playlist_dir="$(profile_field "$playlists_profile" LOCAL_PATH)"
+    select_playlist_dir
+    playlist_dir="$PLAYLIST_DIR"
 
     echo
     echo -e "${PRIMARY}$(hr 62)${NC}"
-    echo -e "${DIM}Tracks profile:${NC}    ${BOLD}$tracks_profile${NC} ${DIM}($music_dir)${NC}"
-    echo -e "${DIM}Playlists profile:${NC} ${BOLD}$playlists_profile${NC} ${DIM}($playlist_dir)${NC}"
+    echo -e "${DIM}Tracks profile:${NC} ${BOLD}$tracks_profile${NC} ${DIM}($music_dir)${NC}"
+    echo -e "${DIM}Playlists dir:${NC}  ${BOLD}$playlist_dir${NC}"
     echo -e "${PRIMARY}$(hr 62)${NC}"
     echo
 
-    mkdir -p "$MPD_DIR" "$music_dir" "$playlist_dir"
+    # Only the music directory is created: it is the destination of an rclone
+    # sync that owns it. The playlists directory is a git clone and must exist.
+    mkdir -p "$MPD_DIR" "$music_dir"
 
     local mpd_share_dir="$HOME/.local/share/mpd"
     if [[ ! -d "$mpd_share_dir" ]]; then
@@ -211,10 +274,10 @@ Usage: $(basename "$0") <command> [args]
 
 ${ACCENT}configure${NC}                   regenerate ~/.config/mpd/mpd.conf from the
                              ~/.config/mpd/mpd.conf.bak template (errors out if
-                             missing); prompts (fzf, or type-to-enter) to pick
-                             the tracks/playlists rclone-sync profiles, patches
-                             only music_directory/playlist_directory, and
-                             ensures the target folders exist
+                             missing); prompts (fzf, or type-to-enter) for the
+                             tracks rclone-sync profile, then for the playlists
+                             directory in the music-metadata git clone, and
+                             patches only music_directory/playlist_directory
 
 ${ACCENT}start | stop | restart${NC}      manage the mpd.service user daemon
 ${ACCENT}enable${NC}                      enable + start mpd.service (persist across reboot)

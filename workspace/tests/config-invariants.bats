@@ -53,14 +53,37 @@ SKILL_DIR="$REPO/workspace/aistuff/skills/dotfiles-management"
 }
 
 @test "the music tracks profile keeps playlists out of the music directory" {
-  # music-tracks syncs a parent of the playlists path, so without these excludes
-  # every playlist lands in MPD's music_directory alongside the audio.
+  # Playlists moved to the music-metadata git repo and music-metadata was deleted
+  # from Drive, so these excludes now guard rather than filter: they are what
+  # stops anything reappearing under Media/Music from landing in MPD's
+  # music_directory. Cheap to keep, and the failure they prevent is silent.
   local conf="$PROFILES/music-tracks.conf"
   [ -f "$conf" ] || skip "music-tracks profile not present"
   run grep -q -- '--exclude=\*\.m3u' "$conf"
   assert_success "music-tracks must exclude *.m3u"
   run grep -q -- '--exclude=/music-metadata/\*\*' "$conf"
   assert_success "music-tracks must exclude /music-metadata/**"
+}
+
+@test "the mpd template ships a placeholder playlist directory, not a real path" {
+  # Playlists live in a git clone whose location this repo cannot know, so
+  # 'mpdc configure' asks for it. A real path in the template would be used
+  # verbatim whenever configure has not run, pointing MPD at a directory nobody
+  # chose -- the placeholder makes that state fail loudly instead.
+  local bak="$REPO/.config/mpd/mpd.conf.bak"
+  [ -f "$bak" ] || skip "mpd template not present"
+  run grep -qE '^playlist_directory[[:space:]]+"@PLAYLIST_DIR@"' "$bak"
+  assert_success "mpd.conf.bak must ship playlist_directory as @PLAYLIST_DIR@"
+}
+
+@test "no rclone profile claims the playlists directory" {
+  # Playlists are git-managed now. A profile syncing into them would fight the
+  # repo, and SYNC_TYPE=one deletes at the destination -- it would erase the
+  # working tree rather than merely duplicate it.
+  for conf in "$PROFILES"/*.conf; do
+    run grep -qE '^LOCAL_PATH=.*(music-metadata|music-playlists)' "$conf"
+    assert_failure "$(basename "$conf") syncs into git-managed playlist territory"
+  done
 }
 
 @test "no profile still filters on m3u8" {

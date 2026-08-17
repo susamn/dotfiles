@@ -82,7 +82,9 @@ repo and links it into `~/.config`.
 
 Installation is additive and idempotent: re-running never disables or removes
 anything. There is deliberately **no uninstall path** — removing a profile leaves
-its `/etc` units behind for you to clean up.
+its `/etc` units behind, and its now-dangling stow symlink in `~/.config`, for you
+to clean up. The full sequence is in the `dotfiles-management` skill,
+`references/music-sync-and-mpd.md` §9.
 
 ## Environment variables
 

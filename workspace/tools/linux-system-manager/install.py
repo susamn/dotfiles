@@ -54,7 +54,131 @@ def detect_distro():
             
     return None, info.get('NAME', 'Unknown')
 
-def install_systemd_services():
+# ── survey: what is installable, and what state is it in ─────────────────────
+# Pure inspection -- reads only, changes nothing, needs no root. This is what
+# lets the menu show "already installed" instead of blindly reinstalling.
+
+UNIT_DEST = '/etc/systemd/system'
+TEMPLATED_UNITS = ('rclone-sync@.service', 'rclone-mount@.service')
+RUNNERS = [
+    ('rclone-sync.sh', '/usr/local/bin/rclone-sync.sh'),
+    ('rclone-mount.sh', '/usr/local/bin/rclone-mount.sh'),
+    ('cleanup-backups.sh', '/usr/local/bin/sys-manager-cleanup-backups.sh'),
+]
+
+
+def _real_user():
+    return os.environ.get('SUDO_USER') or os.environ.get('USER') or 'root'
+
+
+def _rendered(src_path, filename, user):
+    """Source content as it would land on disk, with @USER@ resolved.
+
+    Compared post-substitution: the raw source never equals the installed file
+    for templated units, so a naive diff would report them permanently stale.
+    """
+    with open(src_path) as f:
+        content = f.read()
+    if filename in TEMPLATED_UNITS:
+        content = content.replace('@USER@', user)
+    return content
+
+
+def _file_state(src_path, dest_path, filename=None, user=None):
+    if not os.path.exists(dest_path):
+        return 'missing'
+    try:
+        want = (_rendered(src_path, filename, user) if filename
+                else open(src_path).read())
+        return 'current' if open(dest_path).read() == want else 'stale'
+    except Exception:
+        return 'unknown'
+
+
+def survey():
+    """Returns a list of installable items, each a dict with id/kind/state/detail."""
+    user = _real_user()
+    items = []
+
+    if os.path.isdir(SERVICES_SRC_DIR):
+        for f in sorted(os.listdir(SERVICES_SRC_DIR)):
+            if f.endswith(('.service', '.timer', '.target')):
+                src = os.path.join(SERVICES_SRC_DIR, f)
+                items.append({
+                    'id': f, 'kind': 'unit',
+                    'state': _file_state(src, os.path.join(UNIT_DEST, f), f, user),
+                    'detail': UNIT_DEST,
+                })
+        for src_name, dest in RUNNERS:
+            src = os.path.join(SERVICES_SRC_DIR, src_name)
+            if os.path.exists(src):
+                items.append({
+                    'id': src_name, 'kind': 'engine',
+                    'state': _file_state(src, dest), 'detail': dest,
+                })
+
+    # profiles: registered = has a timer drop-in and is enabled
+    import glob
+    profile_dir = os.path.join(os.path.expanduser(f'~{user}'),
+                               '.config/rclone-sync-profiles')
+    for conf in sorted(glob.glob(os.path.join(profile_dir, '*.conf'))):
+        name = os.path.splitext(os.path.basename(conf))[0]
+        cfg = {}
+        try:
+            for line in open(conf):
+                if '=' in line and not line.strip().startswith('#'):
+                    k, v = line.strip().split('=', 1)
+                    cfg[k.strip()] = v.strip('"\'')
+        except Exception:
+            pass
+        is_mount = cfg.get('SYNC_TYPE') == 'mount'
+        unit = (f'rclone-mount@{name}.service' if is_mount
+                else f'rclone-sync@{name}.timer')
+        try:
+            enabled = subprocess.run(['systemctl', 'is-enabled', unit],
+                                     capture_output=True, text=True,
+                                     timeout=5).stdout.strip()
+        except Exception:
+            enabled = 'unknown'
+        state = {'enabled': 'current', 'enabled-runtime': 'current'}.get(
+            enabled, 'missing' if enabled in ('', 'not-found') else 'disabled')
+        items.append({
+            'id': name, 'kind': 'profile', 'state': state,
+            'detail': f"{unit} ({cfg.get('SCHEDULE') or 'no schedule'})",
+        })
+    return items
+
+
+STATE_STYLE = {
+    'current': (GREEN, '✓ installed'),
+    'stale':   (YELLOW, '~ outdated'),
+    'missing': (RED, '✗ not installed'),
+    'disabled': (YELLOW, '○ installed, disabled'),
+    'unknown': (YELLOW, '? unknown'),
+}
+
+
+def print_survey(items):
+    kinds = [('unit', 'Systemd units → /etc/systemd/system'),
+             ('engine', 'Engines → /usr/local/bin'),
+             ('profile', 'Rclone profiles → timers/mounts')]
+    n = 0
+    index = []
+    for kind, title in kinds:
+        rows = [i for i in items if i['kind'] == kind]
+        if not rows:
+            continue
+        print(f"\n{CYAN}{title}{NC}")
+        for it in rows:
+            n += 1
+            index.append(it)
+            colour, label = STATE_STYLE.get(it['state'], STATE_STYLE['unknown'])
+            print(f"  {BLUE}{n:2}{NC}) {colour}{label:<22}{NC} {it['id']}"
+                  f"  {BLUE}{it['detail']}{NC}")
+    return index
+
+
+def install_systemd_services(only=None):
     real_user = os.environ.get('SUDO_USER', os.environ.get('USER', 'root'))
     dest_dir = '/etc/systemd/system'
 
@@ -64,6 +188,8 @@ def install_systemd_services():
 
     service_files = [f for f in os.listdir(SERVICES_SRC_DIR)
                      if f.endswith(('.service', '.timer', '.target'))]
+    if only is not None:
+        service_files = [f for f in service_files if f in only]
 
     if not service_files:
         print(f"{YELLOW}ℹ No systemd services or timers found in {SERVICES_SRC_DIR}.{NC}")
@@ -121,7 +247,7 @@ def run_distro_installer(distro_id):
     except Exception as e:
         print(f"  {RED}✗ Failed to execute distro installer: {e}{NC}")
 
-def install_rclone_sync_helper():
+def install_rclone_sync_helper(only_engines=None, only_profiles=None):
     
     # 1. Copy sync and mount runner scripts
     runners = [
@@ -129,6 +255,9 @@ def install_rclone_sync_helper():
         ('rclone-mount.sh', '/usr/local/bin/rclone-mount.sh'),
         ('cleanup-backups.sh', '/usr/local/bin/sys-manager-cleanup-backups.sh'),
     ]
+
+    if only_engines is not None:
+        runners = [r for r in runners if r[0] in only_engines]
 
     print(f"{BLUE}⚙ Installing Rclone Sync and Mount helper utilities...{NC}")
     for src_file, dest_path in runners:
@@ -155,6 +284,10 @@ def install_rclone_sync_helper():
     if real_user != 'root':
         profile_paths.extend(glob.glob('/root/.config/rclone-sync-profiles/*.conf'))
     
+    if only_profiles is not None:
+        profile_paths = [p for p in profile_paths
+                         if os.path.splitext(os.path.basename(p))[0] in only_profiles]
+
     if profile_paths:
         print(f"  Found {len(profile_paths)} profiles. Validating and registering systemd services...")
         for src_path in profile_paths:
@@ -286,13 +419,137 @@ def install_rclone_sync_helper():
 
 
 
+def parse_selection(raw, count):
+    """'1 3 5', '1-4', 'a' for all, 'n'/empty for none. Returns a set of 1-based ids."""
+    raw = raw.strip().lower()
+    if raw in ('', 'n', 'q'):
+        return set()
+    if raw in ('a', 'all', '*'):
+        return set(range(1, count + 1))
+    chosen = set()
+    for tok in raw.replace(',', ' ').split():
+        if '-' in tok:
+            try:
+                lo, hi = (int(x) for x in tok.split('-', 1))
+            except ValueError:
+                continue
+            chosen.update(x for x in range(lo, hi + 1) if 1 <= x <= count)
+        elif tok.isdigit() and 1 <= int(tok) <= count:
+            chosen.add(int(tok))
+    return chosen
+
+
+def apply_selection(spec):
+    """Install exactly the items named in 'kind:id,kind:id'. Requires root."""
+    units, engines, profiles = set(), set(), set()
+    for tok in spec.split(','):
+        if ':' not in tok:
+            continue
+        kind, _, ident = tok.partition(':')
+        {'unit': units, 'engine': engines, 'profile': profiles}.get(
+            kind, set()).add(ident)
+
+    failed = []
+    if units:
+        try:
+            install_systemd_services(only=units)
+        except Exception as e:
+            failed.append(f"units: {e}")
+    if engines or profiles:
+        try:
+            install_rclone_sync_helper(only_engines=engines, only_profiles=profiles)
+        except Exception as e:
+            failed.append(f"rclone: {e}")
+    print()
+    for line in failed:
+        print(f"  {RED}✗ {line}{NC}")
+    print(f"{GREEN}✓ Done.{NC}" if not failed else f"{RED}✗ Completed with errors.{NC}")
+    return 1 if failed else 0
+
+
+def interactive_install(distro_id):
+    """Show what is installed, ask what to install, install only that.
+
+    Runs unprivileged up to the point of choosing: seeing the list and picking
+    from it must not cost a password, so escalation happens afterwards, carrying
+    the selection across the re-exec.
+    """
+    items = survey()
+    if not items:
+        print(f"{YELLOW}ℹ Nothing installable found in {SERVICES_SRC_DIR}.{NC}")
+        return 0
+
+    index = print_survey(items)
+    pending = [n for n, it in enumerate(index, 1) if it['state'] != 'current']
+
+    print()
+    if pending:
+        print(f"{YELLOW}{len(pending)} item(s) need attention: "
+              f"{' '.join(str(n) for n in pending)}{NC}")
+    else:
+        print(f"{GREEN}Everything is installed and current.{NC}")
+
+    print(f"{BLUE}Select: numbers (1 3 5), ranges (1-4), 'a' for all, "
+          f"'p' for just the pending ones, Enter to cancel.{NC}")
+    try:
+        raw = input("Install> ").strip()
+    except EOFError:
+        return 0
+    if raw.lower() == 'p':
+        chosen = set(pending)
+    else:
+        chosen = parse_selection(raw, len(index))
+
+    if not chosen:
+        print(f"{YELLOW}Nothing selected. No changes made.{NC}")
+        return 0
+
+    picked = [index[n - 1] for n in sorted(chosen)]
+    spec = ','.join(f"{i['kind']}:{i['id']}" for i in picked)
+
+    print()
+    print(f"{CYAN}Installing {len(picked)} item(s):{NC}")
+    for i in picked:
+        print(f"  • {i['id']}")
+    print()
+
+    if os.geteuid() == 0:
+        return apply_selection(spec)
+
+    print(f"{YELLOW}Root is required to write these. Re-running with sudo...{NC}")
+    try:
+        os.execvp('sudo', ['sudo', sys.executable, os.path.abspath(__file__),
+                           '--install', spec])
+    except Exception as e:
+        print(f"{RED}✗ Failed to elevate: {e}{NC}")
+        return 1
+
+
 def main():
+    mode = sys.argv[1] if len(sys.argv) > 1 else '--all'
+
     print(f"{CYAN}╔════════════════════════════════════════════════╗{NC}")
     print(f"{CYAN}║     sys-manager Global Installation Setup      ║{NC}")
     print(f"{CYAN}╚════════════════════════════════════════════════╝{NC}")
     print()
-    
+
+    # --status is read-only, so it deliberately does not escalate: seeing what is
+    # installed should never require a password.
+    if mode == '--status':
+        print_survey(survey())
+        print()
+        return
+
+    # --interactive surveys and prompts unprivileged, then re-execs itself as
+    # --install once a selection exists.
+    if mode in ('--interactive', '-i'):
+        distro_id, _ = detect_distro()
+        sys.exit(interactive_install(distro_id))
+
     check_root()
+
+    if mode == '--install':
+        sys.exit(apply_selection(sys.argv[2] if len(sys.argv) > 2 else ''))
     
     distro_id, distro_name = detect_distro()
     if not distro_id:

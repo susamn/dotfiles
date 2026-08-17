@@ -742,6 +742,66 @@ class TestTimerTriggeredServiceNoise(unittest.TestCase):
         self.assertIn('TriggeredBy', self.body)
         self.assertIn('[[ -n "$trig" ]]', self.body)
 
+class TestInteractiveInstaller(unittest.TestCase):
+    """Installing was a manual step outside the tool, so a new machine silently
+    ended up with units present but nothing enabled."""
+
+    @classmethod
+    def setUpClass(cls):
+        spec = importlib.util.spec_from_file_location(
+            "installer_ui", os.path.join(SCRIPT_DIR, "install.py"))
+        cls.mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.mod)
+
+    def test_survey_is_read_only_and_needs_no_root(self):
+        """Seeing what is installed must never cost a password."""
+        items = self.mod.survey()
+        self.assertIsInstance(items, list)
+        for it in items:
+            self.assertIn(it['kind'], ('unit', 'engine', 'profile'))
+            self.assertIn(it['state'],
+                          ('current', 'stale', 'missing', 'disabled', 'unknown'))
+
+    def test_status_mode_does_not_escalate(self):
+        with open(os.path.join(SCRIPT_DIR, 'install.py')) as f:
+            src = f.read()
+        status_block = src[src.index("if mode == '--status'"):
+                           src.index("check_root()")]
+        self.assertNotIn('execvp', status_block)
+        self.assertNotIn('check_root', status_block)
+
+    def test_templated_units_compare_after_substitution(self):
+        """@USER@ means the raw source never equals the installed file, so a
+        naive diff would report those units permanently outdated."""
+        self.assertIn('_rendered', dir(self.mod))
+        with open(os.path.join(SCRIPT_DIR, 'install.py')) as f:
+            src = f.read()
+        self.assertIn('TEMPLATED_UNITS', src)
+
+    def test_selection_is_carried_as_kind_id_not_indices(self):
+        """Indices would rebind to different items if the survey order shifted
+        between the unprivileged prompt and the privileged re-exec."""
+        with open(os.path.join(SCRIPT_DIR, 'install.py')) as f:
+            src = f.read()
+        self.assertIn("f\"{i['kind']}:{i['id']}\"", src)
+
+    def test_parse_selection_forms(self):
+        p = self.mod.parse_selection
+        self.assertEqual(sorted(p('1 3 5', 10)), [1, 3, 5])
+        self.assertEqual(sorted(p('1-4', 10)), [1, 2, 3, 4])
+        self.assertEqual(sorted(p('2,4', 10)), [2, 4])
+        self.assertEqual(p('a', 3), {1, 2, 3})
+        self.assertEqual(p('', 10), set())
+        self.assertEqual(p('n', 10), set())
+
+    def test_parse_selection_rejects_out_of_range_and_garbage(self):
+        """Silently dropping a bad token beats installing the wrong item."""
+        p = self.mod.parse_selection
+        self.assertEqual(p('99', 10), set())
+        self.assertEqual(p('abc', 10), set())
+        self.assertEqual(p('0', 10), set())
+        self.assertEqual(sorted(p('1-99', 3)), [1, 2, 3])
+
 
 if __name__ == '__main__':
     unittest.main()

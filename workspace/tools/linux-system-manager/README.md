@@ -30,10 +30,24 @@ linux-system-manager/
 ## Getting Started
 
 ### 1. Installation
-To install custom systemd services and register distro-specific package manager hooks:
+
+From the menu (**Section 5**), which shows what is already installed before
+changing anything:
+
+- **54** — Show Installed / Available Services (read-only, no password)
+- **55** — Install or Update Services (pick items, then it escalates)
+
+Or non-interactively:
+
 ```bash
-sudo ./install.py
+./install.py --status        # what is installed, no root needed
+./install.py --interactive   # choose what to install
+sudo ./install.py            # install everything
 ```
+
+Installation is idempotent and additive: re-running never disables or removes
+anything. Units already matching their source are reported as installed and
+skipped.
 
 ### 2. Run the System Manager
 To start the interactive CLI menu:

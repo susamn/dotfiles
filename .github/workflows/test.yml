@@ -1,21 +1,84 @@
-name: Test Scripts and Aliases
+name: Scripts, aliases and configuration
 
 on: [push, pull_request]
 
+# A second push to the same branch makes the first run irrelevant.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
-  test:
+  bats:
+    name: Bats suite
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
-        submodules: true  # Optional: only needed if you use git submodules
+        # bats-support and bats-assert are submodules under workspace/tests, and
+        # the configuration invariants read the skills submodule. Without this the
+        # suite fails at `load` rather than reporting a real result.
+        submodules: true
 
     - name: Install bats-core
       run: |
-        sudo apt-get update
+        sudo apt-get update -qq
         sudo apt-get install -y bats
+        bats --version
 
-    - name: Run tests
+    - name: Run the suite
+      # Directory discovery rather than named files, so a new .bats file is picked
+      # up automatically instead of silently never running.
+      run: bats workspace/tests
+
+  units:
+    name: Systemd unit files
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Validate every shipped unit
+      # systemd-analyze catches malformed directives. Template units cannot be
+      # verified without an instance name, so they are checked by instantiating
+      # them against a throwaway name rather than being skipped outright.
       run: |
-        bats workspace/tests
+        rc=0
+        for unit in workspace/services/*.service workspace/services/*.timer \
+                    workspace/services/*.target; do
+          [ -e "$unit" ] || continue
+          case "$unit" in
+            *@.service|*@.timer)
+              inst="${unit%@.*}@ci.${unit##*.}"
+              cp "$unit" "/tmp/$(basename "$inst")"
+              if ! systemd-analyze verify "/tmp/$(basename "$inst")" 2>/tmp/err; then
+                echo "::error file=$unit::$(cat /tmp/err)"; rc=1
+              fi
+              ;;
+            *)
+              if ! systemd-analyze verify "$unit" 2>/tmp/err; then
+                echo "::error file=$unit::$(cat /tmp/err)"; rc=1
+              fi
+              ;;
+          esac
+        done
+        exit $rc
+
+    - name: Reject a WantedBy that cannot resolve in its own scope
+      # multi-user.target does not exist in the user manager. A user unit wanting
+      # it enables without error and then never activates -- quieter than a
+      # failure, and the exact bug this repo has already shipped once.
+      run: |
+        rc=0
+        for unit in .config/systemd/user/*.service .config/systemd/user/*.timer \
+                    .config/systemd/user/*.target; do
+          [ -e "$unit" ] || continue
+          if grep -vE '^\s*[#;]' "$unit" | grep -qE '^WantedBy=.*multi-user\.target'; then
+            echo "::error file=$unit::user-scope unit wants multi-user.target"
+            rc=1
+          fi
+        done
+        exit $rc

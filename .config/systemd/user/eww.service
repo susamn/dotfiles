@@ -1,0 +1,18 @@
+[Unit]
+Description=Eww Widget Daemon (lyrics scroll widget)
+After=graphical-session.target
+
+[Service]
+Type=simple
+# scripts/lyrics-listen.sh shells out to "mpdtui" (installed via Homebrew
+# at /home/linuxbrew/.linuxbrew/bin), which isn't on a systemd user
+# service's own minimal default PATH -- unlike an interactive shell, this
+# doesn't source .zshrc/.bashrc/.profile at all.
+Environment=PATH=/home/linuxbrew/.linuxbrew/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/usr/bin/eww daemon --no-daemonize
+ExecStartPost=/usr/bin/sleep 2
+ExecStartPost=/usr/bin/eww open lyrics-window
+Restart=on-failure
+
+[Install]
+WantedBy=default.target personal-services.target

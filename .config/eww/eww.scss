@@ -1,0 +1,55 @@
+* {
+    all: unset;
+}
+
+.lyrics-box {
+    background-color: rgba(0, 0, 0, 0.55);
+    border-radius: 12px;
+    padding: 14px 20px;
+    font-family: "DejaVu Sans Mono", monospace;
+    /* Fixed regardless of how long/short the current line's text is --
+       otherwise the box (not the window, which is already a fixed
+       620px) visibly shrinks and grows to fit whichever line is
+       currently longest. 580px = 620px window width minus this box's
+       own 20px left/right padding. */
+    min-width: 580px;
+}
+
+.lyrics-context, .lyrics-current {
+    font-size: 15px;
+    margin: 2px 0;
+}
+
+.lyrics-context {
+    color: #888888;
+}
+
+.lyrics-current {
+    /* Same weight as the context lines on purpose -- font-size is set
+       per-instance via the bound :style attribute (shrinks for long
+       lines, see lyrics-listen.sh's font_size_for), not here. */
+    color: #ffe66d;
+    opacity: 1;
+    transition: opacity 300ms ease;
+}
+
+.lyrics-current.dim {
+    /* The brief in-between state on a line change -- see
+       lyrics-listen.sh's two-phase "reveal" emission. Opacity only, so
+       this row's own height never changes and nothing above/below it
+       moves. */
+    opacity: 0.15;
+}
+
+.lyrics-close {
+    color: #888888;
+    font-size: 12px;
+    margin: 4px 6px 0 0;
+    padding: 2px 5px;
+    border-radius: 6px;
+}
+
+.lyrics-close:hover {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.15);
+}

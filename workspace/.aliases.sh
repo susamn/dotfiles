@@ -18,6 +18,35 @@ alias pfm="$TOOLS_PATH/performance-manager/quick-start.sh"
 alias mtrm="$TOOLS_PATH/media-trimmer/quick-start.sh"
 alias att="$TOOLS_PATH/api-testing-tool/quick-start.sh"
 
+# eww widgets (lyrics scroll + mpd player, see ~/.config/eww/) --
+# restart picks up ~/.config/systemd/user/eww.service, eww.yuck, or
+# eww.scss changes; reload is lighter (yuck/scss only, no daemon
+# restart, but won't pick up a changed unit file).
+alias ewwr="systemctl --user restart eww.service"
+alias ewwreload="eww reload"
+alias ewwlog="journalctl --user -u eww.service -f"
+alias ewwst="systemctl --user status eww.service"
+
+# Reopen the mpd player widget on both monitors after a manual "eww
+# close" -- matches eww.service's own ExecStartPost invocations exactly
+# (see that file for why win-id is required: each instance's close
+# button targets itself by that id, not the shared "mpd-player-window"
+# name neither open instance actually uses).
+mpdwidget() {
+  case "$1" in
+    open)
+      eww open --id mpd-player-screen0 --screen 0 --arg win-id=mpd-player-screen0 mpd-player-window
+      eww open --id mpd-player-screen1 --screen 1 --arg win-id=mpd-player-screen1 mpd-player-window
+      ;;
+    close)
+      eww close mpd-player-screen0 mpd-player-screen1
+      ;;
+    *)
+      echo "Usage: mpdwidget open|close"
+      ;;
+  esac
+}
+
 pnv() {
   if [ "$1" = "activate" ]; then
     if [ -z "$2" ]; then

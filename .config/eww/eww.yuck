@@ -45,3 +45,93 @@
   :stacking "fg"
   :windowtype "normal"
   (lyrics-widget))
+
+;; Collapsible player, bottom-right. "mpc toggle" flips play<->pause in
+;; one command (matches every real media player's own single toggle
+;; button rather than separate always-visible Play/Pause buttons, which
+;; would be redundant given the state is already known).
+(deflisten mpd_status :initial "{\"state\": \"stop\", \"artist\": \"\", \"title\": \"\", \"albumart\": \"/tmp/eww-mpd-albumart-placeholder.png\"}"
+  "~/.config/eww/scripts/mpd-player-status.sh")
+
+;; Shared across both monitor instances (not per-window/[win-id]-scoped
+;; like the close button below has to be) -- expanding on one screen
+;; expands on both. Simplest option and matches mpd_status itself
+;; already being one shared value across both instances; ask if you'd
+;; rather each screen's card open/close independently, which needs a
+;; separate defvar per win-id instead of one shared one.
+(defvar player_expanded false)
+
+;; Absolute, because (image :path ...) goes straight to GTK/gdk-pixbuf,
+;; which does no "~" expansion (unlike the deflisten commands above,
+;; where a shell expands it). Kept in one variable so there's a single
+;; place to change if this config ever moves off this machine.
+(defvar player_assets "/home/susamn/.config/eww/assets")
+
+;; win-id is this specific window instance's own --id (see eww.service's
+;; two "eww open --id ... --arg win-id=..." calls, one per monitor) --
+;; needed because "eww close mpd-player-window" (the bare defwindow
+;; name) wouldn't match either open instance; both were opened under
+;; distinct --id values instead, so the close button has to close by
+;; that same id, and each instance needs to know its own.
+(defwidget mpd-player-widget [win-id]
+  ;; halign/valign "end" so whichever branch is showing hugs the
+  ;; window's own bottom-right anchor instead of centering in it.
+  (box :orientation "v" :halign "end" :valign "end" :space-evenly false
+
+    ;; Each branch is gated on :visible *and* wrapped in a revealer, not
+    ;; a revealer alone. A hidden revealer only collapses the axis its
+    ;; transition animates -- it still reserves the child's full size on
+    ;; the other axis (and crossfade animates neither), so the hidden
+    ;; card below was silently reserving its own ~220px width even while
+    ;; collapsed, pushing the little circle that far off the corner.
+    ;; :visible false drops the widget from allocation entirely; the
+    ;; revealer inside it still provides the reveal animation.
+    (box :visible {!player_expanded}
+      (revealer :transition "crossfade" :duration "250ms" :reveal {!player_expanded}
+        ;; The sizer is the overlay's first (size-determining) child:
+        ;; a bit larger than the 64px circle, so the arrow can sit in
+        ;; the empty upper-left corner *outside* the circle's arc
+        ;; without a negative margin (which would push it past the
+        ;; window's own auto-sized bounds and get clipped).
+        (overlay
+          (box :class "player-collapsed-sizer")
+          (button :class "player-shape-btn" :halign "end" :valign "end"
+                  :onclick "mpc toggle"
+            (image :path {mpd_status.state == "playing"
+                          ? "${player_assets}/player-pause.svg"
+                          : "${player_assets}/player-play.svg"}
+                   :image-width 64 :image-height 64))
+          (button :class "player-expand-arrow" :halign "start" :valign "start"
+                  :onclick "eww update player_expanded=true"
+            (image :path "${player_assets}/player-expand.svg"
+                   :image-width 20 :image-height 20)))))
+
+    ;; Expanded: a taller card -- album art, title, artist, the same
+    ;; toggle/stop pair, plus collapse (back to the circle) and close
+    ;; (this instance only, see win-id above) in the corner.
+    (box :visible {player_expanded}
+      (revealer :transition "crossfade" :duration "300ms" :reveal {player_expanded}
+        (overlay
+          (box :orientation "v" :space-evenly false :halign "center" :class "player-card"
+            (image :class "player-albumart" :path {mpd_status.albumart} :image-width 120 :image-height 120)
+            (label :class "player-title" :text {mpd_status.title == "" ? "Nothing playing" : mpd_status.title} :limit-width 28)
+            (label :class "player-artist" :text {mpd_status.artist} :limit-width 28)
+            (box :orientation "h" :space-evenly false :halign "center" :class "player-controls"
+              (button :class "mpd-btn" :onclick "mpc toggle" {mpd_status.state == "playing" ? "⏸" : "▶"})
+              (button :class "mpd-btn" :onclick "mpc stop" "⏹")))
+          (box :orientation "h" :halign "end" :valign "start" :class "player-card-actions"
+            (button :class "mpd-close" :onclick "eww update player_expanded=false" "⌄")
+            (button :class "mpd-close" :onclick "eww close ${win-id}" "✕")))))))
+
+(defwindow mpd-player-window
+  [win-id]
+  :monitor 0
+  ;; Both width and height auto-size to content (not just height, like
+  ;; lyrics-window) -- the collapsed circle and expanded card are very
+  ;; different widths too, not just heights, and a fixed width would
+  ;; leave the small circle floating in the middle of reserved space
+  ;; instead of flush against the corner.
+  :geometry (geometry :x "5px" :y "15px" :width "1px" :height "1px" :anchor "bottom right")
+  :stacking "fg"
+  :windowtype "normal"
+  (mpd-player-widget :win-id win-id))

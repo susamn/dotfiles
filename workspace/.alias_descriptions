@@ -32,4 +32,9 @@ mtx=MPD Tui player - enlarged with vim motions
 mt=MPD Tui mini player - small, inline and only what is needed
 mtp=Search playlists and play with MPD Tui player
 mtt=Search tracks and play with MPD Tui player
+ewwr=Restart the eww widget daemon (picks up yuck/scss/unit file changes)
+ewwreload=Reload eww's yuck/scss without restarting the daemon
+ewwlog=Tail the eww widget daemon's systemd journal
+ewwst=Show the eww widget daemon's systemd service status
+mpdwidget=Open or close the mpd player widget on both monitors (mpdwidget open|close)
 

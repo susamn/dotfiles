@@ -12,29 +12,39 @@
 (deflisten dashboard_search_results :initial "[]"
   "~/.config/eww/scripts/dashboard-search-listen.sh")
 
-(defwidget mpd-dashboard-widget []
+(defwidget mpd-dashboard-widget [screen_id]
   (box :class "dashboard-container" :orientation "h" :space-evenly false
     ;; Left Pane: Now Playing & Lyrics
     (box :class "dashboard-left" :orientation "v" :space-evenly false :width 450
-      (box :class "dashboard-now-playing" :orientation "h" :space-evenly false
-        (image :class "dashboard-albumart" :path {mpd_status.albumart} :image-width 160 :image-height 160)
-        (box :orientation "v" :space-evenly false :vexpand true :class "dashboard-meta"
-          (label :class "dashboard-title" :text {mpd_status.title == "" ? "Nothing playing" : mpd_status.title} :limit-width 30 :halign "start")
-          (label :class "dashboard-album" :text "👤  ${mpd_status.artist}" :limit-width 30 :halign "start")
-          (label :class "dashboard-year" :text "📅  ${mpd_status.year}" :halign "start" :visible {mpd_status.year != ""})
-          (label :class "dashboard-composer" :text "🎼  ${mpd_status.composer}" :limit-width 30 :halign "start" :visible {mpd_status.composer != ""})
-          (box :vexpand true)
-          (box :orientation "v" :space-evenly false :class "dashboard-progress-container"
-            (label :class "dashboard-time" :text {mpd_status.time} :halign "end")
-            (scale :class "dashboard-progress" :value {mpd_status.progress} :min 0 :max 101 :onchange "mpc seek {}%"))
-          (box :orientation "h" :space-evenly false :halign "start" :class "dashboard-controls"
-            (button :class "mpd-btn" :onclick "mpc prev" "⏮")
-            (button :class "mpd-btn" :onclick "mpc toggle" {mpd_status.state == "playing" ? "⏸" : "▶"})
-            (button :class "mpd-btn" :onclick "mpc stop" "⏹")
-            (button :class "mpd-btn" :onclick "mpc next" "⏭"))))
-      (box :class "dashboard-tabs" :orientation "h" :space-evenly false :spacing 10
-        (button :class {dashboard_left_tab == "lyrics" ? "dashboard-tab-active" : "dashboard-tab"} :onclick "eww update dashboard_left_tab='lyrics'" "Lyrics")
-        (button :class {dashboard_left_tab == "queue" ? "dashboard-tab-active" : "dashboard-tab"} :onclick "eww update dashboard_left_tab='queue'" "Queue"))
+      (overlay
+        (box :class "dashboard-now-playing" :orientation "h" :space-evenly false
+          (image :class "dashboard-albumart" :path {mpd_status.albumart} :image-width 160 :image-height 160)
+          (box :orientation "v" :space-evenly false :vexpand true :class "dashboard-meta"
+            (label :class "dashboard-title" :text {mpd_status.title == "" ? "Nothing playing" : mpd_status.title} :limit-width 30 :halign "start")
+            (label :class "dashboard-album" :text "👤  ${mpd_status.artist}" :limit-width 30 :halign "start")
+            (label :class "dashboard-year" :text "📅  ${mpd_status.year}" :halign "start" :visible {mpd_status.year != ""})
+            (label :class "dashboard-composer" :text "🎼  ${mpd_status.composer}" :limit-width 30 :halign "start" :visible {mpd_status.composer != ""})
+            (box :vexpand true)
+            (box :orientation "v" :space-evenly false :class "dashboard-progress-container"
+              (label :class "dashboard-time" :text {mpd_status.time} :halign "end")
+              (scale :class "dashboard-progress" :value {mpd_status.progress} :min 0 :max 101 :onchange "mpc seek {}%"))
+            (box :orientation "h" :space-evenly false :halign "start" :class "dashboard-controls"
+              (button :class "mpd-btn" :onclick "mpc prev" "⏮")
+              (button :class "mpd-btn" :onclick "mpc toggle" {mpd_status.state == "playing" ? "⏸" : "▶"})
+              (button :class "mpd-btn" :onclick "mpc stop" "⏹")
+              (button :class "mpd-btn" :onclick "mpc next" "⏭"))))
+        (box :halign "end" :valign "start" :class "dashboard-lyrics-toggle-box"
+          (button :class "mpd-close" :onclick "eww open --toggle --screen ${screen_id} lyrics-window" "🎤")))
+      (box :class "dashboard-tabs-bar" :orientation "h" :space-evenly false :hexpand true
+        (box :class "dashboard-tabs" :orientation "h" :space-evenly false :spacing 10
+          (button :class {dashboard_left_tab == "lyrics" ? "dashboard-tab-active" : "dashboard-tab"} :onclick "eww update dashboard_left_tab='lyrics'" "Lyrics")
+          (button :class {dashboard_left_tab == "queue" ? "dashboard-tab-active" : "dashboard-tab"} :onclick "eww update dashboard_left_tab='queue'" "Queue"))
+        (box :hexpand true)
+        (box :class "dashboard-modes-bar" :orientation "h" :space-evenly false :spacing 5 :valign "center"
+          (button :class {mpd_status.random == "on" ? "mpd-mode-shuffle-active" : "mpd-mode-shuffle"} :onclick "mpc random" "Shuffle")
+          (button :class {mpd_status.repeat == "on" ? "mpd-mode-repeat-active" : "mpd-mode-repeat"} :onclick "mpc repeat" "Repeat")
+          (button :class {mpd_status.consume == "on" ? "mpd-mode-consume-active" : "mpd-mode-consume"} :onclick "mpc consume" "Consume")
+          (button :class {mpd_status.single == "on" ? "mpd-mode-single-active" : "mpd-mode-single"} :onclick "mpc single" "Single")))
       
       (box :class "dashboard-left-content" :orientation "v" :space-evenly false :vexpand true
         (box :visible {dashboard_left_tab == "lyrics"} :class "dashboard-lyrics" :orientation "v" :space-evenly false :vexpand true
@@ -93,4 +103,4 @@
   :geometry (geometry :x "0" :y "0" :width "750px" :height "450px" :anchor "center")
   :stacking "fg"
   :windowtype "normal"
-  (mpd-dashboard-widget))
+  (mpd-dashboard-widget :screen_id 0))

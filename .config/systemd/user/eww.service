@@ -11,7 +11,6 @@ Type=simple
 Environment=PATH=/home/linuxbrew/.linuxbrew/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/bin
 ExecStart=/usr/bin/eww daemon --no-daemonize
 ExecStartPost=/usr/bin/sleep 2
-ExecStartPost=/usr/bin/eww open lyrics-window
 # One instance per monitor -- "--id" lets the same mpd-player-window
 # definition be opened more than once simultaneously (normally opening
 # a window name that's already open just no-ops/replaces it); "--screen"
@@ -19,8 +18,8 @@ ExecStartPost=/usr/bin/eww open lyrics-window
 # "--arg win-id=..." matches each instance's own --id so its close
 # button (eww.yuck) can close itself specifically, not the other
 # monitor's copy or the (unmatched) bare "mpd-player-window" name.
-ExecStartPost=/usr/bin/eww open --id mpd-player-screen0 --screen 0 --arg win-id=mpd-player-screen0 mpd-player-window
-ExecStartPost=/usr/bin/eww open --id mpd-player-screen1 --screen 1 --arg win-id=mpd-player-screen1 mpd-player-window
+ExecStartPost=/usr/bin/eww open --id mpd-player-screen0 --screen 0 --arg win-id=mpd-player-screen0 --arg screen_id=0 mpd-player-window
+ExecStartPost=/usr/bin/eww open --id mpd-player-screen1 --screen 1 --arg win-id=mpd-player-screen1 --arg screen_id=1 mpd-player-window
 Restart=on-failure
 
 [Install]

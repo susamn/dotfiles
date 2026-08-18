@@ -75,7 +75,7 @@
 ;; name) wouldn't match either open instance; both were opened under
 ;; distinct --id values instead, so the close button has to close by
 ;; that same id, and each instance needs to know its own.
-(defwidget mpd-player-widget [win-id]
+(defwidget mpd-player-widget [win-id screen_id]
   ;; halign/valign "end" so whichever branch is showing hugs the
   ;; window's own bottom-right anchor instead of centering in it.
   (box :orientation "v" :halign "end" :valign "end" :space-evenly false
@@ -112,13 +112,13 @@
     (box :visible {player_expanded}
       (revealer :transition "slideup" :duration "300ms" :reveal {player_expanded}
         (overlay
-          (mpd-dashboard-widget)
+          (mpd-dashboard-widget :screen_id screen_id)
           (box :orientation "h" :halign "end" :valign "start" :class "player-card-actions"
             (button :class "mpd-close" :onclick "eww update player_expanded=false" "⌄")
             (button :class "mpd-close" :onclick "eww close ${win-id}" "✕")))))))
 
 (defwindow mpd-player-window
-  [win-id]
+  [win-id screen_id]
   :monitor 0
   ;; Both width and height auto-size to content (not just height, like
   ;; lyrics-window) -- the collapsed circle and expanded card are very
@@ -129,4 +129,4 @@
   :stacking "fg"
   :windowtype "normal"
   :focusable true
-  (mpd-player-widget :win-id win-id))
+  (mpd-player-widget :win-id win-id :screen_id screen_id))

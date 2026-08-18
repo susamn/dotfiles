@@ -21,15 +21,21 @@ MUSIC_DIR=$(grep -E "^music_directory" ~/.config/mpd/mpd.conf 2>/dev/null | sed 
 
 prev=""
 while true; do
-    state=$(mpc status 2>/dev/null | grep -oP '\[\K[^\]]+' || echo "stop")
+    status_text=$(mpc status 2>/dev/null)
+    state=$(echo "$status_text" | grep -oP '\[\K[^\]]+' || echo "stop")
     artist=$(mpc current -f '%artist%' 2>/dev/null)
     title=$(mpc current -f '%title%' 2>/dev/null)
     file=$(mpc current -f '%file%' 2>/dev/null)
     year=$(mpc current -f '%date%' 2>/dev/null)
     composer=$(mpc current -f '%composer%' 2>/dev/null)
     queue_length=$(mpc playlist 2>/dev/null | wc -l)
-    progress=$(mpc status 2>/dev/null | grep -oP '\(\K[0-9]+(?=%\))' || echo "0")
-    time_str=$(mpc status 2>/dev/null | grep -oP '\d+:\d+/\d+:\d+' | sed 's|/| / |' || echo "0:00 / 0:00")
+    progress=$(echo "$status_text" | grep -oP '\(\K[0-9]+(?=%\))' || echo "0")
+    time_str=$(echo "$status_text" | grep -oP '\d+:\d+/\d+:\d+' | sed 's|/| / |' || echo "0:00 / 0:00")
+    
+    repeat_mode=$(echo "$status_text" | grep -oP 'repeat: \K(on|off)' || echo "off")
+    random_mode=$(echo "$status_text" | grep -oP 'random: \K(on|off)' || echo "off")
+    single_mode=$(echo "$status_text" | grep -oP 'single: \K(on|off)' || echo "off")
+    consume_mode=$(echo "$status_text" | grep -oP 'consume: \K(on|off)' || echo "off")
 
     if [ -n "$file" ]; then
         # Only re-extract when the track actually changed -- ffmpeg+convert
@@ -53,10 +59,10 @@ while true; do
     albumart="$PLACEHOLDER_PATH"
     [ -s "$ALBUMART_PATH" ] && albumart="$ALBUMART_PATH"
 
-    line="${state}|${artist}|${title}|${file}|${year}|${composer}|${queue_length}|${progress}|${time_str}"
+    line="${state}|${artist}|${title}|${file}|${year}|${composer}|${queue_length}|${progress}|${time_str}|${repeat_mode}|${random_mode}|${single_mode}|${consume_mode}"
     if [ "$line" != "$prev" ]; then
-        jq -cn --arg state "$state" --arg artist "$artist" --arg title "$title" --arg albumart "$albumart" --arg year "$year" --arg composer "$composer" --arg queue "$queue_length" --arg progress "$progress" --arg time "$time_str" \
-            '{state: $state, artist: $artist, title: $title, albumart: $albumart, year: $year, composer: $composer, queue_length: $queue, progress: $progress, time: $time}'
+        jq -cn --arg state "$state" --arg artist "$artist" --arg title "$title" --arg albumart "$albumart" --arg year "$year" --arg composer "$composer" --arg queue "$queue_length" --arg progress "$progress" --arg time "$time_str" --arg repeat "$repeat_mode" --arg random "$random_mode" --arg single "$single_mode" --arg consume "$consume_mode" \
+            '{state: $state, artist: $artist, title: $title, albumart: $albumart, year: $year, composer: $composer, queue_length: $queue, progress: $progress, time: $time, repeat: $repeat, random: $random, single: $single, consume: $consume}'
         prev="$line"
     fi
 

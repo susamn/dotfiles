@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <!-- Collapsed player, "playing" state: same concentric outline
+       circles as player-play.svg, with outlined pause bars instead of
+       the play triangle. -->
+  <g fill="none" stroke="#ffe66d" stroke-width="1.6">
+    <circle cx="32" cy="32" r="29"/>
+    <circle cx="32" cy="32" r="23"/>
+    <rect x="25" y="22" width="5.5" height="20" rx="1"/>
+    <rect x="35" y="22" width="5.5" height="20" rx="1"/>
+  </g>
+</svg>

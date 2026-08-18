@@ -53,3 +53,115 @@
     color: #ffffff;
     background-color: rgba(255, 255, 255, 0.15);
 }
+
+/* Collapsed state. Both of these wrap an SVG from assets/ (see
+   eww.yuck) and must contribute *no* visuals of their own -- no
+   background, border, padding or min-size -- so the SVG's own shape is
+   the entire widget. Styling the button instead (border-radius +
+   border) is what produced a rounded rectangle rather than the
+   concentric-circle design. */
+.player-shape-btn {
+    background-color: transparent;
+    background-image: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+}
+
+.player-shape-btn:hover {
+    /* GTK's default button hover would paint a rectangle behind the
+       SVG, reintroducing exactly the shape this design avoids. */
+    background-color: transparent;
+    background-image: none;
+}
+
+/* Defines the collapsed state's overall footprint (it is the overlay's
+   first, size-determining child and draws nothing itself). Slightly
+   larger than the 64px circle, which sits bottom-right within it, so
+   the expand triangle can occupy the empty upper-left corner just
+   outside the circle's arc. Sized so the two nearly touch on the
+   diagonal: the circle's own outline reaches to ~20px from this box's
+   top-left, and the triangle's lower tip ends at ~18px. */
+.player-collapsed-sizer {
+    background-color: transparent;
+    min-width: 72px;
+    min-height: 72px;
+}
+
+/* The separate expand triangle -- no negative margin: it is positioned
+   by the sizer above instead. A negative margin here pushed it outside
+   the auto-sized window's own bounds and got it clipped. */
+.player-expand-arrow {
+    background-color: transparent;
+    background-image: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+}
+
+.player-expand-arrow:hover {
+    background-color: transparent;
+    background-image: none;
+}
+
+/* Expanded state: a taller card. */
+.player-card {
+    background-color: rgba(0, 0, 0, 0.75);
+    border-radius: 16px;
+    padding: 20px 24px;
+    font-family: "DejaVu Sans Mono", monospace;
+    min-width: 220px;
+}
+
+.player-albumart {
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+
+.player-title {
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: bold;
+    margin-bottom: 2px;
+}
+
+.player-artist {
+    color: #aaaaaa;
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+.player-controls {
+    margin-top: 4px;
+}
+
+.player-card-actions {
+    margin: 6px 6px 0 0;
+}
+
+.mpd-btn {
+    color: #ffffff;
+    font-size: 16px;
+    padding: 2px 8px;
+    margin: 0 2px;
+    border-radius: 6px;
+}
+
+.mpd-btn:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.mpd-close {
+    color: #888888;
+    font-size: 12px;
+    padding: 2px 6px;
+    margin: 0 0 0 6px;
+    border-radius: 6px;
+}
+
+.mpd-close:hover {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.15);
+}

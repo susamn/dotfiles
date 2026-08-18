@@ -156,6 +156,8 @@
     padding: 2px 8px;
     margin: 0 2px;
     border-radius: 6px;
+    min-width: 20px;
+    min-height: 20px;
 }
 
 .mpd-btn:hover {
@@ -174,3 +176,4 @@
     color: #ffffff;
     background-color: rgba(255, 255, 255, 0.15);
 }
+@import "mpd-dashboard";

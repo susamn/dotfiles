@@ -70,15 +70,21 @@ while true; do
         current_size=$(font_size_for "${#current}")
 
         if [ "$current" != "$prev_current" ] && [ -n "$prev_current" ]; then
-            jq -cn --argjson visible "$playing" --argjson size "$current_size" --arg above "$above" --arg current "$prev_current" --arg below1 "$below1" --arg below2 "$below2" \
+            # Fade out the old current line, keeping the old context
+            jq -cn --argjson visible "$playing" --argjson size "$prev_size" --arg above "$prev_above" --arg current "$prev_current" --arg below1 "$prev_below1" --arg below2 "$prev_below2" \
                 '{visible: $visible, reveal: false, current_size: $size, above: $above, current: $current, below1: $below1, below2: $below2}'
-            sleep 0.2
+            sleep 0.3
         fi
 
+        # Fade in the new current line with the new context
         jq -cn --argjson visible "$playing" --argjson size "$current_size" --arg above "$above" --arg current "$current" --arg below1 "$below1" --arg below2 "$below2" \
             '{visible: $visible, reveal: true, current_size: $size, above: $above, current: $current, below1: $below1, below2: $below2}'
 
         prev_current="$current"
+        prev_above="$above"
+        prev_below1="$below1"
+        prev_below2="$below2"
+        prev_size="$current_size"
     else
         jq -cn --argjson visible "$playing" \
             '{visible: $visible, reveal: true, current_size: 15, above: "", current: "", below1: "", below2: ""}'

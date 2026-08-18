@@ -1,0 +1,217 @@
+.dashboard-container {
+    background-color: rgba(20, 20, 20, 0.95);
+    border-radius: 12px;
+    padding: 20px;
+    color: #ffffff;
+    font-family: "DejaVu Sans", sans-serif;
+    min-height: 450px;
+    min-width: 950px;
+}
+
+.dashboard-left {
+    padding-right: 20px;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dashboard-now-playing {
+    margin-bottom: 20px;
+}
+
+.dashboard-albumart {
+    border-radius: 8px;
+    margin-right: 15px;
+}
+
+.dashboard-title {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.dashboard-album, .dashboard-year, .dashboard-composer {
+    font-size: 13px;
+    color: #aaaaaa;
+    margin-bottom: 2px;
+}
+
+.dashboard-controls {
+    margin-top: 10px;
+}
+
+.dashboard-progress-container {
+    margin-top: 15px;
+    margin-bottom: 5px;
+    padding-right: 15px;
+}
+
+.dashboard-time {
+    font-size: 11px;
+    color: #888888;
+    margin-bottom: 2px;
+}
+
+.dashboard-progress {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.dashboard-progress trough {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    min-height: 4px;
+}
+
+.dashboard-progress highlight {
+    background-color: #00a2ff;
+    border-radius: 4px;
+}
+
+.dashboard-lyrics {
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.dashboard-lyrics-title {
+    font-weight: bold;
+    color: #888;
+    margin-bottom: 10px;
+    font-size: 12px;
+}
+
+.dashboard-lyrics-content label {
+    margin-bottom: 4px;
+}
+
+.dashboard-lyrics-current {
+    color: #ffe66d;
+    font-weight: bold;
+}
+
+.dashboard-right {
+    padding-left: 20px;
+}
+
+.dashboard-search-bar {
+    margin-bottom: 15px;
+    margin-right: 70px;
+}
+
+.dashboard-search-input {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: white;
+    border: 1px solid transparent;
+}
+
+.dashboard-search-input:focus {
+    border: 1px solid #00a2ff;
+}
+
+.dashboard-search-btn {
+    background-color: #00a2ff;
+    color: white;
+    border-radius: 6px;
+    padding: 6px 16px;
+    margin-left: 10px;
+    font-weight: bold;
+}
+
+.dashboard-filters {
+    margin-bottom: 20px;
+}
+
+.dashboard-filter, .dashboard-filter-active {
+    padding: 6px 16px;
+    border-radius: 20px;
+    margin: 0 5px;
+    font-size: 13px;
+    background-color: rgba(255, 255, 255, 0.05);
+    transition: all 0.2s ease;
+}
+
+.dashboard-filter:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.dashboard-filter-active {
+    background-color: #00a2ff;
+    color: white;
+    font-weight: bold;
+}
+
+.dashboard-tab, .dashboard-tab-active {
+    padding: 2px 12px;
+    margin-bottom: 5px;
+    font-size: 11px;
+    transition: all 0.2s ease;
+    border-radius: 12px;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.dashboard-tab:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+.dashboard-tab-active {
+    background-color: #00a2ff;
+    color: white;
+    font-weight: bold;
+}
+
+.dashboard-pagination {
+    margin-top: 10px;
+    font-size: 13px;
+    color: #aaaaaa;
+}
+
+.dashboard-queue {
+    font-size: 13px;
+    color: #888888;
+    margin-left: 15px;
+}
+
+.dashboard-results-list {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.dashboard-track-row {
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dashboard-track-row:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dashboard-track-title {
+    font-size: 11px;
+    font-weight: bold;
+    color: #ffffff;
+    margin-bottom: 2px;
+}
+
+.dashboard-track-row .dashboard-album {
+    font-size: 10px;
+    color: #888888;
+}
+
+.dashboard-track-play {
+    color: #25d366;
+    margin-right: 15px;
+    font-size: 14px;
+}
+
+.dashboard-track-add {
+    color: #aaa;
+    font-size: 16px;
+    padding: 0 5px;
+}
+
+.dashboard-track-add:hover {
+    color: white;
+}

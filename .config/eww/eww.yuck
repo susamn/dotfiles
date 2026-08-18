@@ -1,3 +1,4 @@
+(include "./mpd-dashboard.yuck")
 ;; Lyrics scroll widget -- pinned always-on-top overlay showing the
 ;; current synced (.lrc) lyrics line with 1 line of context above and 2
 ;; below, sourced from "mpdtui -lyrics-line" via scripts/lyrics-listen.sh
@@ -44,13 +45,14 @@
   :geometry (geometry :x "0%" :y "4%" :width "620px" :height "1px" :anchor "top center")
   :stacking "fg"
   :windowtype "normal"
+
   (lyrics-widget))
 
 ;; Collapsible player, bottom-right. "mpc toggle" flips play<->pause in
 ;; one command (matches every real media player's own single toggle
 ;; button rather than separate always-visible Play/Pause buttons, which
 ;; would be redundant given the state is already known).
-(deflisten mpd_status :initial "{\"state\": \"stop\", \"artist\": \"\", \"title\": \"\", \"albumart\": \"/tmp/eww-mpd-albumart-placeholder.png\"}"
+(deflisten mpd_status :initial "{\"state\": \"stop\", \"artist\": \"\", \"title\": \"\", \"albumart\": \"/tmp/eww-mpd-albumart-placeholder.png\", \"year\": \"\", \"composer\": \"\", \"queue_length\": \"0\"}"
   "~/.config/eww/scripts/mpd-player-status.sh")
 
 ;; Shared across both monitor instances (not per-window/[win-id]-scoped
@@ -106,19 +108,11 @@
             (image :path "${player_assets}/player-expand.svg"
                    :image-width 20 :image-height 20)))))
 
-    ;; Expanded: a taller card -- album art, title, artist, the same
-    ;; toggle/stop pair, plus collapse (back to the circle) and close
-    ;; (this instance only, see win-id above) in the corner.
+    ;; Expanded: the new massive dashboard
     (box :visible {player_expanded}
       (revealer :transition "slideup" :duration "300ms" :reveal {player_expanded}
         (overlay
-          (box :orientation "v" :space-evenly false :halign "center" :class "player-card"
-            (image :class "player-albumart" :path {mpd_status.albumart} :image-width 120 :image-height 120)
-            (label :class "player-title" :text {mpd_status.title == "" ? "Nothing playing" : mpd_status.title} :limit-width 28)
-            (label :class "player-artist" :text {mpd_status.artist} :limit-width 28)
-            (box :orientation "h" :space-evenly false :halign "center" :class "player-controls"
-              (button :class "mpd-btn" :onclick "mpc toggle" {mpd_status.state == "playing" ? "⏸" : "▶"})
-              (button :class "mpd-btn" :onclick "mpc stop" "⏹")))
+          (mpd-dashboard-widget)
           (box :orientation "h" :halign "end" :valign "start" :class "player-card-actions"
             (button :class "mpd-close" :onclick "eww update player_expanded=false" "⌄")
             (button :class "mpd-close" :onclick "eww close ${win-id}" "✕")))))))
@@ -134,4 +128,5 @@
   :geometry (geometry :x "10px" :y "15px" :width "1px" :height "1px" :anchor "bottom right")
   :stacking "fg"
   :windowtype "normal"
+  :focusable true
   (mpd-player-widget :win-id win-id))

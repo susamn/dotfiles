@@ -18,8 +18,8 @@ ExecStartPost=/usr/bin/sleep 2
 # "--arg win-id=..." matches each instance's own --id so its close
 # button (eww.yuck) can close itself specifically, not the other
 # monitor's copy or the (unmatched) bare "mpd-player-window" name.
-ExecStartPost=/usr/bin/eww open --id mpd-player-screen0 --screen 0 --arg win-id=mpd-player-screen0 mpd-player-window
-ExecStartPost=/usr/bin/eww open --id mpd-player-screen1 --screen 1 --arg win-id=mpd-player-screen1 mpd-player-window
+ExecStartPost=/usr/bin/eww open --id mpd-player-screen0 --screen 0 --arg win-id=mpd-player-screen0 --arg screen_id=0 mpd-player-window
+ExecStartPost=/usr/bin/eww open --id mpd-player-screen1 --screen 1 --arg win-id=mpd-player-screen1 --arg screen_id=1 mpd-player-window
 Restart=on-failure
 
 [Install]

@@ -114,6 +114,7 @@
         (overlay
           (mpd-dashboard-widget)
           (box :orientation "h" :halign "end" :valign "start" :class "player-card-actions"
+            (button :class "mpd-close" :onclick "eww open --toggle lyrics-window" "🎤")
             (button :class "mpd-close" :onclick "eww update player_expanded=false" "⌄")
             (button :class "mpd-close" :onclick "eww close ${win-id}" "✕")))))))
 

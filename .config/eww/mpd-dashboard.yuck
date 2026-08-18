@@ -32,9 +32,16 @@
             (button :class "mpd-btn" :onclick "mpc toggle" {mpd_status.state == "playing" ? "⏸" : "▶"})
             (button :class "mpd-btn" :onclick "mpc stop" "⏹")
             (button :class "mpd-btn" :onclick "mpc next" "⏭"))))
-      (box :class "dashboard-tabs" :orientation "h" :space-evenly false :spacing 10
-        (button :class {dashboard_left_tab == "lyrics" ? "dashboard-tab-active" : "dashboard-tab"} :onclick "eww update dashboard_left_tab='lyrics'" "Lyrics")
-        (button :class {dashboard_left_tab == "queue" ? "dashboard-tab-active" : "dashboard-tab"} :onclick "eww update dashboard_left_tab='queue'" "Queue"))
+      (box :class "dashboard-tabs-bar" :orientation "h" :space-evenly false :hexpand true
+        (box :class "dashboard-tabs" :orientation "h" :space-evenly false :spacing 10
+          (button :class {dashboard_left_tab == "lyrics" ? "dashboard-tab-active" : "dashboard-tab"} :onclick "eww update dashboard_left_tab='lyrics'" "Lyrics")
+          (button :class {dashboard_left_tab == "queue" ? "dashboard-tab-active" : "dashboard-tab"} :onclick "eww update dashboard_left_tab='queue'" "Queue"))
+        (box :hexpand true)
+        (box :class "dashboard-modes-bar" :orientation "h" :space-evenly false :spacing 5 :valign "center"
+          (button :class {mpd_status.random == "on" ? "mpd-mode-shuffle-active" : "mpd-mode-shuffle"} :onclick "mpc random" "Shuffle")
+          (button :class {mpd_status.repeat == "on" ? "mpd-mode-repeat-active" : "mpd-mode-repeat"} :onclick "mpc repeat" "Repeat")
+          (button :class {mpd_status.consume == "on" ? "mpd-mode-consume-active" : "mpd-mode-consume"} :onclick "mpc consume" "Consume")
+          (button :class {mpd_status.single == "on" ? "mpd-mode-single-active" : "mpd-mode-single"} :onclick "mpc single" "Single")))
       
       (box :class "dashboard-left-content" :orientation "v" :space-evenly false :vexpand true
         (box :visible {dashboard_left_tab == "lyrics"} :class "dashboard-lyrics" :orientation "v" :space-evenly false :vexpand true

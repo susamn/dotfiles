@@ -1,0 +1,96 @@
+(defvar dashboard_search_filter "track")
+(defvar dashboard_search_query "")
+
+(defvar dashboard_left_tab "lyrics")
+(defvar dashboard_queue_page 0)
+(defvar dashboard_queue_total_pages 1)
+
+
+(deflisten dashboard_queue :initial "[]"
+  "~/.config/eww/scripts/dashboard-queue-listen.sh")
+
+(deflisten dashboard_search_results :initial "[]"
+  "~/.config/eww/scripts/dashboard-search-listen.sh")
+
+(defwidget mpd-dashboard-widget []
+  (box :class "dashboard-container" :orientation "h" :space-evenly false
+    ;; Left Pane: Now Playing & Lyrics
+    (box :class "dashboard-left" :orientation "v" :space-evenly false :width 450
+      (box :class "dashboard-now-playing" :orientation "h" :space-evenly false
+        (image :class "dashboard-albumart" :path {mpd_status.albumart} :image-width 160 :image-height 160)
+        (box :orientation "v" :space-evenly false :vexpand true :class "dashboard-meta"
+          (label :class "dashboard-title" :text {mpd_status.title == "" ? "Nothing playing" : mpd_status.title} :limit-width 30 :halign "start")
+          (label :class "dashboard-album" :text "👤  ${mpd_status.artist}" :limit-width 30 :halign "start")
+          (label :class "dashboard-year" :text "📅  ${mpd_status.year}" :halign "start" :visible {mpd_status.year != ""})
+          (label :class "dashboard-composer" :text "🎼  ${mpd_status.composer}" :limit-width 30 :halign "start" :visible {mpd_status.composer != ""})
+          (box :vexpand true)
+          (box :orientation "v" :space-evenly false :class "dashboard-progress-container"
+            (label :class "dashboard-time" :text {mpd_status.time} :halign "end")
+            (scale :class "dashboard-progress" :value {mpd_status.progress} :min 0 :max 101 :onchange "mpc seek {}%"))
+          (box :orientation "h" :space-evenly false :halign "start" :class "dashboard-controls"
+            (button :class "mpd-btn" :onclick "mpc prev" "⏮")
+            (button :class "mpd-btn" :onclick "mpc toggle" {mpd_status.state == "playing" ? "⏸" : "▶"})
+            (button :class "mpd-btn" :onclick "mpc stop" "⏹")
+            (button :class "mpd-btn" :onclick "mpc next" "⏭"))))
+      (box :class "dashboard-tabs" :orientation "h" :space-evenly false :spacing 10
+        (button :class {dashboard_left_tab == "lyrics" ? "dashboard-tab-active" : "dashboard-tab"} :onclick "eww update dashboard_left_tab='lyrics'" "Lyrics")
+        (button :class {dashboard_left_tab == "queue" ? "dashboard-tab-active" : "dashboard-tab"} :onclick "eww update dashboard_left_tab='queue'" "Queue"))
+      
+      (box :class "dashboard-left-content" :orientation "v" :space-evenly false :vexpand true
+        (box :visible {dashboard_left_tab == "lyrics"} :class "dashboard-lyrics" :orientation "v" :space-evenly false :vexpand true
+          (scroll :vscroll true :hscroll false :vexpand true
+            (box :orientation "v" :space-evenly false :class "dashboard-lyrics-content"
+              (label :text {lyrics.above} :limit-width 100)
+              (label :class "dashboard-lyrics-current" 
+                     :text {lyrics.current} 
+                     :style "font-size: ${lyrics.current_size}px; opacity: ${lyrics.reveal ? 1.0 : 0.0}; transition: opacity 300ms ease-in-out;" 
+                     :limit-width 100)
+              (label :text {lyrics.below1} :limit-width 100)
+              (label :text {lyrics.below2} :limit-width 100))))
+        
+        (box :visible {dashboard_left_tab == "queue"} :class "dashboard-queue-view" :orientation "v" :space-evenly false :vexpand true
+          (scroll :vscroll true :hscroll false :vexpand true
+            (box :orientation "v" :space-evenly false :class "dashboard-results-list"
+              (for item in dashboard_queue
+                (box :class "dashboard-track-row" :orientation "h" :space-evenly false
+                  (button :class "dashboard-track-play" :onclick "mpc play ${item.pos}" "▶")
+                  (box :orientation "v" :space-evenly false :hexpand true
+                    (label :class "dashboard-track-title" :text {item.title} :halign "start" :limit-width 30)
+                    (label :class "dashboard-album" :text {item.artist} :halign "start" :limit-width 30))))))
+          (box :class "dashboard-pagination" :orientation "h" :space-evenly true
+            (button :onclick "eww update dashboard_queue_page=${dashboard_queue_page > 0 ? dashboard_queue_page - 1 : 0}" "◀")
+            (label :text "Page ${dashboard_queue_page + 1} of ${dashboard_queue_total_pages}")
+            (button :onclick "eww update dashboard_queue_page=${dashboard_queue_page + 1 < dashboard_queue_total_pages ? dashboard_queue_page + 1 : dashboard_queue_page}" "▶")))))
+
+    ;; Right Pane: Search & Library
+    (box :class "dashboard-right" :orientation "v" :space-evenly false :hexpand true
+      (box :class "dashboard-search-bar" :orientation "h" :space-evenly false
+        (input :class "dashboard-search-input" :value dashboard_search_query :onchange "eww update dashboard_search_query='{}'" :hexpand true)
+        (button :class "dashboard-search-btn" :onclick "eww update dashboard_search_query=''" "Clear"))
+      
+      (box :class "dashboard-filters-container" :orientation "h" :space-evenly false :hexpand true
+        (box :class "dashboard-filters" :orientation "h" :space-evenly false :halign "start" :hexpand true
+          (button :class {dashboard_search_filter == "track" ? "dashboard-filter-active" : "dashboard-filter"} 
+                  :onclick "eww update dashboard_search_filter='track'" "Track")
+          (button :class {dashboard_search_filter == "playlist" ? "dashboard-filter-active" : "dashboard-filter"} 
+                  :onclick "eww update dashboard_search_filter='playlist'" "Playlist")
+          (button :class {dashboard_search_filter == "artist" ? "dashboard-filter-active" : "dashboard-filter"} 
+                  :onclick "eww update dashboard_search_filter='artist'" "Artist"))
+        (label :class "dashboard-queue" :text "${mpd_status.queue_length} in queue" :halign "end"))
+      
+      (scroll :vscroll true :hscroll false :vexpand true :class "dashboard-results-scroll"
+        (box :orientation "v" :space-evenly false :class "dashboard-results-list"
+          (for track in dashboard_search_results
+            (box :class "dashboard-track-row" :orientation "h" :space-evenly false
+              (button :class "dashboard-track-play" :onclick "~/.config/eww/scripts/dashboard-action.sh play '${dashboard_search_filter}' '${track.file}'" "▶")
+              (box :orientation "v" :space-evenly false :hexpand true
+                (label :class "dashboard-track-title" :text {track.title} :halign "start" :limit-width 35)
+                (label :class "dashboard-album" :text {track.artist} :halign "start" :limit-width 35))
+              (button :class "dashboard-track-add" :onclick "~/.config/eww/scripts/dashboard-action.sh add '${dashboard_search_filter}' '${track.file}'" "+"))))))))
+
+(defwindow mpd-dashboard-window
+  :monitor 0
+  :geometry (geometry :x "0" :y "0" :width "750px" :height "450px" :anchor "center")
+  :stacking "fg"
+  :windowtype "normal"
+  (mpd-dashboard-widget))

@@ -25,6 +25,11 @@ while true; do
     artist=$(mpc current -f '%artist%' 2>/dev/null)
     title=$(mpc current -f '%title%' 2>/dev/null)
     file=$(mpc current -f '%file%' 2>/dev/null)
+    year=$(mpc current -f '%date%' 2>/dev/null)
+    composer=$(mpc current -f '%composer%' 2>/dev/null)
+    queue_length=$(mpc playlist 2>/dev/null | wc -l)
+    progress=$(mpc status 2>/dev/null | grep -oP '\(\K[0-9]+(?=%\))' || echo "0")
+    time_str=$(mpc status 2>/dev/null | grep -oP '\d+:\d+/\d+:\d+' | sed 's|/| / |' || echo "0:00 / 0:00")
 
     if [ -n "$file" ]; then
         # Only re-extract when the track actually changed -- ffmpeg+convert
@@ -48,10 +53,10 @@ while true; do
     albumart="$PLACEHOLDER_PATH"
     [ -s "$ALBUMART_PATH" ] && albumart="$ALBUMART_PATH"
 
-    line="${state}|${artist}|${title}|${file}"
+    line="${state}|${artist}|${title}|${file}|${year}|${composer}|${queue_length}|${progress}|${time_str}"
     if [ "$line" != "$prev" ]; then
-        jq -cn --arg state "$state" --arg artist "$artist" --arg title "$title" --arg albumart "$albumart" \
-            '{state: $state, artist: $artist, title: $title, albumart: $albumart}'
+        jq -cn --arg state "$state" --arg artist "$artist" --arg title "$title" --arg albumart "$albumart" --arg year "$year" --arg composer "$composer" --arg queue "$queue_length" --arg progress "$progress" --arg time "$time_str" \
+            '{state: $state, artist: $artist, title: $title, albumart: $albumart, year: $year, composer: $composer, queue_length: $queue, progress: $progress, time: $time}'
         prev="$line"
     fi
 

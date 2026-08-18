@@ -67,6 +67,7 @@
     box-shadow: none;
     padding: 0;
     margin: 0;
+    transition: all 0.15s ease;
 }
 
 .player-shape-btn:hover {
@@ -74,6 +75,11 @@
        SVG, reintroducing exactly the shape this design avoids. */
     background-color: transparent;
     background-image: none;
+    opacity: 0.85;
+}
+
+.player-shape-btn:active {
+    opacity: 0.6;
 }
 
 /* Defines the collapsed state's overall footprint (it is the overlay's
@@ -85,8 +91,8 @@
    top-left, and the triangle's lower tip ends at ~18px. */
 .player-collapsed-sizer {
     background-color: transparent;
-    min-width: 72px;
-    min-height: 72px;
+    min-width: 68px;
+    min-height: 68px;
 }
 
 /* The separate expand triangle -- no negative margin: it is positioned
@@ -99,11 +105,14 @@
     box-shadow: none;
     padding: 0;
     margin: 0;
+    border-radius: 50%;
+    transition: all 0.2s ease;
 }
 
 .player-expand-arrow:hover {
-    background-color: transparent;
+    background-color: rgba(0, 162, 255, 0.15);
     background-image: none;
+    box-shadow: 0 0 12px 4px rgba(0, 162, 255, 0.4);
 }
 
 /* Expanded state: a taller card. */
@@ -147,6 +156,8 @@
     padding: 2px 8px;
     margin: 0 2px;
     border-radius: 6px;
+    min-width: 20px;
+    min-height: 20px;
 }
 
 .mpd-btn:hover {
@@ -165,3 +176,4 @@
     color: #ffffff;
     background-color: rgba(255, 255, 255, 0.15);
 }
+@import "mpd-dashboard";

@@ -1,0 +1,47 @@
+;; Lyrics scroll widget -- pinned always-on-top overlay showing the
+;; current synced (.lrc) lyrics line with 1 line of context above and 2
+;; below, sourced from "mpdtui -lyrics-line" via scripts/lyrics-listen.sh
+;; (see that script for why this is deflisten/push rather than
+;; defpoll/pull -- it needs to emit an intermediate "dimmed" frame for
+;; the current line's opacity transition below to animate from).
+;;
+;; The current line's own opacity (not a `revealer`, which was tried
+;; first -- it collapses its child to zero height while hidden, shrinking
+;; then re-growing the whole box on every line change) fades between
+;; `reveal`'s two states; its font-size is bound to `current_size`
+;; (scripts/lyrics-listen.sh's font_size_for) so a long line shrinks
+;; instead of overflowing the box's fixed width.
+;;
+;; The outer revealer (visible) auto-hides the whole widget when MPD
+;; isn't actively playing -- collapsing it rather than "eww close"-ing
+;; the window itself, which would kill the very deflisten script that's
+;; supposed to bring it back (see lyrics-listen.sh's own doc comment).
+
+(deflisten lyrics :initial "{\"visible\": false, \"reveal\": true, \"current_size\": 15, \"above\": \"\", \"current\": \"\", \"below1\": \"\", \"below2\": \"\"}"
+  "~/.config/eww/scripts/lyrics-listen.sh")
+
+;; :close-window closes lyrics-window, not the daemon -- but note (see
+;; lyrics-listen.sh and personal-systemd-services.md §7) this is a
+;; *manual* close, not the auto-hide-on-pause path: it does kill the
+;; deflisten script backing `lyrics` (eww only keeps one running while
+;; some open window uses its variable), and won't come back on its own.
+;; Run "eww open lyrics-window" to bring it back afterward.
+(defwidget lyrics-widget []
+  (revealer :transition "slidedown" :duration "400ms" :reveal {lyrics.visible}
+    (overlay
+      (box :orientation "v" :space-evenly false :halign "center" :class "lyrics-box"
+        (label :class "lyrics-context" :text {lyrics.above} :limit-width 70)
+        (label :class {lyrics.reveal ? "lyrics-current" : "lyrics-current dim"}
+               :style "font-size: ${lyrics.current_size}px;"
+               :text {lyrics.current} :limit-width 70)
+        (label :class "lyrics-context" :text {lyrics.below1} :limit-width 70)
+        (label :class "lyrics-context" :text {lyrics.below2} :limit-width 70))
+      (button :class "lyrics-close" :halign "end" :valign "start"
+              :onclick "eww close lyrics-window" "✕"))))
+
+(defwindow lyrics-window
+  :monitor 0
+  :geometry (geometry :x "0%" :y "4%" :width "620px" :height "1px" :anchor "top center")
+  :stacking "fg"
+  :windowtype "normal"
+  (lyrics-widget))

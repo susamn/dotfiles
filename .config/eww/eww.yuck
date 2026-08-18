@@ -87,7 +87,7 @@
     ;; :visible false drops the widget from allocation entirely; the
     ;; revealer inside it still provides the reveal animation.
     (box :visible {!player_expanded}
-      (revealer :transition "crossfade" :duration "250ms" :reveal {!player_expanded}
+      (revealer :transition "slideup" :duration "250ms" :reveal {!player_expanded}
         ;; The sizer is the overlay's first (size-determining) child:
         ;; a bit larger than the 64px circle, so the arrow can sit in
         ;; the empty upper-left corner *outside* the circle's arc
@@ -110,7 +110,7 @@
     ;; toggle/stop pair, plus collapse (back to the circle) and close
     ;; (this instance only, see win-id above) in the corner.
     (box :visible {player_expanded}
-      (revealer :transition "crossfade" :duration "300ms" :reveal {player_expanded}
+      (revealer :transition "slideup" :duration "300ms" :reveal {player_expanded}
         (overlay
           (box :orientation "v" :space-evenly false :halign "center" :class "player-card"
             (image :class "player-albumart" :path {mpd_status.albumart} :image-width 120 :image-height 120)
@@ -131,7 +131,7 @@
   ;; different widths too, not just heights, and a fixed width would
   ;; leave the small circle floating in the middle of reserved space
   ;; instead of flush against the corner.
-  :geometry (geometry :x "5px" :y "15px" :width "1px" :height "1px" :anchor "bottom right")
+  :geometry (geometry :x "10px" :y "15px" :width "1px" :height "1px" :anchor "bottom right")
   :stacking "fg"
   :windowtype "normal"
   (mpd-player-widget :win-id win-id))

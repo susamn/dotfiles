@@ -1,0 +1,14 @@
+#!/bin/bash
+# Fetch active theme colors via Omarchy's color helper
+branch_color=$(omarchy-theme-color magenta 2>/dev/null || omarchy-theme-color accent 2>/dev/null || echo "#d3869b")
+status_color=$(omarchy-theme-color red 2>/dev/null || echo "#ea6962")
+config_file="$HOME/.config/herdr/config.toml"
+
+if [[ -e "$config_file" ]]; then
+  # Follow symlinks to keep dotfiles repo and stow in sync
+  sed -i --follow-symlinks -E "s/(\\{ token = \"branch\", fg = \")[^\"]*(\", bold = true \\})/\1${branch_color}\2/" "$config_file"
+  sed -i --follow-symlinks -E "s/(\\{ token = \"git_status\", fg = \")[^\"]*(\" \\})/\1${status_color}\2/" "$config_file"
+
+  # Hot-reload the running Herdr server
+  herdr server reload-config >/dev/null 2>&1 || true
+fi

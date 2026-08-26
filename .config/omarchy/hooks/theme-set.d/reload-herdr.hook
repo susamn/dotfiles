@@ -2,12 +2,31 @@
 # Fetch active theme colors via Omarchy's color helper
 branch_color=$(omarchy-theme-color magenta 2>/dev/null || omarchy-theme-color accent 2>/dev/null || echo "#d3869b")
 status_color=$(omarchy-theme-color red 2>/dev/null || echo "#ea6962")
+
+# Agent colors
+agy_color=$(omarchy-theme-color blue 2>/dev/null || omarchy-theme-color accent 2>/dev/null || echo "#83a598")
+claude_color=$(omarchy-theme-color magenta 2>/dev/null || echo "#d3869b")
+codex_color=$(omarchy-theme-color green 2>/dev/null || echo "#b8bb26")
+opencode_color=$(omarchy-theme-color yellow 2>/dev/null || echo "#fabd2f")
+copilot_color=$(omarchy-theme-color cyan 2>/dev/null || echo "#8ec07c")
+cursor_color=$(omarchy-theme-color cyan 2>/dev/null || echo "#8ec07c")
+pi_color=$(omarchy-theme-color magenta 2>/dev/null || echo "#d3869b")
+
 config_file="$HOME/.config/herdr/config.toml"
 
 if [[ -e "$config_file" ]]; then
   # Follow symlinks to keep dotfiles repo and stow in sync
   sed -i --follow-symlinks -E "s/(\\{ token = \"branch\", fg = \")[^\"]*(\", bold = true \\})/\1${branch_color}\2/" "$config_file"
   sed -i --follow-symlinks -E "s/(\\{ token = \"git_status\", fg = \")[^\"]*(\" \\})/\1${status_color}\2/" "$config_file"
+
+  # Update per-agent colors
+  sed -i --follow-symlinks -E "s/(agy = .*\\{ token = \"agent\", fg = \")[^\"]*(\", bold = true \\}.*)/\1${agy_color}\2/" "$config_file"
+  sed -i --follow-symlinks -E "s/(claude = .*\\{ token = \"agent\", fg = \")[^\"]*(\", bold = true \\}.*)/\1${claude_color}\2/" "$config_file"
+  sed -i --follow-symlinks -E "s/(codex = .*\\{ token = \"agent\", fg = \")[^\"]*(\", bold = true \\}.*)/\1${codex_color}\2/" "$config_file"
+  sed -i --follow-symlinks -E "s/(opencode = .*\\{ token = \"agent\", fg = \")[^\"]*(\", bold = true \\}.*)/\1${opencode_color}\2/" "$config_file"
+  sed -i --follow-symlinks -E "s/(copilot = .*\\{ token = \"agent\", fg = \")[^\"]*(\", bold = true \\}.*)/\1${copilot_color}\2/" "$config_file"
+  sed -i --follow-symlinks -E "s/(cursor = .*\\{ token = \"agent\", fg = \")[^\"]*(\", bold = true \\}.*)/\1${cursor_color}\2/" "$config_file"
+  sed -i --follow-symlinks -E "s/(pi = .*\\{ token = \"agent\", fg = \")[^\"]*(\", bold = true \\}.*)/\1${pi_color}\2/" "$config_file"
 
   # Hot-reload the running Herdr server
   herdr server reload-config >/dev/null 2>&1 || true

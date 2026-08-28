@@ -37,4 +37,5 @@ ewwreload=Reload eww's yuck/scss without restarting the daemon
 ewwlog=Tail the eww widget daemon's systemd journal
 ewwst=Show the eww widget daemon's systemd service status
 mpdwidget=Open or close the mpd player widget on both monitors (mpdwidget open|close)
+mdbk=On-demand backup/restore of ONLY the mpdtui SQLite DB file to an rclone remote (prompts, default gdrive; base <remote>:Backup/mpdtui); subcommands: backup (default), restore, list
 

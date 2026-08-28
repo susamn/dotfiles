@@ -11,6 +11,7 @@ alias zsht="$SCRIPTS_PATH/zsh-timeline.sh"
 alias gsec="$SCRIPTS_PATH/generate-secure-resources.sh"
 alias mln="$SCRIPTS_PATH/music-library-normalizer.py"
 alias mpdc="$SCRIPTS_PATH/mpd-configurer.sh"
+alias mdbk="$SCRIPTS_PATH/mpdtui-db-backup.sh"
 alias agm="$SCRIPTS_PATH/agm.sh"
 alias ht2="$TOOLS_PATH/helpful-tools-v2/quick-start.sh"
 alias mosiac="$TOOLS_PATH/mosiac/quick-start.sh"
@@ -100,11 +101,14 @@ if [ -x "$(command -v bat)" ]; then
 fi
 
 if [ -x "$(command -v zoxide)" ]; then
+  __zoxide_shell="zsh"
+  [ -n "$BASH_VERSION" ] && __zoxide_shell="bash"
   if [ "$SHELL_MODE" = "ENHANCED" ]; then
-    eval "$(zoxide init zsh --cmd cd)"  # Replace 'cd' with zoxide
+    eval "$(zoxide init "$__zoxide_shell" --cmd cd)"  # Replace 'cd' with zoxide
   else
-    eval "$(zoxide init zsh)"           # Keep 'z' command, preserve native 'cd'
+    eval "$(zoxide init "$__zoxide_shell")"           # Keep 'z' command, preserve native 'cd'
   fi
+  unset __zoxide_shell
 fi
 
 if [ -x "$(command -v colorls)" ]; then
@@ -126,6 +130,15 @@ if [ -x "$(command -v lsd)" ]; then
   alias lstree="lsd --tree"  # Keep lstree as it's a new command, not a replacement
 fi
 
+if [ -x "$(command -v eza)" ]; then
+  EZA_COMMON_ARGS="-lh --group-directories-first --icons=auto"
+  if [ "$SHELL_MODE" = "ENHANCED" ]; then
+    alias ls="eza $EZA_COMMON_ARGS"
+    alias lsrt="eza $EZA_COMMON_ARGS -a -r -s modified"
+  fi
+  alias lstree="eza $EZA_COMMON_ARGS --tree"  # Keep lstree as it's a new command, not a replacement
+fi
+
 if [ -x "$(command -v jq)" ]; then
   alias jwtd="$SCRIPTS_PATH/jwtd.sh"
 fi
@@ -145,7 +158,11 @@ fi
 
 # fzf aliases
 if [ -x "$(command -v fzf)" ]; then
-  source <(fzf --zsh)
+  if [ -n "$BASH_VERSION" ]; then
+    source <(fzf --bash)
+  else
+    source <(fzf --zsh)
+  fi
   alias fze="fzf --exact"
   alias _als_script="$SCRIPTS_PATH/als.sh"
   alias als="alias|_als_script -m"
@@ -161,10 +178,10 @@ fi
 # git aliases
 if [ -x "$(command -v git)" ]; then
     alias g='git'
-    alias ga='git add'
+    alias gadd='git add'
     alias gaa='git add .'
     alias gs="$SCRIPTS_PATH/git-assumed-status.sh"
-    alias gd='git diff'
+    alias gdiff='git diff'
     alias gco='git checkout'
     alias gc='git commit'
     alias gcom='git commit -m'

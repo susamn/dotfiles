@@ -19,3 +19,27 @@
 [submodule "workspace/tools/mosaic"]
 	path = workspace/tools/mosaic
 	url = git@github.com:susamn/mosiac.git
+[submodule ".config/omarchy/plugins/susamn.mpd-dashboard"]
+	path = .config/omarchy/plugins/susamn.mpd-dashboard
+	url = git@github.com:susamn/omarchy-mpd-dashboard.git
+[submodule ".config/omarchy/plugins/susamn.homeassistant"]
+	path = .config/omarchy/plugins/susamn.homeassistant
+	url = git@github.com:susamn/omarchy-homeassistant-hud.git
+[submodule ".config/omarchy/plugins/susamn.mpd-lyrics"]
+	path = .config/omarchy/plugins/susamn.mpd-lyrics
+	url = git@github.com:susamn/omarchy-mpd-lyrics-line.git
+[submodule ".config/omarchy/plugins/susamn.rclone"]
+	path = .config/omarchy/plugins/susamn.rclone
+	url = git@github.com:susamn/omarchy-rclone-hud.git
+[submodule ".config/omarchy/plugins/susamn.illusions"]
+	path = .config/omarchy/plugins/susamn.illusions
+	url = git@github.com:susamn/omarchy-illusions.git
+[submodule ".config/omarchy/themes/last-call"]
+	path = .config/omarchy/themes/last-call
+	url = https://github.com/OldJobobo/omarchy-last-call-theme.git
+[submodule ".config/omarchy/themes/serenity"]
+	path = .config/omarchy/themes/serenity
+	url = https://github.com/themiddlechildreal/omarchy-serenity-theme.git
+[submodule ".config/omarchy/themes/terminus"]
+	path = .config/omarchy/themes/terminus
+	url = https://github.com/r-bart/omarchy-terminus-theme.git

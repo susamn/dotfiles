@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "susamn.desktop-widgets",
+  "name": "Desktop Widgets",
+  "version": "1.0.0",
+  "author": "susamn",
+  "license": "MIT",
+  "description": "Desktop-layer widgets: a clock card and a themed 'pipes' animation card. Renders on the background layer with no bar icon.",
+  "kinds": ["panel"],
+  "keepLoaded": true,
+  "entryPoints": {
+    "panel": "DesktopWidgets.qml"
+  }
+}

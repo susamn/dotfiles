@@ -21,7 +21,10 @@ source $WORKSPACE_PATH/.aliases.sh
 
 HISTFILE=~/.zsh_history
 HISTSIZE=10000
-SAVEHIST=10000
-setopt appendhistory
-# Ctrl + Backspace to delete an entire word
-bindkey '^H' backward-kill-word
+
+if [[ -n $ZSH_VERSION ]]; then
+  SAVEHIST=10000
+  setopt appendhistory
+  # Ctrl + Backspace to delete an entire word
+  bindkey '^H' backward-kill-word
+fi

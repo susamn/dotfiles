@@ -76,7 +76,7 @@ __pm_family_for() {
   case "$1" in
     mac|macos|darwin)
       printf 'mac' ;;
-    arch|manjaro|endeavouros|garuda|artix|archcraft|arcolinux|cachyos)
+    arch|manjaro|endeavouros|garuda|artix|archcraft|arcolinux|cachyos|omarchy)
       printf 'arch' ;;
     ubuntu|debian|linuxmint|mint|pop|"pop!_os"|kali|raspbian|elementary|\
 zorin|deepin|parrot|tails|backbox|neon|"ubuntu-budgie"|"ubuntu-mate")

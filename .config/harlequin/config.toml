@@ -1,0 +1,9 @@
+# Harlequin config — https://harlequin.sh/docs/config-file
+# Discovered automatically at ~/.config/harlequin/config.toml
+
+default_profile = "mpdtui"
+
+[profiles.mpdtui]
+adapter = "sqlite"
+# sqlite3.connect() does not expand "~", so this path is absolute.
+conn_str = ["/home/susamn/.config/mpdtui/mpdtui.db"]

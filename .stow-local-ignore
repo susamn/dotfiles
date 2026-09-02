@@ -35,3 +35,6 @@ RCS
 # that resolves to ~/ instead of ~/dotfiles/ and the scripts break.
 ^do-stow\.sh$
 ^do-unstow\.sh$
+
+# --- stow-ignores: profile files read by do-stow.sh/do-unstow.sh, not a package ---
+^stow-ignores$

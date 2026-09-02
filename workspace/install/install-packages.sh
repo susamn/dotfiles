@@ -1,8 +1,10 @@
 #!/bin/bash
 
-# Require sudo for the script
-if [[ "$EUID" -ne 0 ]]; then
-  echo "[ERROR] This script must be run as root (use sudo)."
+# Do NOT run this script itself with sudo: Homebrew refuses to run as root,
+# so brew.pkg installs would silently fail. Run as your normal user --
+# the platform package manager step below escalates to sudo on its own.
+if [[ "$EUID" -eq 0 ]]; then
+  echo "[ERROR] Do not run this script as root/with sudo. Run it as your normal user."
   exit 1
 fi
 
@@ -68,17 +70,17 @@ install_packages() {
         brew install "${to_install[@]}" &> /dev/null
         ;;
       apt)
-        apt update &> /dev/null
-        apt install -y "${to_install[@]}" &> /dev/null
+        sudo apt update &> /dev/null
+        sudo apt install -y "${to_install[@]}" &> /dev/null
         ;;
       yum)
-        yum install -y "${to_install[@]}" &> /dev/null
+        sudo yum install -y "${to_install[@]}" &> /dev/null
         ;;
       dnf)
-        dnf install -y "${to_install[@]}" &> /dev/null
+        sudo dnf install -y "${to_install[@]}" &> /dev/null
         ;;
       pacman)
-        pacman -S --noconfirm "${to_install[@]}" &> /dev/null
+        sudo pacman -S --noconfirm "${to_install[@]}" &> /dev/null
         ;;
       *)
         warn "Unsupported package manager: $pkg_manager"

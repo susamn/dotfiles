@@ -125,43 +125,7 @@ ensure_templates_installed() {
     script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     local repo_dir
     repo_dir="$(dirname "$(dirname "$script_dir")")"
-    
-    # Copy sync runner script
-    if [[ -f "$repo_dir/services/rclone-sync.sh" ]]; then
-        sudo cp "$repo_dir/services/rclone-sync.sh" /usr/local/bin/rclone-sync.sh
-        sudo chmod 755 /usr/local/bin/rclone-sync.sh
-    else
-        echo -e "${RED}Error: Source runner script not found at $repo_dir/services/rclone-sync.sh${NC}" >&2
-        return 1
-    fi
-    
-    # Copy mount runner script
-    if [[ -f "$repo_dir/services/rclone-mount.sh" ]]; then
-        sudo cp "$repo_dir/services/rclone-mount.sh" /usr/local/bin/rclone-mount.sh
-        sudo chmod 755 /usr/local/bin/rclone-mount.sh
-    else
-        echo -e "${RED}Error: Source mount script not found at $repo_dir/services/rclone-mount.sh${NC}" >&2
-        return 1
-    fi
-    
-    # Copy timer template
-    if [[ -f "$repo_dir/services/rclone-sync@.timer" ]]; then
-        sudo cp "$repo_dir/services/rclone-sync@.timer" /etc/systemd/system/rclone-sync@.timer
-        sudo chmod 644 /etc/systemd/system/rclone-sync@.timer
-    fi
-    
-    # Copy sync service template and replace placeholder
-    if [[ -f "$repo_dir/services/rclone-sync@.service" ]]; then
-        sed "s/@USER@/$REAL_USER/g" "$repo_dir/services/rclone-sync@.service" | sudo tee /etc/systemd/system/rclone-sync@.service > /dev/null
-        sudo chmod 644 /etc/systemd/system/rclone-sync@.service
-    fi
-    
-    # Copy mount service template and replace placeholder
-    if [[ -f "$repo_dir/services/rclone-mount@.service" ]]; then
-        sed "s/@USER@/$REAL_USER/g" "$repo_dir/services/rclone-mount@.service" | sudo tee /etc/systemd/system/rclone-mount@.service > /dev/null
-        sudo chmod 644 /etc/systemd/system/rclone-mount@.service
-    fi
-    
+
     sudo systemctl daemon-reload
     echo -e "  ${GREEN}✓ Templates and runner scripts are up to date.${NC}"
 }

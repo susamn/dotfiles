@@ -21,18 +21,20 @@ display_usage() {
   echo "Options:"
   echo "  -o    Open the selected file in \$EDITOR (falls back to vim)."
   echo "  -h    Show this help message."
-  echo "  -e    Search for content inside files using ripgrep."
+  echo "  -d    Search for content inside files using ripgrep."
+  echo "  -e    Enable exact-match for file search (like fzf -e)."
   echo "  -x    Search for files with a specific extension (with or without leading dot)."
   echo "  -r    Exclude files with the given intermediate path."
   echo "  -i    Include files with the given intermediate path."
-  echo "  -s    Perform a case-insensitive search (only works with -e)."
+  echo "  -s    Perform a case-insensitive search (only works with -d)."
   echo ""
   echo "Examples:"
   echo "  $0 my_file.txt          # Find files with 'my_file.txt' in the name"
+  echo "  $0 -e my_file.txt       # Find files with exact name 'my_file.txt'"
   echo "  $0 -x pdf               # Find all PDF files"
   echo "  $0 -o important_doc.md  # Find 'important_doc.md' and open it in \$EDITOR"
-  echo "  $0 -e 'some content'    # Find files containing 'some content'"
-  echo "  $0 -e 'pattern' -x log  # Find .log files containing 'pattern'"
+  echo "  $0 -d 'some content'    # Find files containing 'some content'"
+  echo "  $0 -d 'pattern' -x log  # Find .log files containing 'pattern'"
   echo "  $0 -r 'pkg/mod' -i 'tools' # Exclude 'pkg/mod' and include 'tools'"
 }
 
@@ -40,6 +42,7 @@ display_usage() {
 
 OPEN_IN_EDITOR=false
 CONTENT_SEARCH=""
+EXACT_MATCH=false
 EXTENSION_SEARCH=""
 EXCLUDE_PATH=""
 INCLUDE_PATH=""
@@ -47,7 +50,7 @@ CASE_INSENSITIVE=false
 FILE_SEARCH_ARGS=()
 
 # Parse command-line arguments
-while getopts "ohx:e:r:i:s" opt; do
+while getopts "ohx:d:er:i:s" opt; do
   case "$opt" in
     o)
       OPEN_IN_EDITOR=true
@@ -56,8 +59,11 @@ while getopts "ohx:e:r:i:s" opt; do
       display_usage
       exit 0
       ;;
-    e)
+    d)
       CONTENT_SEARCH="$OPTARG"
+      ;;
+    e)
+      EXACT_MATCH=true
       ;;
     x)
       EXTENSION_SEARCH="$OPTARG"
@@ -126,12 +132,20 @@ if [ -n "$EXTENSION_SEARCH" ]; then
   results_computed=true
 elif [ "${#FILE_SEARCH_ARGS[@]}" -gt 0 ]; then
   if [ "$FILE_FIND_CMD" = "fd" ]; then
-    search_results=$(fd "${FILE_SEARCH_ARGS[@]}" 2>/dev/null)
+    if [ "$EXACT_MATCH" = true ]; then
+      search_results=$(fd -g "${FILE_SEARCH_ARGS[@]}" 2>/dev/null)
+    else
+      search_results=$(fd "${FILE_SEARCH_ARGS[@]}" 2>/dev/null)
+    fi
   else
     find_expr=()
     for term in "${FILE_SEARCH_ARGS[@]}"; do
       [ "${#find_expr[@]}" -gt 0 ] && find_expr+=(-o)
-      find_expr+=(-iname "*${term}*")
+      if [ "$EXACT_MATCH" = true ]; then
+        find_expr+=(-iname "${term}")
+      else
+        find_expr+=(-iname "*${term}*")
+      fi
     done
     search_results=$(find . \( "${find_expr[@]}" \) -print 2>/dev/null)
   fi
@@ -184,15 +198,16 @@ fi
 # Filter results with fzf (with preview panel showing absolute path and file content)
 if [ -n "$search_results" ]; then
   export CONTENT_SEARCH
+  FZF_OPTS=(--ansi --preview-window='right:60%:wrap')
+  [ "$EXACT_MATCH" = true ] && FZF_OPTS+=(-e)
+
   if [ -n "$CONTENT_SEARCH" ]; then
     selected_file=$(printf '%s\n' "$search_results" | fzf \
-      --ansi \
-      --preview-window='right:60%:wrap' \
+      "${FZF_OPTS[@]}" \
       --preview 'echo -e "\033[1;36m{}\033[0m" && echo "" && rg --color=always --heading --line-number --context=3 -- "$CONTENT_SEARCH" {} 2>/dev/null || bat --style=numbers --color=always --line-range=:100 {} 2>/dev/null || cat {} 2>/dev/null')
   else
     selected_file=$(printf '%s\n' "$search_results" | fzf \
-      --ansi \
-      --preview-window='right:60%:wrap' \
+      "${FZF_OPTS[@]}" \
       --preview 'echo -e "\033[1;36m{}\033[0m" && echo "" && bat --style=numbers --color=always --line-range=:100 {} 2>/dev/null || cat {} 2>/dev/null')
   fi
 

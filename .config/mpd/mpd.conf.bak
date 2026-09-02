@@ -61,6 +61,17 @@ audio_output {
     format "44100:16:2"
 }
 
+audio_output {
+    type             "httpd"
+    name             "Cast"
+    encoder          "lame"
+    port             "8111"
+    bind_to_address  "0.0.0.0"
+    bitrate          "192"
+    format           "44100:16:2"
+    max_clients      "0"
+}
+
 
 # Network control
 bind_to_address    "localhost"  # Allow remote connections (use "localhost" to disable)

@@ -1,13 +1,16 @@
 #!/bin/bash
 
 # Script to find files interactively using fd (or find), ripgrep, and fzf.
-# Optionally opens the selected file in vim.
+# Optionally opens the selected file in an editor.
 
 # --- Helper Functions ---
 
 check_command() {
+  local quiet="${2:-false}"
   if ! command -v "$1" &> /dev/null; then
-    echo "Error: Command '$1' not found. Please install it to use this script."
+    if [ "$quiet" != "true" ]; then
+      echo "Error: Command '$1' not found. Please install it to use this script."
+    fi
     return 1
   fi
   return 0
@@ -16,26 +19,26 @@ check_command() {
 display_usage() {
   echo "Usage: $0 [options] [search_term]"
   echo "Options:"
-  echo "  -o    Open the selected file in vim."
+  echo "  -o    Open the selected file in \$EDITOR (falls back to vim)."
   echo "  -h    Show this help message."
   echo "  -e    Search for content inside files using ripgrep."
-  echo "  -x    Search for files with a specific extension."
+  echo "  -x    Search for files with a specific extension (with or without leading dot)."
   echo "  -r    Exclude files with the given intermediate path."
   echo "  -i    Include files with the given intermediate path."
   echo "  -s    Perform a case-insensitive search (only works with -e)."
   echo ""
   echo "Examples:"
   echo "  $0 my_file.txt          # Find files with 'my_file.txt' in the name"
-  echo "  $0 -x .pdf              # Find all PDF files"
-  echo "  $0 -o important_doc.md  # Find 'important_doc.md' and open it in vim"
+  echo "  $0 -x pdf               # Find all PDF files"
+  echo "  $0 -o important_doc.md  # Find 'important_doc.md' and open it in \$EDITOR"
   echo "  $0 -e 'some content'    # Find files containing 'some content'"
-  echo "  $0 -e 'pattern' -x .log # Find .log files containing 'pattern'"
+  echo "  $0 -e 'pattern' -x log  # Find .log files containing 'pattern'"
   echo "  $0 -r 'pkg/mod' -i 'tools' # Exclude 'pkg/mod' and include 'tools'"
 }
 
 # --- Main Script ---
 
-OPEN_IN_VIM=false
+OPEN_IN_EDITOR=false
 CONTENT_SEARCH=""
 EXTENSION_SEARCH=""
 EXCLUDE_PATH=""
@@ -47,7 +50,7 @@ FILE_SEARCH_ARGS=()
 while getopts "ohx:e:r:i:s" opt; do
   case "$opt" in
     o)
-      OPEN_IN_VIM=true
+      OPEN_IN_EDITOR=true
       ;;
     h)
       display_usage
@@ -80,8 +83,8 @@ shift $((OPTIND - 1))
 # Remaining arguments are for file name/pattern search
 FILE_SEARCH_ARGS=("$@")
 
-# Check for required tools
-if check_command "fd"; then
+# Check for required tools (only warn about the fallback if we actually need to fall back)
+if check_command "fd" true; then
   FILE_FIND_CMD="fd"
 elif check_command "find"; then
   FILE_FIND_CMD="find"
@@ -90,9 +93,14 @@ else
   exit 1
 fi
 
-if [ "$OPEN_IN_VIM" = true ] && ! check_command "vim"; then
-  OPEN_IN_VIM=false
-  echo "Warning: 'vim' not found. Will not open file automatically."
+EDITOR_CMD="${EDITOR:-vim}"
+if [ "$OPEN_IN_EDITOR" = true ] && ! check_command "$EDITOR_CMD" true; then
+  echo "Warning: editor '$EDITOR_CMD' not found. Falling back to vim."
+  EDITOR_CMD="vim"
+  if ! check_command "vim" true; then
+    echo "Warning: 'vim' not found either. Will not open file automatically."
+    OPEN_IN_EDITOR=false
+  fi
 fi
 
 if ! check_command "fzf"; then
@@ -100,29 +108,55 @@ if ! check_command "fzf"; then
   exit 1
 fi
 
-# Perform file search with priority to extension matching
+# --- File search ---
+# search_results holds the current candidate list.
+# results_computed tracks whether a real filter/search has run yet, so an
+# empty result from a filter is never confused with "nothing ran yet" and
+# silently replaced by an unrelated fallback listing.
 search_results=""
+results_computed=false
 
-# First, search by extension if provided
 if [ -n "$EXTENSION_SEARCH" ]; then
+  ext="${EXTENSION_SEARCH#.}"
   if [ "$FILE_FIND_CMD" = "fd" ]; then
-    search_results=$(fd -e "$EXTENSION_SEARCH" 2>/dev/null)
+    search_results=$(fd -e "$ext" 2>/dev/null)
   else
-    search_results=$(find . -iname "*.$EXTENSION_SEARCH" -print 2>/dev/null)
+    search_results=$(find . -iname "*.$ext" -print 2>/dev/null)
   fi
+  results_computed=true
+elif [ "${#FILE_SEARCH_ARGS[@]}" -gt 0 ]; then
+  if [ "$FILE_FIND_CMD" = "fd" ]; then
+    search_results=$(fd "${FILE_SEARCH_ARGS[@]}" 2>/dev/null)
+  else
+    find_expr=()
+    for term in "${FILE_SEARCH_ARGS[@]}"; do
+      [ "${#find_expr[@]}" -gt 0 ] && find_expr+=(-o)
+      find_expr+=(-iname "*${term}*")
+    done
+    search_results=$(find . \( "${find_expr[@]}" \) -print 2>/dev/null)
+  fi
+  results_computed=true
 fi
 
-# Then, search for content if provided
+# Narrow by content if requested. If a name/extension filter already ran,
+# only search inside its candidates; if it found nothing, there is nothing
+# to content-search. If no name filter ran, content search covers the tree.
 if [ -n "$CONTENT_SEARCH" ]; then
-  if check_command "rg"; then
-    RG_OPTS=""
+  if check_command "rg" true; then
+    RG_OPTS=()
     if [ "$CASE_INSENSITIVE" = true ]; then
-      RG_OPTS="--ignore-case"
+      RG_OPTS+=(--ignore-case)
     fi
-    if [ -n "$search_results" ]; then
-      search_results=$(echo "$search_results" | xargs rg -l $RG_OPTS -- "$CONTENT_SEARCH" 2>/dev/null)
+    if [ "$results_computed" = true ]; then
+      if [ -n "$search_results" ]; then
+        mapfile -t candidate_files <<< "$search_results"
+        search_results=$(rg -l "${RG_OPTS[@]}" -- "$CONTENT_SEARCH" "${candidate_files[@]}" 2>/dev/null)
+      else
+        search_results=""
+      fi
     else
-      search_results=$(rg -l $RG_OPTS -- "$CONTENT_SEARCH" 2>/dev/null)
+      search_results=$(rg -l "${RG_OPTS[@]}" -- "$CONTENT_SEARCH" 2>/dev/null)
+      results_computed=true
     fi
   else
     echo "Error: 'ripgrep' command not found. Cannot perform content-based search."
@@ -130,53 +164,43 @@ if [ -n "$CONTENT_SEARCH" ]; then
   fi
 fi
 
-# Exclude files with the given path if -r is provided
-if [ -n "$EXCLUDE_PATH" ]; then
-  search_results=$(echo "$search_results" | grep -v "$EXCLUDE_PATH")
+# Exclude/include filters, applied unconditionally to whatever we have so far
+if [ -n "$EXCLUDE_PATH" ] && [ -n "$search_results" ]; then
+  search_results=$(printf '%s\n' "$search_results" | grep -v -- "$EXCLUDE_PATH")
+fi
+if [ -n "$INCLUDE_PATH" ] && [ -n "$search_results" ]; then
+  search_results=$(printf '%s\n' "$search_results" | grep -- "$INCLUDE_PATH")
 fi
 
-# Include files with the given path if -i is provided
-if [ -n "$INCLUDE_PATH" ]; then
-  search_results=$(echo "$search_results" | grep "$INCLUDE_PATH")
-fi
-
-# If no extension or content search was applied, fallback to general search
-if [ -z "$search_results" ]; then
-  if [ "${#FILE_SEARCH_ARGS[@]}" -gt 0 ]; then
-    if [ "$FILE_FIND_CMD" = "fd" ]; then
-      search_results=$(fd "${FILE_SEARCH_ARGS[@]}" 2>/dev/null)
-    else
-      search_results=$(find . -iname "*${FILE_SEARCH_ARGS[0]}*" -print 2>/dev/null)
-    fi
+# Only fall back to "list everything" when no search/filter was given at all
+if [ "$results_computed" = false ]; then
+  if [ "$FILE_FIND_CMD" = "fd" ]; then
+    search_results=$(fd 2>/dev/null)
   else
-    # Default: list all files in the current directory
-    if [ "$FILE_FIND_CMD" = "fd" ]; then
-      search_results=$(fd 2>/dev/null)
-    else
-      search_results=$(find . -print 2>/dev/null)
-    fi
+    search_results=$(find . -print 2>/dev/null)
   fi
 fi
 
 # Filter results with fzf (with preview panel showing absolute path and file content)
 if [ -n "$search_results" ]; then
+  export CONTENT_SEARCH
   if [ -n "$CONTENT_SEARCH" ]; then
-    selected_file=$(echo "$search_results" | fzf \
+    selected_file=$(printf '%s\n' "$search_results" | fzf \
       --ansi \
       --preview-window='right:60%:wrap' \
-      --preview "echo -e '\033[1;36m{}\033[0m' && echo '' && rg --color=always --heading --line-number --context=3 '$CONTENT_SEARCH' {} 2>/dev/null || bat --style=numbers --color=always --line-range=:100 {} 2>/dev/null")
+      --preview 'echo -e "\033[1;36m{}\033[0m" && echo "" && rg --color=always --heading --line-number --context=3 -- "$CONTENT_SEARCH" {} 2>/dev/null || bat --style=numbers --color=always --line-range=:100 {} 2>/dev/null || cat {} 2>/dev/null')
   else
-    selected_file=$(echo "$search_results" | fzf \
+    selected_file=$(printf '%s\n' "$search_results" | fzf \
       --ansi \
       --preview-window='right:60%:wrap' \
-      --preview "echo -e '\033[1;36m{}\033[0m' && echo '' && bat --style=numbers --color=always --line-range=:100 {} 2>/dev/null")
+      --preview 'echo -e "\033[1;36m{}\033[0m" && echo "" && bat --style=numbers --color=always --line-range=:100 {} 2>/dev/null || cat {} 2>/dev/null')
   fi
 
   if [ -n "$selected_file" ]; then
     echo "Selected: $selected_file"
-    if [ "$OPEN_IN_VIM" = true ]; then
-      echo "Opening '$selected_file' in vim..."
-      vim "$selected_file"
+    if [ "$OPEN_IN_EDITOR" = true ]; then
+      echo "Opening '$selected_file' in $EDITOR_CMD..."
+      "$EDITOR_CMD" "$selected_file"
     fi
   fi
 else
@@ -184,4 +208,3 @@ else
 fi
 
 exit 0
-

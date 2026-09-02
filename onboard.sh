@@ -477,7 +477,24 @@ run_stow() {
   fi
 }
 
-# --- 10) DEFAULT SHELL CONFIGURATION ---------------------
+# --- 10) DESKTOP SETTINGS (dconf) ------------------------
+# gsettings writes to ~/.config/dconf/user, a binary DB that stow does not track,
+# so desktop keys do not survive a rebuild the way stowed configs do. Runs after
+# run_stow because it invokes the stowed copy of the script.
+#
+# Deliberately non-fatal: a headless or non-GNOME machine has no gsettings, and
+# that is not a reason to fail a bootstrap that has otherwise succeeded.
+apply_desktop_settings() {
+  local script="$HOME/workspace/scripts/dconf-apply.sh"
+  if [ ! -x "$script" ]; then
+    warn "dconf-apply.sh not found at $script — skipping desktop settings."
+    return 0
+  fi
+  log "Applying version-controlled desktop settings..."
+  "$script" || warn "Some desktop settings could not be applied (see output above)."
+}
+
+# --- 11) DEFAULT SHELL CONFIGURATION ---------------------
 configure_default_shell() {
   if [ "$SHELL" != "$(command -v zsh)" ] && command -v zsh &>/dev/null; then
     log "Changing default login shell to Zsh..."
@@ -500,6 +517,7 @@ main() {
   install_manifest_packages
   setup_zshrc
   run_stow
+  apply_desktop_settings
   configure_default_shell
   
   log "=================================================="

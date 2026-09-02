@@ -1,0 +1,8 @@
+# stow-ignores/minimal — baseline patterns, safe to use on any machine
+# (no desktop-environment-specific exclusions).
+#
+# Selected interactively by do-stow.sh / do-unstow.sh (fzf profile picker).
+# Format: one glob per line. A trailing "/" ignores a directory and
+# everything under it; anything else must match a path segment exactly.
+
+.ssh/

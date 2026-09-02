@@ -6,29 +6,61 @@ DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AISTUFF_DIR="$DOTFILES_DIR/workspace/aistuff"
 SKILLS_DIR="$AISTUFF_DIR/skills"
 AGENTS_FILE="$SKILLS_DIR/.agents"
+IGNORE_PROFILES_DIR="$DOTFILES_DIR/stow-ignores"
+
+# ── pick an ignore profile ────────────────────────────────────────────────────
+SELECTED_IGNORE_FILE=""
+select_ignore_profile() {
+  command -v fzf >/dev/null 2>&1 || {
+    echo "[stow] fzf is required to pick a stow-ignore profile. Install it and re-run." >&2
+    exit 1
+  }
+
+  local profiles=()
+  while IFS= read -r f; do profiles+=("$(basename "$f")"); done \
+    < <(find "$IGNORE_PROFILES_DIR" -maxdepth 1 -type f | sort)
+
+  if [[ ${#profiles[@]} -eq 0 ]]; then
+    echo "[stow] No ignore profiles found in $IGNORE_PROFILES_DIR" >&2
+    exit 1
+  fi
+
+  local choice confirm
+  while true; do
+    choice="$(printf '%s\n' "${profiles[@]}" | fzf --prompt="stow-ignore profile> " --height=~40% --border --header="Which machine is this? (Esc to abort)")"
+    [[ -n "$choice" ]] || { echo "[stow] No profile selected, aborting."; exit 1; }
+
+    confirm="$(printf '%s\n' "Yes" "No" | fzf --prompt="Use '$choice'? > " --height=~40% --border --header="Confirm profile selection")"
+    if [[ "$confirm" == "Yes" ]]; then
+      SELECTED_IGNORE_FILE="$IGNORE_PROFILES_DIR/$choice"
+      echo "[stow] Using ignore profile: $choice"
+      return
+    fi
+    # "No" or Esc on confirm: loop back to profile selection
+  done
+}
 
 # ── stow ignore configurations ───────────────────────────────────────────────
 STOW_IGNORE_FLAGS=()
 get_stow_ignore_flags() {
   local flags=()
-  flags+=("--ignore=\.ignored")
-  if [[ -f "$DOTFILES_DIR/.ignored" ]]; then
+  if [[ -f "$SELECTED_IGNORE_FILE" ]]; then
     while IFS= read -r line || [[ -n "$line" ]]; do
       # Skip empty lines and comments
       [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
       line=$(echo "$line" | xargs)
-      
+
       # Convert glob pattern to regex pattern
       local escaped
       escaped="${line//./\.}"
       escaped="${escaped//\*/.*}"
-      
+
       if [[ "$escaped" == */ ]]; then
         flags+=("--ignore=^${escaped%/}($|/)")
       else
         flags+=("--ignore=^${escaped}$")
       fi
-    done < "$DOTFILES_DIR/.ignored"
+    done < "$SELECTED_IGNORE_FILE"
   fi
   STOW_IGNORE_FLAGS=("${flags[@]}")
 }
@@ -164,6 +196,7 @@ deploy_mcp() {
   fi
 }
 
+select_ignore_profile
 stow_packages
 deploy_skills
 deploy_instructions

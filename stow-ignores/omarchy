@@ -1,0 +1,47 @@
+# stow-ignores/omarchy — baseline patterns plus everything Omarchy 4 already
+# manages itself. Stowing our own copies over these either hijacks Omarchy's
+# live config/theme engine or gets silently overwritten by it later. Verified
+# by hand against a fresh Omarchy 4.0.0 install (Hyprland 0.56.2) — see the
+# comment on each entry for the exact mechanism.
+#
+# Selected interactively by do-stow.sh / do-unstow.sh (fzf profile picker).
+
+.ssh/
+
+# Hyprland: Omarchy 4's real config entrypoint is
+# ~/.config/hypr/hyprland.lua, which require()s monitors/input/bindings/
+# looknfeel/autostart.lua siblings in the same directory. Hyprland 0.56.2
+# still honors a legacy hyprland.conf if one is present (deprecated, removed
+# in 0.57) — no filename collides, so stow would merge our old .conf-based
+# package in silently, and Hyprland may pick it up over the .lua config,
+# replacing Omarchy's entire session setup. Ignore the whole package.
+.config/hypr/
+
+# Neovim: Omarchy ships its own LazyVim distro with a dynamically
+# hot-reloaded colorscheme (lua/plugins/theme.lua, regenerated per Omarchy
+# theme switch, + a theme-hotreload watcher plugin). Our
+# nvim/lua/plugins/catppuccin.lua is a second lazy.nvim spec at the same
+# priority=1000 that hardcodes `colorscheme "catppuccin"` — no filename
+# collides in lua/plugins/, so it would load alongside Omarchy's and fight
+# it for the active colorscheme on every startup/reload. init.lua and
+# lazy-lock.json also collide directly (real files, blocks stow outright).
+.config/nvim/
+
+# Terminal emulators: Omarchy wires these into its live theme system via an
+# include/import that points at ~/.local/state/omarchy/current/theme/*.
+# Stowing our own file replaces that hook, so theme switching silently stops
+# updating the terminal's colors.
+.config/alacritty/alacritty.toml
+.config/ghostty/
+.config/kitty/
+
+# Fontconfig: `omarchy-font-set` writes directly to
+# ~/.config/fontconfig/fonts.conf on every font change (`cat > "$file"`,
+# not a symlink swap). If that path is a symlink into this repo, Omarchy
+# silently overwrites our tracked file the next time the font changes.
+.config/fontconfig/
+
+.config/rofi
+.config/waybar
+.config/matugen
+.config/swaync

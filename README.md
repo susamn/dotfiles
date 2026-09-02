@@ -29,7 +29,9 @@ installed from here by [`linux-system-manager`](workspace/tools/linux-system-man
 ├── do-stow.sh            # stow + deploy skills + generate agent instructions + sync MCP
 ├── do-unstow.sh          # reverse of do-stow.sh
 ├── .stow-local-ignore    # stow's ignore list — REPLACES stow's built-in defaults
-└── .ignored              # extra ignore patterns read by do-stow.sh
+└── stow-ignores/         # profiles read by do-stow.sh/do-unstow.sh (fzf-picked at run time)
+    ├── minimal              # baseline, no DE-specific exclusions
+    └── omarchy               # + everything Omarchy 4 manages itself (hypr, nvim, theme hooks, fontconfig)
 ```
 
 ## Setting up a new machine
@@ -54,7 +56,10 @@ For everything after the first run, `./do-stow.sh` is the only command needed.
 
 ## What `do-stow.sh` does beyond stowing
 
-1. **Stows** the repo into `$HOME`, honouring `.stow-local-ignore` and `.ignored`.
+1. **Stows** the repo into `$HOME`, honouring `.stow-local-ignore` and an ignore
+   profile you pick via `fzf` from `stow-ignores/` (confirmed before use). Use
+   `omarchy` on an Omarchy machine, `minimal` elsewhere. `do-unstow.sh` asks the
+   same question — pick whichever profile you stowed with.
 2. **Skills** — symlinks every active skill in `workspace/aistuff/skills/` into
    *every* agent's skills directory. There is no per-agent selection.
 3. **Instructions** — *generates* each agent's instruction file (e.g.

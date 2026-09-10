@@ -19,3 +19,6 @@
 [submodule "workspace/tools/mosaic"]
 	path = workspace/tools/mosaic
 	url = git@github.com:susamn/mosiac.git
+[submodule "workspace/tools/music-management-tui"]
+	path = workspace/tools/music-management-tui
+	url = git@github.com:susamn/music-management-tui.git

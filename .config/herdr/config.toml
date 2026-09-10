@@ -87,6 +87,9 @@ prompt_new_tab_name = false
 # set -g mouse on
 mouse_capture = true
 
+status_indicators = "symbols"
+show_agent_labels_on_pane_borders = true
+
 # status-right had the zoom flag followed by #h
 tab_bar_right = [{ type = "zoom" }, { type = "hostname" }]
 
@@ -94,3 +97,27 @@ tab_bar_right = [{ type = "zoom" }, { type = "hostname" }]
 # the basename of the pane cwd. This is what Hyprland shows in the group bar,
 # and it resolves on the server so remote sessions name the remote host.
 window_title = "{hostname}: {workspace}"
+
+[ui.sidebar.spaces]
+row_gap = 0
+rows = [
+  ["state_icon", "workspace"],
+  [
+    { token = "branch", fg = "#a8a9eb", bold = true },
+    { token = "git_status", fg = "#fd6883" }
+  ]
+]
+
+[ui.sidebar.agents]
+row_gap = 0
+rows = [["state_icon", "workspace"], ["tab"], ["agent"]]
+
+[ui.sidebar.agents.rows_by_agent]
+agy = [["state_icon", "workspace"], ["tab"], [{ token = "agent", fg = "#f38d70", bold = true }]]
+claude = [["state_icon", "workspace"], ["tab"], ["terminal_title_stripped"], [{ token = "agent", fg = "#a8a9eb", bold = true }]]
+codex = [["state_icon", "workspace"], ["tab"], [{ token = "agent", fg = "#adda78", bold = true }]]
+opencode = [["state_icon", "workspace"], ["tab"], [{ token = "agent", fg = "#f9cc6c", bold = true }]]
+copilot = [["state_icon", "workspace"], ["tab"], [{ token = "agent", fg = "#85dacc", bold = true }]]
+cursor = [["state_icon", "workspace"], ["tab"], [{ token = "agent", fg = "#85dacc", bold = true }]]
+pi = [["state_icon", "workspace"], ["tab"], [{ token = "agent", fg = "#a8a9eb", bold = true }]]
+

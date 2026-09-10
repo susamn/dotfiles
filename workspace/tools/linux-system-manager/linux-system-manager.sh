@@ -27,15 +27,18 @@ DRY_RUN = False
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 OS_RELEASE_PATH = os.environ.get('OS_RELEASE_PATH', '/etc/os-release')
 
+# Fallback only: a section may carry its own "icon" in menu.json. Keying icons
+# on the section number alone silently reassigns them the moment sections are
+# renumbered, which is how merging two sections would have handed Cloud Sync the
+# icon that used to mean Personal Services.
 SECTION_ICONS = {
     "1": "🛡️ ",
     "2": "📦",
     "3": "🔍",
     "4": "⚙️ ",
-    "5": "⚡",
-    "6": "📊",
-    "7": "🔧",
-    "8": "🔬",
+    "5": "📊",
+    "6": "🔧",
+    "7": "🔬",
 }
 
 
@@ -131,7 +134,7 @@ def render_menu(menu_data: dict, distro_name: str):
     for section in sections:
         sec_id = str(section.get("id"))
         sec_title = section.get("title")
-        icon = SECTION_ICONS.get(sec_id, "⚙️ ")
+        icon = section.get("icon") or SECTION_ICONS.get(sec_id, "⚙️ ")
         print(f"{SUCCESS}{sec_id}{NC})   {INFO}{icon} {BOLD}{sec_title}{NC}")
 
         items = section.get("items", [])

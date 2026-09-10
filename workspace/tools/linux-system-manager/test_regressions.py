@@ -15,6 +15,7 @@ import contextlib
 import importlib.util
 import io
 import os
+import re
 import shutil
 import subprocess
 import symtable
@@ -30,6 +31,21 @@ BASH = shutil.which('bash') or '/bin/bash'
 # so the suite cannot silently drift from what ships.
 SERVICES_DIR = os.environ.get('SERVICES_PATH') or os.path.abspath(
     os.path.join(SCRIPT_DIR, '..', '..', 'services'))
+
+
+def extract_function(body, name):
+    """A shell function exactly as shipped: from its definition to the closing
+    brace in column 0.
+
+    Personal-unit behaviour used to be located by slicing the file between case
+    labels (`--failed-personal` .. `--manage-personal`). Once those branches
+    became one-line dispatches to functions, those slices still resolved -- to a
+    couple of characters -- so the guards passed while asserting nothing. Anchor
+    on the function that holds the logic, not on where it happens to be called.
+    """
+    start = body.index('%s() {' % name)
+    end = body.index('\n}\n', start) + len('\n}\n')
+    return body[start:end]
 
 
 def run_bash(script, *args, env=None, stdin=None, cwd=None):
@@ -621,18 +637,29 @@ class TestPersonalServicesScope(unittest.TestCase):
         self.assertIn('lsm_systemctl_admin', self.body,
                       "enable/disable must route through the scope-aware wrapper")
 
+    PERSONAL_FUNCTIONS = ('collect_personal_units', 'lsm_show_active_personal',
+                          'lsm_show_failed_personal', 'lsm_manage_personal')
+
     def test_no_unscoped_systemctl_in_personal_sections(self):
         """Every systemctl call reachable from a personal-unit record must carry
-        the record's scope."""
-        start = self.body.index('--active-personal')
-        section = self.body[start:]
+        the record's scope.
+
+        Scoped to the functions that handle personal units rather than to the
+        rest of the file: the system-wide dashboard counts are legitimately
+        unscoped, because a total across the machine has no single scope.
+        """
         offenders = []
-        for lineno, line in enumerate(section.splitlines(), 1):
-            stripped = line.strip()
-            if stripped.startswith('#'):
-                continue
-            if 'systemctl' in stripped and 'lsm_systemctl' not in stripped:
-                offenders.append(stripped)
+        for fn in self.PERSONAL_FUNCTIONS:
+            for line in extract_function(self.body, fn).splitlines():
+                stripped = line.strip()
+                if stripped.startswith('#'):
+                    continue
+                # `command -v systemctl` probes for the binary, it does not
+                # address a manager, so it has no scope to carry.
+                if 'command -v systemctl' in stripped:
+                    continue
+                if 'systemctl' in stripped and 'lsm_systemctl' not in stripped:
+                    offenders.append('%s: %s' % (fn, stripped))
         self.assertEqual(
             offenders, [],
             "unscoped systemctl calls in the personal sections: " + "; ".join(offenders))
@@ -726,13 +753,12 @@ class TestTimerTriggeredServiceNoise(unittest.TestCase):
     def test_failed_listing_does_NOT_filter_them(self):
         """A failed oneshot is exactly what --failed-personal exists to surface;
         applying the same filter there would hide real breakage."""
-        failed_block = self.body[self.body.index('--failed-personal'):
-                                 self.body.index('--manage-personal')]
+        failed_block = extract_function(self.body, 'lsm_show_failed_personal')
         self.assertNotIn('lsm_is_timer_triggered', failed_block)
 
     def test_manage_listing_does_NOT_filter_them(self):
         """You must still be able to trigger a oneshot by hand."""
-        manage_block = self.body[self.body.index('--manage-personal'):]
+        manage_block = extract_function(self.body, 'lsm_manage_personal')
         self.assertNotIn('lsm_is_timer_triggered', manage_block)
 
     def test_unscheduled_oneshot_is_still_shown(self):
@@ -889,13 +915,7 @@ class TestTimerActivatedCrossReference(unittest.TestCase):
         with open(self._services_script()) as f:
             return f.read()
 
-    @staticmethod
-    def _extract_function(body, name):
-        """The function exactly as shipped: from its definition to the closing
-        brace in column 0. Testing a re-typed copy would not catch a drift."""
-        start = body.index('%s() {' % name)
-        end = body.index('\n}\n', start) + len('\n}\n')
-        return body[start:end]
+    _extract_function = staticmethod(extract_function)
 
     def test_marker_is_not_read_through_command_substitution(self):
         import re
@@ -926,12 +946,95 @@ class TestTimerActivatedCrossReference(unittest.TestCase):
 
     def test_hidden_oneshot_is_accounted_for_not_dropped(self):
         body = self._body()
-        start = body.index('--active-personal)')
-        end = body.index('--failed-personal)')
         self.assertIn(
-            'lsm_print_triggered_section', body[start:end],
+            'lsm_print_triggered_section',
+            extract_function(body, 'lsm_show_active_personal'),
             "the status view filters out timer-driven oneshots, so it must also "
             "print the section that accounts for them")
+
+
+class TestTruncatedListingBrokenPipe(unittest.TestCase):
+    """`--recent-changes` piped a `while read` loop into `head -20`. Once head
+    had its twenty lines it closed the pipe, so the loop's `echo` failed for
+    every remaining unit -- one "write error: Broken pipe" per line on stderr --
+    and the pipeline exited 141 under `set -o pipefail`.
+
+    The view was the last thing the script did, so the menu reported the whole
+    action as "exited with code 141" on any machine with more than twenty
+    recently-modified units. Truncation is the intent; it must not read as
+    failure.
+
+    Verified against the pre-fix tree: test_loop_is_not_piped_into_head and
+    test_real_view_is_silent_and_succeeds both fail there.
+    test_truncating_before_the_loop_avoids_sigpipe exercises the corrected idiom
+    in isolation, so it passes by construction.
+    """
+
+    def setUp(self):
+        self.script = os.path.join(SCRIPT_DIR, 'distros', 'arch',
+                                   'services_scripts.sh')
+        if not os.path.isfile(self.script):
+            self.skipTest("services_scripts.sh not found")
+        with open(self.script) as f:
+            self.body = f.read()
+
+    def test_loop_is_not_piped_into_head(self):
+        """Truncate the producer, not the consumer: `head` must come before the
+        loop, so nothing is still writing once it exits."""
+        # Scanned across the whole file rather than inside one function: the
+        # idiom is the bug wherever it appears, and anchoring on a function name
+        # would make this pass on any tree that merely spells things differently.
+        for distro in ('arch', 'debian'):
+            path = os.path.join(SCRIPT_DIR, 'distros', distro,
+                                'services_scripts.sh')
+            if not os.path.isfile(path):
+                continue
+            with open(path) as f:
+                body = f.read()
+            offenders = [l.strip() for l in body.splitlines()
+                         if re.search(r'done\s*\|\s*head', l)]
+            self.assertEqual(
+                offenders, [],
+                "%s: piping a loop into head leaves it echoing into a closed "
+                "pipe for every remaining line: %s" % (distro, offenders))
+
+    def test_real_view_is_silent_and_succeeds(self):
+        """The shipped view, run for real. Asserts on stderr rather than on a
+        line count so it cannot flake on a machine with fewer than twenty
+        recently-modified units -- there the bug simply does not trigger."""
+        res = run_bash(self.script, '--recent-changes')
+        self.assertNotIn('Broken pipe', res.stderr)
+        self.assertEqual(res.stderr.strip(), '')
+        self.assertEqual(res.returncode, 0,
+                         "truncating a listing must not read as a failure")
+
+    def test_truncating_before_the_loop_avoids_sigpipe(self):
+        """Both idioms, side by side, against a producer that outstrips the
+        limit. The old one is expected to fail loudly; the new one to be clean."""
+        harness = textwrap.dedent("""\
+            set -o pipefail
+            producer() { seq 1 100; }
+
+            # old: consumer truncates, producer keeps writing
+            old_err=$( { producer | while read -r n; do echo "$n"; done | head -5; } 2>&1 >/dev/null )
+            old_rc=$?
+
+            # new: producer truncated, nothing writes after head exits
+            new_err=$( { producer | head -5 | while read -r n; do echo "$n"; done; } 2>&1 >/dev/null )
+            new_rc=$?
+
+            echo "old_rc=$old_rc old_err=${#old_err}"
+            echo "new_rc=$new_rc new_err=${#new_err}"
+        """)
+        res = subprocess.run([BASH, '-c', harness], capture_output=True, text=True)
+        out = dict(kv.split('=', 1) for line in res.stdout.split()
+                   for kv in [line] if '=' in kv)
+        self.assertNotEqual(out['old_rc'], '0',
+                            "expected the pre-fix idiom to fail; harness is not "
+                            "reproducing the bug: %r" % res.stdout)
+        self.assertEqual(out['new_rc'], '0', res.stdout)
+        self.assertEqual(out['new_err'], '0',
+                         "the corrected idiom must write nothing to stderr")
 
 
 class TestDistroParity(unittest.TestCase):
@@ -948,6 +1051,7 @@ class TestDistroParity(unittest.TestCase):
         'boot_help.sh',
         'cloud_sync.sh',
         'install_services.sh',
+        'nmcli_toolset.sh',
         'services_scripts.sh',
         'view_grub.sh',
     ]

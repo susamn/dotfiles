@@ -5,6 +5,7 @@
     {
       "id": "1",
       "title": "Boot Management",
+      "icon": "🛡️ ",
       "items": [
         {
           "key": "a",
@@ -68,6 +69,7 @@
     {
       "id": "2",
       "title": "Update Management",
+      "icon": "📦",
       "items": [
         {
           "key": "1",
@@ -89,6 +91,7 @@
     {
       "id": "3",
       "title": "Package Timeline",
+      "icon": "🔍",
       "items": [
         {
           "key": "1",
@@ -118,88 +121,19 @@
     },
     {
       "id": "4",
-      "title": "Services & Scripts",
+      "title": "Services, Timers & Scripts",
+      "icon": "⚙️ ",
       "items": [
         {
           "key": "1",
-          "label": "Active Systemd Services",
+          "label": "Services Dashboard (system + personal)",
           "exec": "services_scripts.sh",
           "args": [
-            "--active"
+            "--dashboard"
           ]
         },
         {
           "key": "2",
-          "label": "Failed Services",
-          "exec": "services_scripts.sh",
-          "args": [
-            "--failed"
-          ]
-        },
-        {
-          "key": "3",
-          "label": "Systemd Timers",
-          "exec": "services_scripts.sh",
-          "args": [
-            "--timers"
-          ]
-        },
-        {
-          "key": "4",
-          "label": "Cron Jobs",
-          "exec": "services_scripts.sh",
-          "args": [
-            "--cron"
-          ]
-        },
-        {
-          "key": "5",
-          "label": "User Scripts & Tools",
-          "exec": "services_scripts.sh",
-          "args": [
-            "--user-scripts"
-          ]
-        },
-        {
-          "key": "6",
-          "label": "Enabled Services",
-          "exec": "services_scripts.sh",
-          "args": [
-            "--enabled"
-          ]
-        },
-        {
-          "key": "7",
-          "label": "Recent Service Changes",
-          "exec": "services_scripts.sh",
-          "args": [
-            "--recent-changes"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "5",
-      "title": "Personal Services & Timers",
-      "items": [
-        {
-          "key": "1",
-          "label": "Active Personal Services",
-          "exec": "services_scripts.sh",
-          "args": [
-            "--active-personal"
-          ]
-        },
-        {
-          "key": "2",
-          "label": "Failed Personal Services",
-          "exec": "services_scripts.sh",
-          "args": [
-            "--failed-personal"
-          ]
-        },
-        {
-          "key": "3",
           "label": "Manage Personal Services (Start/Stop/Toggle)",
           "exec": "services_scripts.sh",
           "args": [
@@ -207,16 +141,24 @@
           ]
         },
         {
-          "key": "4",
-          "label": "Show Installed / Available Services",
-          "exec": "install_services.sh",
+          "key": "3",
+          "label": "Scheduled Tasks (Timers & Cron)",
+          "exec": "services_scripts.sh",
           "args": [
-            "--status"
+            "--scheduled"
+          ]
+        },
+        {
+          "key": "4",
+          "label": "User Scripts & Tools",
+          "exec": "services_scripts.sh",
+          "args": [
+            "--user-scripts"
           ]
         },
         {
           "key": "5",
-          "label": "Install or Update Services [modifies system]",
+          "label": "Personal Service Units — status & install",
           "exec": "install_services.sh",
           "args": [
             "--interactive"
@@ -225,8 +167,9 @@
       ]
     },
     {
-      "id": "6",
+      "id": "5",
       "title": "Cloud Sync Management",
+      "icon": "📊",
       "items": [
         {
           "key": "1",
@@ -263,19 +206,26 @@
       ]
     },
     {
-      "id": "7",
-      "title": "Network Discovery & Mapping",
+      "id": "6",
+      "title": "Network Discovery & Diagnostics",
+      "icon": "🔧",
       "items": [
         {
-          "key": "a",
-          "label": "Open Network Auditor Toolset",
+          "key": "1",
+          "label": "Network Auditor Toolset",
           "exec": "network_auditor.py"
+        },
+        {
+          "key": "2",
+          "label": "NetworkManager (nmcli) Toolset",
+          "exec": "nmcli_toolset.sh"
         }
       ]
     },
     {
-      "id": "8",
+      "id": "7",
       "title": "BPF Tools",
+      "icon": "🔬",
       "items": [
         {
           "key": "a",

@@ -1,7 +1,7 @@
 ---
 name: linux-system-manager-maintainer
 description: Maintain, enhance, and extend the system-agnostic linux-system-manager toolset. Use this skill when adding new features, modifying distro menus, replicating functionality across all distros, managing systemd services, or running tests.
-version: 1.1.0
+version: 1.2.0
 triggers:
   - "how to add a new feature to linux-system-manager"
   - "add distro-agnostic capability"
@@ -10,7 +10,7 @@ triggers:
 intent: system
 config_dir: ./config
 created_at: 2026-07-06
-updated_at: 2026-07-06
+updated_at: 2026-09-05
 ---
 
 # Linux-System-Manager Project Maintainer & Developer Guide
@@ -99,15 +99,15 @@ To deploy and manage custom background utility services (e.g., a backup cleanup 
 
 2. **Installation**: Run `install.py` (which escalates via `sudo` automatically). It copies `services/*.{service,timer,target}` to `/etc/systemd/system/`, then copies `services/user/*.{service,timer,target}` to the *invoking* user's `~/.config/systemd/user/` (chowned back to them, reloaded via `sudo -u <user>` with `XDG_RUNTIME_DIR` set — never as root, whose user manager is a different instance). A destination that is already a symlink resolving to the repo source is left alone, so an external deployer (stow) keeps ownership.
 3. **Menu Segregation**:
-   - Standard system services are monitored and inspected under **Section 4 (Services & Scripts)**.
-   - Local/personal services from this repository are segregated and monitored under **Section 5 (Personal Services & Timers)**.
+   - Everything lives under **Section 4 (Services, Timers & Scripts)**. Standard system services and local/personal services from this repository are still reported separately -- the segregation is visual, within one dashboard, rather than two menu sections.
+   - `services_scripts.sh` exposes one function per view and one per composite. Menu entries call the composites (`--dashboard`, `--scheduled`); the individual views (`--active`, `--failed`, `--timers`, `--cron`, `--enabled`, `--recent-changes`, `--active-personal`, `--failed-personal`) remain addressable and are what the composites are built from. Add a new view as a function plus a `--flag`, then decide which composite surfaces it -- do not add a menu entry per listing.
    - Distro-specific logic (e.g. `services_scripts.sh`) detects these services by querying `personal-services.target` in **both** managers and scanning both source directories, then checks status, failures, and toggle state via `systemctl`.
    - **Every unit carries its scope.** `collect_personal_units` emits `"<scope><TAB><unit>"` records, and all downstream calls route through `lsm_systemctl <scope> …` / `lsm_systemctl_admin <scope> …`. Adding a new `systemctl` call in a personal-services code path without that wrapper is a bug — `test_regressions.py` fails the build on it.
    - `lsm_systemctl_admin` uses `sudo` for system scope and **plain `systemctl --user`** for user scope. `sudo systemctl --user` addresses *root's* user manager, so the unit would be enabled for the wrong account while appearing to succeed.
 4. **Template Units Support (e.g., `rclone-sync@.service`, `rclone-mount@.service`)**:
    - Systemd templates in `services/` require instance names (e.g. `rclone-mount@obsidian-mount.service`) to run.
    - **Crucial Rule:** In template unit files, always use the raw `%i` (lowercase) specifier in `ExecStart` and descriptions instead of `%I` (uppercase). Systemd path-unescapes `%I`, translating dashes (`-`) to slashes (`/`), which will break configuration file resolution if profile names contain dashes.
-   - When managing templates under Section 5 (`services_scripts.sh`), the script automatically queries systemd for active or configured instances of that template (using `systemctl list-units` and `systemctl list-unit-files`) and lets the user choose which instance to manage.
+   - When managing templates under Section 4 (`services_scripts.sh`), the script automatically queries systemd for active or configured instances of that template (using `systemctl list-units` and `systemctl list-unit-files`) and lets the user choose which instance to manage.
 
 ---
 
@@ -180,6 +180,7 @@ When committing updates:
 - **Zero Third-Party Packages:** Never import packages outside the Python standard library in `linux-system-manager.sh`, `install.py`, or `test_sys_manager.py`.
 - **Stateless Operation:** Never write user settings or operation logs inside the project source tree. Use `~/.local/state/` or `/var/log/` for distro logs.
 - **Fail Gracefully:** Never allow python `subprocess` exceptions to crash the main menu loop. Always catch execution failures and log them to standard error.
+- **Locate Shell Logic by Function, Not by Position:** `test_regressions.py` inspects `services_scripts.sh` as text. Anchor those assertions on a function definition (`extract_function(body, name)`), never on a slice between two case labels -- once a branch becomes a one-line dispatch, such a slice still resolves, to a couple of characters, and the guard passes while asserting nothing.
 - **Self-Escalation Pattern**: Any distro-specific script requiring root must self-escalate on launch:
   ```bash
   if [[ $EUID -ne 0 ]]; then

@@ -238,291 +238,416 @@ collect_personal_units() {
 }
 
 
-case "$action" in
-    --active)
-        echo -e "${CYAN}Currently running services:${NC}"
+# ── views ───────────────────────────────────────────────────────────────────
+# Each view is a function rather than a case-branch body so the composite
+# actions below can reuse them. The individual --flags all still work: the menu
+# reaches these through the dashboard; a script or a shell reaches them directly.
+
+
+lsm_show_active() {
+    echo -e "${CYAN}Currently running services:${NC}"
+    echo ""
+    # head closes the pipe once it has its 30 lines, killing systemctl with
+    # SIGPIPE; under pipefail that surfaces as a failed command (141) even
+    # though truncation is the intent.
+    systemctl list-units --type=service --state=running --no-pager | head -30 || true
+    echo ""
+    echo -e "${BLUE}Showing first 30 services. Use 'systemctl list-units --type=service' for complete list.${NC}"
+}
+
+
+lsm_show_failed() {
+    failed=$(systemctl list-units --type=service --state=failed --no-pager)
+    if echo "$failed" | grep -q "0 loaded units listed"; then
+        echo -e "${GREEN}✓ No failed services!${NC}"
+    else
+        echo -e "${RED}Failed service units:${NC}"
         echo ""
-        systemctl list-units --type=service --state=running --no-pager | head -30
-        echo ""
-        echo -e "${BLUE}Showing first 30 services. Use 'systemctl list-units --type=service' for complete list.${NC}"
-        ;;
-    --failed)
-        failed=$(systemctl list-units --type=service --state=failed --no-pager)
-        if echo "$failed" | grep -q "0 loaded units listed"; then
-            echo -e "${GREEN}✓ No failed services!${NC}"
-        else
-            echo -e "${RED}Failed service units:${NC}"
+        echo "$failed"
+    fi
+}
+
+
+lsm_show_enabled() {
+    echo -e "${CYAN}Services enabled at boot:${NC}"
+    echo ""
+    systemctl list-unit-files --type=service --state=enabled --no-pager | head -30 || true
+    echo ""
+    echo -e "${BLUE}Showing first 30 enabled services.${NC}"
+}
+
+
+lsm_show_timers() {
+    echo -e "${CYAN}Active systemd timers:${NC}"
+    echo ""
+    systemctl list-timers --all --no-pager
+}
+
+
+lsm_show_cron() {
+    echo -e "${CYAN}System crontab (/etc/crontab):${NC}"
+    echo ""
+    if [[ -f /etc/crontab ]]; then
+        cat /etc/crontab | grep -v "^#" | grep -v "^$" || echo "  No entries"
+    else
+        echo "  Not found"
+    fi
+
+    echo ""
+    echo -e "${CYAN}User crontab ($USER):${NC}"
+    echo ""
+    crontab -l 2>/dev/null || echo "  No crontab for $USER"
+
+    echo ""
+    echo -e "${CYAN}System cron directories:${NC}"
+    echo ""
+    for dir in /etc/cron.{hourly,daily,weekly,monthly}; do
+        if [[ -d "$dir" ]]; then
+            count=$(ls -1 "$dir" 2>/dev/null | wc -l)
+            echo -e "  ${BLUE}$dir${NC}: $count scripts"
+        fi
+    done
+}
+
+
+lsm_show_user_scripts() {
+    echo -e "${CYAN}Custom scripts in /usr/local/bin:${NC}"
+    echo ""
+    # Derive the prefix from the containing distro directory: this file is shared
+    # verbatim between distros, and a hardcoded "arch-" found nothing on Debian,
+    # whose installer writes debian-*.sh.
+    script_prefix="$(basename "$SCRIPT_DIR")"
+    if [[ -d /usr/local/bin ]]; then
+        found_any=false
+        while IFS= read -r -d '' installed; do
+            printf '  %s  %6s  %s\n' \
+                "$(stat -c '%A' "$installed")" \
+                "$(du -h "$installed" | cut -f1)" \
+                "$(basename "$installed")"
+            found_any=true
+        done < <(find /usr/local/bin -maxdepth 1 -type f \
+                      -name "${script_prefix}-*.sh" -print0 2>/dev/null | sort -z)
+        if [[ "$found_any" == false ]]; then
+            echo "  No ${script_prefix}-*.sh scripts found"
+        fi
+    fi
+
+    echo ""
+    echo -e "${CYAN}Scripts in ~/bin or ~/.local/bin:${NC}"
+    echo ""
+    for dir in ~/bin ~/.local/bin; do
+        if [[ -d "$dir" ]]; then
+            echo -e "${BLUE}$dir:${NC}"
+            ls -1 "$dir" | head -10
             echo ""
-            echo "$failed"
         fi
-        ;;
-    --timers)
-        echo -e "${CYAN}Active systemd timers:${NC}"
+    done
+}
+
+
+lsm_show_recent_changes() {
+    echo -e "${CYAN}Recently modified systemd units:${NC}"
+    echo ""
+    # Truncate before the loop, not after it. Piping the loop into `head -20`
+    # leaves it echoing into a closed pipe for every remaining unit, so the view
+    # printed a "write error: Broken pipe" per line and exited 141.
+    find /etc/systemd/system /usr/lib/systemd/system -type f -name "*.service" -mtime -30 2>/dev/null | head -20 | while read -r file; do
+        mtime=$(stat -c %y "$file" | cut -d'.' -f1)
+        echo -e "  ${YELLOW}$mtime${NC}  $(basename "$file")"
+    done
+}
+
+# ── composite views ─────────────────────────────────────────────────────────
+# The menu used to carry twelve entries across two sections, most of which were
+# a single systemctl listing each. They are grouped here instead: one dashboard
+# for state, one for schedules. Every underlying view is still reachable on its
+# own --flag, and nothing that was listed before has stopped being listed.
+
+# Headline numbers for the whole system manager, on one line. Counts are read
+# from the system manager only -- these are the totals a personal-unit scope
+# does not apply to, which is why they are deliberately not routed through
+# lsm_systemctl.
+lsm_system_counts() {
+    local running failed enabled timers
+    running=$(systemctl list-units --type=service --state=running --plain --no-legend --no-pager 2>/dev/null | wc -l || echo 0)
+    failed=$(systemctl list-units --type=service --state=failed --plain --no-legend --no-pager 2>/dev/null | wc -l || echo 0)
+    enabled=$(systemctl list-unit-files --type=service --state=enabled --plain --no-legend --no-pager 2>/dev/null | wc -l || echo 0)
+    timers=$(systemctl list-units --type=timer --state=active --plain --no-legend --no-pager 2>/dev/null | wc -l || echo 0)
+
+    echo -e "  ${GREEN}●${NC} ${running} running    ${RED}✗${NC} ${failed} failed    ${YELLOW}⏻${NC} ${enabled} enabled at boot    ${BLUE}⏱${NC} ${timers} active timers"
+}
+
+# The long listings -- 30 lines each -- stay one keystroke away rather than
+# being concatenated into the dashboard, where they would push the failures
+# (the part worth reading) off the top of the screen.
+#
+# Skipped without a tty so the dashboard stays usable non-interactively.
+lsm_dashboard_drilldown() {
+    [[ -t 0 ]] || return 0
+    local d
+    while true; do
         echo ""
-        systemctl list-timers --all --no-pager
-        ;;
-    --cron)
-        echo -e "${CYAN}System crontab (/etc/crontab):${NC}"
+        echo -e "${CYAN}Full listings:${NC}"
+        echo -e "  ${GREEN}1${NC}) All running services   ${GREEN}2${NC}) Enabled at boot   ${GREEN}3${NC}) Recently changed units"
+        echo -e "  ${RED}0${NC}) Back"
+        read -r -p "Select (0-3): " d || return 0
         echo ""
-        if [[ -f /etc/crontab ]]; then
-            cat /etc/crontab | grep -v "^#" | grep -v "^$" || echo "  No entries"
+        case "$d" in
+            1) lsm_show_active ;;
+            2) lsm_show_enabled ;;
+            3) lsm_show_recent_changes ;;
+            ''|0) return 0 ;;
+            *) echo -e "${RED}Invalid selection.${NC}" ;;
+        esac
+    done
+}
+
+# System state and personal state in one screen. The two are still visually
+# segregated -- that separation is the point of having personal units at all --
+# but they no longer live in different menu sections, since the question being
+# asked ("is anything broken?") is the same one.
+lsm_dashboard() {
+    echo -e "${CYAN}System services:${NC}"
+    echo ""
+    lsm_system_counts
+    echo ""
+    lsm_show_failed
+    echo ""
+    echo -e "${BLUE}──────────────────────────────────────────────────────────────${NC}"
+    echo ""
+    lsm_show_active_personal
+    echo ""
+    lsm_show_failed_personal
+    lsm_dashboard_drilldown
+}
+
+# Timers and cron answer one question -- "what runs on a schedule here?" -- and
+# had no reason to be two menu entries.
+lsm_scheduled() {
+    lsm_show_timers
+    echo ""
+    echo -e "${BLUE}──────────────────────────────────────────────────────────────${NC}"
+    echo ""
+    lsm_show_cron
+}
+
+# ── personal units ──────────────────────────────────────────────────────────
+# Every systemctl call below carries the unit's scope: the same unit name can
+# exist in both managers, and a bare call would address the wrong one.
+
+
+lsm_show_active_personal() {
+    echo -e "${CYAN}Personal Services & Timers Status:${NC}"
+    echo ""
+    while IFS= read -r -d '' record; do
+        scope="${record%%	*}"
+        name="${record#*	}"
+        tag="$(lsm_scope_label "$scope")"
+        if [[ "$name" == *@.service || "$name" == *@.timer ]]; then
+            template_base="${name%.*}"
+            template_suffix="${name##*.}"
+            instances=()
+            while read -r inst; do
+                if [[ -n "$inst" && "$inst" != "$name" ]]; then
+                    instances+=("$inst")
+                fi
+            done < <(lsm_systemctl "$scope" list-units --all --no-legend --plain --no-pager "${template_base}*.${template_suffix}" 2>/dev/null | lsm_unit_names || true)
+
+            if [[ ${#instances[@]} -gt 0 ]]; then
+                for inst in "${instances[@]}"; do
+                    lsm_is_timer_triggered "$scope" "$inst" && continue
+                    lsm_print_unit_row "$scope" "$inst" "$tag"
+                done
+            else
+                echo -e "  ${BLUE}ℹ${NC} [$tag] $name (No active instances)"
+            fi
         else
-            echo "  Not found"
+            lsm_is_timer_triggered "$scope" "$name" && continue
+            lsm_print_unit_row "$scope" "$name" "$tag"
         fi
+    done < <(collect_personal_units)
+    lsm_print_triggered_section
+}
 
-        echo ""
-        echo -e "${CYAN}User crontab ($USER):${NC}"
-        echo ""
-        crontab -l 2>/dev/null || echo "  No crontab for $USER"
 
-        echo ""
-        echo -e "${CYAN}System cron directories:${NC}"
-        echo ""
-        for dir in /etc/cron.{hourly,daily,weekly,monthly}; do
-            if [[ -d "$dir" ]]; then
-                count=$(ls -1 "$dir" 2>/dev/null | wc -l)
-                echo -e "  ${BLUE}$dir${NC}: $count scripts"
-            fi
-        done
-        ;;
-    --user-scripts)
-        echo -e "${CYAN}Custom scripts in /usr/local/bin:${NC}"
-        echo ""
-        # Derive the prefix from the containing distro directory: this file is shared
-        # verbatim between distros, and a hardcoded "arch-" found nothing on Debian,
-        # whose installer writes debian-*.sh.
-        script_prefix="$(basename "$SCRIPT_DIR")"
-        if [[ -d /usr/local/bin ]]; then
-            found_any=false
-            while IFS= read -r -d '' installed; do
-                printf '  %s  %6s  %s\n' \
-                    "$(stat -c '%A' "$installed")" \
-                    "$(du -h "$installed" | cut -f1)" \
-                    "$(basename "$installed")"
-                found_any=true
-            done < <(find /usr/local/bin -maxdepth 1 -type f \
-                          -name "${script_prefix}-*.sh" -print0 2>/dev/null | sort -z)
-            if [[ "$found_any" == false ]]; then
-                echo "  No ${script_prefix}-*.sh scripts found"
-            fi
-        fi
-
-        echo ""
-        echo -e "${CYAN}Scripts in ~/bin or ~/.local/bin:${NC}"
-        echo ""
-        for dir in ~/bin ~/.local/bin; do
-            if [[ -d "$dir" ]]; then
-                echo -e "${BLUE}$dir:${NC}"
-                ls -1 "$dir" | head -10
+lsm_show_failed_personal() {
+    echo -e "${CYAN}Failed Personal Services & Timers Check:${NC}"
+    echo ""
+    failed_count=0
+    while IFS= read -r -d '' record; do
+        scope="${record%%	*}"
+        name="${record#*	}"
+        tag="$(lsm_scope_label "$scope")"
+        if [[ "$name" == *@.service || "$name" == *@.timer ]]; then
+            template_base="${name%.*}"
+            template_suffix="${name##*.}"
+            while read -r inst; do
+                if [[ -n "$inst" && "$inst" != "$name" ]]; then
+                    state=$(lsm_systemctl "$scope" show -p ActiveState --value "$inst" 2>/dev/null || echo "")
+                    substate=$(lsm_systemctl "$scope" show -p SubState --value "$inst" 2>/dev/null || echo "")
+                    if [[ "$state" == "failed" ]] || [[ "$substate" == "failed" ]]; then
+                        echo -e "  ${RED}✗ [$tag] $inst is failed${NC}"
+                        lsm_systemctl "$scope" status "$inst" --no-pager | sed 's/^/    /'
+                        echo ""
+                        failed_count=$((failed_count + 1))
+                    fi
+                fi
+            done < <(lsm_systemctl "$scope" list-units --all --no-legend --plain --no-pager "${template_base}*.${template_suffix}" 2>/dev/null | lsm_unit_names || true)
+        else
+            state=$(lsm_systemctl "$scope" show -p ActiveState --value "$name" 2>/dev/null || echo "")
+            substate=$(lsm_systemctl "$scope" show -p SubState --value "$name" 2>/dev/null || echo "")
+            if [[ "$state" == "failed" ]] || [[ "$substate" == "failed" ]]; then
+                echo -e "  ${RED}✗ [$tag] $name is failed${NC}"
+                lsm_systemctl "$scope" status "$name" --no-pager | sed 's/^/    /'
                 echo ""
+                failed_count=$((failed_count + 1))
+            fi
+        fi
+    done < <(collect_personal_units)
+    if [[ $failed_count -eq 0 ]]; then
+        echo -e "${GREEN}✓ No failed personal services/timers!${NC}"
+    fi
+}
+
+
+lsm_manage_personal() {
+    echo -e "${CYAN}Manage Personal Services & Timers:${NC}"
+    echo ""
+    units=()
+    scopes=()
+    while IFS= read -r -d '' record; do
+        scopes+=("${record%%	*}")
+        units+=("${record#*	}")
+    done < <(collect_personal_units)
+
+    if [[ ${#units[@]} -eq 0 ]]; then
+        echo "No personal services/timers found."
+        exit 0
+    fi
+
+    echo "Select a personal unit to manage:"
+    echo ""
+    i=1
+    for idx in "${!units[@]}"; do
+        echo -e "  ${GREEN}$i${NC}) [$(lsm_scope_label "${scopes[$idx]}")] ${units[$idx]}"
+        i=$((i + 1))
+    done
+    echo -e "  ${RED}0${NC}) Cancel"
+    echo ""
+    read -p "Select unit (1-$((i-1))): " choice
+    
+    if [[ ! "$choice" =~ ^[0-9]+$ ]] || [[ "$choice" -lt 1 ]] || [[ "$choice" -ge "$i" ]]; then
+        echo "Cancelled or invalid selection."
+        exit 0
+    fi
+    
+    selected_unit="${units[$((choice-1))]}"
+    selected_scope="${scopes[$((choice-1))]}"
+    echo ""
+
+    # If template, resolve instance
+    if [[ "$selected_unit" == *@.service || "$selected_unit" == *@.timer ]]; then
+        template_base="${selected_unit%.*}"
+        template_suffix="${selected_unit##*.}"
+        echo "Scanning for instantiated units of $selected_unit..."
+        
+        # Find active or configured instances
+        instances=()
+        while read -r line; do
+            if [[ -n "$line" ]]; then
+                instances+=("$line")
+            fi
+        done < <(lsm_systemctl "$selected_scope" list-units --all --no-legend --plain --no-pager "${template_base}*.${template_suffix}" 2>/dev/null | lsm_unit_names || true)
+
+        # Check enabled/disabled ones too
+        while read -r line; do
+            if [[ -n "$line" && "$line" == *.* ]]; then
+                exists=false
+                for inst in "${instances[@]:-}"; do
+                    if [[ "$inst" == "$line" ]]; then
+                        exists=true
+                        break
+                    fi
+                done
+                if [[ "$exists" = false ]]; then
+                    instances+=("$line")
+                fi
+            fi
+        done < <(lsm_systemctl "$selected_scope" list-unit-files --no-legend --plain --no-pager "${template_base}*.${template_suffix}" 2>/dev/null | lsm_unit_names || true)
+
+        # Filter base template
+        filtered_instances=()
+        for inst in "${instances[@]:-}"; do
+            if [[ "$inst" != "$selected_unit" && "$inst" != "${template_base}.service" && "$inst" != "${template_base}.timer" ]]; then
+                filtered_instances+=("$inst")
             fi
         done
-        ;;
-    --enabled)
-        echo -e "${CYAN}Services enabled at boot:${NC}"
-        echo ""
-        systemctl list-unit-files --type=service --state=enabled --no-pager | head -30
-        echo ""
-        echo -e "${BLUE}Showing first 30 enabled services.${NC}"
-        ;;
-    --recent-changes)
-        echo -e "${CYAN}Recently modified systemd units:${NC}"
-        echo ""
-        find /etc/systemd/system /usr/lib/systemd/system -type f -name "*.service" -mtime -30 2>/dev/null | while read -r file; do
-            mtime=$(stat -c %y "$file" | cut -d'.' -f1)
-            echo -e "  ${YELLOW}$mtime${NC}  $(basename "$file")"
-        done | head -20
-        ;;
-    --active-personal)
-        echo -e "${CYAN}Personal Services & Timers Status:${NC}"
-        echo ""
-        while IFS= read -r -d '' record; do
-            scope="${record%%	*}"
-            name="${record#*	}"
-            tag="$(lsm_scope_label "$scope")"
-            if [[ "$name" == *@.service || "$name" == *@.timer ]]; then
-                template_base="${name%.*}"
-                template_suffix="${name##*.}"
-                instances=()
-                while read -r inst; do
-                    if [[ -n "$inst" && "$inst" != "$name" ]]; then
-                        instances+=("$inst")
-                    fi
-                done < <(lsm_systemctl "$scope" list-units --all --no-legend --plain --no-pager "${template_base}*.${template_suffix}" 2>/dev/null | lsm_unit_names || true)
-
-                if [[ ${#instances[@]} -gt 0 ]]; then
-                    for inst in "${instances[@]}"; do
-                        lsm_is_timer_triggered "$scope" "$inst" && continue
-                        lsm_print_unit_row "$scope" "$inst" "$tag"
-                    done
-                else
-                    echo -e "  ${BLUE}ℹ${NC} [$tag] $name (No active instances)"
-                fi
-            else
-                lsm_is_timer_triggered "$scope" "$name" && continue
-                lsm_print_unit_row "$scope" "$name" "$tag"
-            fi
-        done < <(collect_personal_units)
-        lsm_print_triggered_section
-        ;;
-    --failed-personal)
-        echo -e "${CYAN}Failed Personal Services & Timers Check:${NC}"
-        echo ""
-        failed_count=0
-        while IFS= read -r -d '' record; do
-            scope="${record%%	*}"
-            name="${record#*	}"
-            tag="$(lsm_scope_label "$scope")"
-            if [[ "$name" == *@.service || "$name" == *@.timer ]]; then
-                template_base="${name%.*}"
-                template_suffix="${name##*.}"
-                while read -r inst; do
-                    if [[ -n "$inst" && "$inst" != "$name" ]]; then
-                        state=$(lsm_systemctl "$scope" show -p ActiveState --value "$inst" 2>/dev/null || echo "")
-                        substate=$(lsm_systemctl "$scope" show -p SubState --value "$inst" 2>/dev/null || echo "")
-                        if [[ "$state" == "failed" ]] || [[ "$substate" == "failed" ]]; then
-                            echo -e "  ${RED}✗ [$tag] $inst is failed${NC}"
-                            lsm_systemctl "$scope" status "$inst" --no-pager | sed 's/^/    /'
-                            echo ""
-                            failed_count=$((failed_count + 1))
-                        fi
-                    fi
-                done < <(lsm_systemctl "$scope" list-units --all --no-legend --plain --no-pager "${template_base}*.${template_suffix}" 2>/dev/null | lsm_unit_names || true)
-            else
-                state=$(lsm_systemctl "$scope" show -p ActiveState --value "$name" 2>/dev/null || echo "")
-                substate=$(lsm_systemctl "$scope" show -p SubState --value "$name" 2>/dev/null || echo "")
-                if [[ "$state" == "failed" ]] || [[ "$substate" == "failed" ]]; then
-                    echo -e "  ${RED}✗ [$tag] $name is failed${NC}"
-                    lsm_systemctl "$scope" status "$name" --no-pager | sed 's/^/    /'
-                    echo ""
-                    failed_count=$((failed_count + 1))
-                fi
-            fi
-        done < <(collect_personal_units)
-        if [[ $failed_count -eq 0 ]]; then
-            echo -e "${GREEN}✓ No failed personal services/timers!${NC}"
-        fi
-        ;;
-    --manage-personal)
-        echo -e "${CYAN}Manage Personal Services & Timers:${NC}"
-        echo ""
-        units=()
-        scopes=()
-        while IFS= read -r -d '' record; do
-            scopes+=("${record%%	*}")
-            units+=("${record#*	}")
-        done < <(collect_personal_units)
-
-        if [[ ${#units[@]} -eq 0 ]]; then
-            echo "No personal services/timers found."
+        
+        if [[ ${#filtered_instances[@]} -eq 0 ]]; then
+            echo -e "${YELLOW}No instances of $selected_unit are currently configured or running on the system.${NC}"
+            echo -e "You can configure them from Section 5 (Cloud Sync Management)."
             exit 0
         fi
-
-        echo "Select a personal unit to manage:"
-        echo ""
-        i=1
-        for idx in "${!units[@]}"; do
-            echo -e "  ${GREEN}$i${NC}) [$(lsm_scope_label "${scopes[$idx]}")] ${units[$idx]}"
-            i=$((i + 1))
+        
+        echo "Select an instance to manage:"
+        inst_idx=1
+        for inst in "${filtered_instances[@]}"; do
+            echo -e "  ${GREEN}$inst_idx${NC}) $inst"
+            inst_idx=$((inst_idx + 1))
         done
         echo -e "  ${RED}0${NC}) Cancel"
         echo ""
-        read -p "Select unit (1-$((i-1))): " choice
-        
-        if [[ ! "$choice" =~ ^[0-9]+$ ]] || [[ "$choice" -lt 1 ]] || [[ "$choice" -ge "$i" ]]; then
-            echo "Cancelled or invalid selection."
+        read -p "Select instance (1-$((inst_idx-1))): " inst_choice
+        if [[ ! "$inst_choice" =~ ^[0-9]+$ ]] || [[ "$inst_choice" -lt 1 ]] || [[ "$inst_choice" -ge "$inst_idx" ]]; then
+            echo "Cancelled."
             exit 0
         fi
-        
-        selected_unit="${units[$((choice-1))]}"
-        selected_scope="${scopes[$((choice-1))]}"
+        selected_unit="${filtered_instances[$((inst_choice-1))]}"
         echo ""
+    fi
 
-        # If template, resolve instance
-        if [[ "$selected_unit" == *@.service || "$selected_unit" == *@.timer ]]; then
-            template_base="${selected_unit%.*}"
-            template_suffix="${selected_unit##*.}"
-            echo "Scanning for instantiated units of $selected_unit..."
-            
-            # Find active or configured instances
-            instances=()
-            while read -r line; do
-                if [[ -n "$line" ]]; then
-                    instances+=("$line")
-                fi
-            done < <(lsm_systemctl "$selected_scope" list-units --all --no-legend --plain --no-pager "${template_base}*.${template_suffix}" 2>/dev/null | lsm_unit_names || true)
+    echo -e "Selected unit: ${CYAN}$selected_unit${NC} [$(lsm_scope_label "$selected_scope")]"
+    echo "1) Start & Enable"
+    echo "2) Stop & Disable"
+    echo "3) View status logs"
+    read -p "Select action: " act
 
-            # Check enabled/disabled ones too
-            while read -r line; do
-                if [[ -n "$line" && "$line" == *.* ]]; then
-                    exists=false
-                    for inst in "${instances[@]:-}"; do
-                        if [[ "$inst" == "$line" ]]; then
-                            exists=true
-                            break
-                        fi
-                    done
-                    if [[ "$exists" = false ]]; then
-                        instances+=("$line")
-                    fi
-                fi
-            done < <(lsm_systemctl "$selected_scope" list-unit-files --no-legend --plain --no-pager "${template_base}*.${template_suffix}" 2>/dev/null | lsm_unit_names || true)
-
-            # Filter base template
-            filtered_instances=()
-            for inst in "${instances[@]:-}"; do
-                if [[ "$inst" != "$selected_unit" && "$inst" != "${template_base}.service" && "$inst" != "${template_base}.timer" ]]; then
-                    filtered_instances+=("$inst")
-                fi
-            done
-            
-            if [[ ${#filtered_instances[@]} -eq 0 ]]; then
-                echo -e "${YELLOW}No instances of $selected_unit are currently configured or running on the system.${NC}"
-                echo -e "You can configure them from Section 6 (Cloud Sync Management)."
-                exit 0
-            fi
-            
-            echo "Select an instance to manage:"
-            inst_idx=1
-            for inst in "${filtered_instances[@]}"; do
-                echo -e "  ${GREEN}$inst_idx${NC}) $inst"
-                inst_idx=$((inst_idx + 1))
-            done
-            echo -e "  ${RED}0${NC}) Cancel"
+    case "$act" in
+        1)
+            echo "Enabling and starting $selected_unit ($selected_scope scope)..."
+            lsm_systemctl_admin "$selected_scope" enable --now "$selected_unit"
+            ;;
+        2)
+            echo "Stopping and disabling $selected_unit ($selected_scope scope)..."
+            lsm_systemctl_admin "$selected_scope" disable --now "$selected_unit"
+            ;;
+        3)
             echo ""
-            read -p "Select instance (1-$((inst_idx-1))): " inst_choice
-            if [[ ! "$inst_choice" =~ ^[0-9]+$ ]] || [[ "$inst_choice" -lt 1 ]] || [[ "$inst_choice" -ge "$inst_idx" ]]; then
-                echo "Cancelled."
-                exit 0
-            fi
-            selected_unit="${filtered_instances[$((inst_choice-1))]}"
-            echo ""
-        fi
+            lsm_systemctl "$selected_scope" status "$selected_unit" --no-pager
+            ;;
+        *)
+            echo "Invalid action."
+            ;;
+    esac
+}
 
-        echo -e "Selected unit: ${CYAN}$selected_unit${NC} [$(lsm_scope_label "$selected_scope")]"
-        echo "1) Start & Enable"
-        echo "2) Stop & Disable"
-        echo "3) View status logs"
-        read -p "Select action: " act
+case "$action" in
+    # Composite actions -- what the menu calls.
+    --dashboard)        lsm_dashboard ;;
+    --scheduled)        lsm_scheduled ;;
 
-        case "$act" in
-            1)
-                echo "Enabling and starting $selected_unit ($selected_scope scope)..."
-                lsm_systemctl_admin "$selected_scope" enable --now "$selected_unit"
-                ;;
-            2)
-                echo "Stopping and disabling $selected_unit ($selected_scope scope)..."
-                lsm_systemctl_admin "$selected_scope" disable --now "$selected_unit"
-                ;;
-            3)
-                echo ""
-                lsm_systemctl "$selected_scope" status "$selected_unit" --no-pager
-                ;;
-            *)
-                echo "Invalid action."
-                ;;
-        esac
-        ;;
+    # Individual views. No longer each a menu entry, but still addressable:
+    # scripts, shell one-liners and the composites above all reach them here.
+    --active)           lsm_show_active ;;
+    --failed)           lsm_show_failed ;;
+    --enabled)          lsm_show_enabled ;;
+    --timers)           lsm_show_timers ;;
+    --cron)             lsm_show_cron ;;
+    --user-scripts)     lsm_show_user_scripts ;;
+    --recent-changes)   lsm_show_recent_changes ;;
+    --active-personal)  lsm_show_active_personal ;;
+    --failed-personal)  lsm_show_failed_personal ;;
+    --manage-personal)  lsm_manage_personal ;;
     *)
         echo -e "${RED}Unknown action: $action${NC}"
         exit 1

@@ -1,31 +1,61 @@
 add_newline = true
-command_timeout = 200
-format = "$directory$git_branch$git_status$line_break$character"
+# was 200ms -- too tight: git modules silently vanish in large repos
+command_timeout = 1000
 
-[character]
-success_symbol = "[❯](bold green)"
-error_symbol = "[✗](bold red)"
+format = """
+$os$username$hostname$directory$git_branch$git_status
+$character"""
+
+[os]
+disabled = false
+format = "[$symbol]($style) "
+style = "bold blue"
+
+[os.symbols]
+Arch = ""
+
+[username]
+show_always = true
+format = "[$user]($style)"
+style_user = "bold yellow"
+style_root = "bold red"
+
+[hostname]
+ssh_only = false
+format = "[@$hostname]($style) "
+style = "bold green"
 
 [directory]
 use_logical_path = false
-truncation_length = 2
+truncate_to_repo = false
+truncation_length = 3
 truncation_symbol = "…/"
+style = "cyan"
+# repo root gets its own style so the repo name stands out inside the path
+repo_root_style = "bold cyan"
+repo_root_format = "[$before_root_path]($before_repo_root_style)[$repo_root]($repo_root_style)[$path]($style)[$read_only]($read_only_style) "
+before_repo_root_style = "dimmed cyan"
+
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
 
 [git_branch]
-format = "[$symbol$branch]($style) "
+format = "[\\[](bold white)[$symbol$branch]($style)"
 symbol = " "
 style = "bold purple"
 
 [git_status]
-style      = "bold red"
-ahead      = "⇡${count} "
-diverged   = "⇕⇡${ahead_count}⇣${behind_count} "
-behind     = "⇣${count} "
-conflicted = " "
+format = "([$all_status$ahead_behind]($style))[\\]](bold white) "
+style      = ""
+conflicted = " [!${count}](bold red)"
 up_to_date = ""
-untracked  = "? "
-modified   = " "
-stashed    = ""
-staged     = ""
-renamed    = ""
-deleted    = ""
+untracked  = " [?${count}](bold red)"
+modified   = " [*${count}](bold yellow)"
+staged     = " [+${count}](bold green)"
+renamed    = " [»${count}](bold yellow)"
+deleted    = " [x${count}](bold red)"
+stashed    = " [$${count}](bold cyan)"
+ahead      = " [^${count}](bold cyan)"
+behind     = " [v${count}](bold cyan)"
+diverged   = " [^${ahead_count}v${behind_count}](bold cyan)"

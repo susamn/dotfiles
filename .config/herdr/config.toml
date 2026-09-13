@@ -103,8 +103,8 @@ row_gap = 0
 rows = [
   ["state_icon", "workspace"],
   [
-    { token = "branch", fg = "#a8a9eb", bold = true },
-    { token = "git_status", fg = "#fd6883" }
+    { token = "branch", fg = "#D2689C", bold = true },
+    { token = "git_status", fg = "#FF5345" }
   ]
 ]
 
@@ -113,11 +113,11 @@ row_gap = 0
 rows = [["state_icon", "workspace"], ["tab"], ["agent"]]
 
 [ui.sidebar.agents.rows_by_agent]
-agy = [["state_icon", "workspace"], ["tab"], [{ token = "agent", fg = "#f38d70", bold = true }]]
-claude = [["state_icon", "workspace"], ["tab"], ["terminal_title_stripped"], [{ token = "agent", fg = "#a8a9eb", bold = true }]]
-codex = [["state_icon", "workspace"], ["tab"], [{ token = "agent", fg = "#adda78", bold = true }]]
-opencode = [["state_icon", "workspace"], ["tab"], [{ token = "agent", fg = "#f9cc6c", bold = true }]]
-copilot = [["state_icon", "workspace"], ["tab"], [{ token = "agent", fg = "#85dacc", bold = true }]]
-cursor = [["state_icon", "workspace"], ["tab"], [{ token = "agent", fg = "#85dacc", bold = true }]]
-pi = [["state_icon", "workspace"], ["tab"], [{ token = "agent", fg = "#a8a9eb", bold = true }]]
+agy = [["state_icon", "workspace"], ["tab"], [{ token = "agent", fg = "#509475", bold = true }]]
+claude = [["state_icon", "workspace"], ["tab"], ["terminal_title_stripped"], [{ token = "agent", fg = "#D2689C", bold = true }]]
+codex = [["state_icon", "workspace"], ["tab"], [{ token = "agent", fg = "#549e6a", bold = true }]]
+opencode = [["state_icon", "workspace"], ["tab"], [{ token = "agent", fg = "#459451", bold = true }]]
+copilot = [["state_icon", "workspace"], ["tab"], [{ token = "agent", fg = "#2DD5B7", bold = true }]]
+cursor = [["state_icon", "workspace"], ["tab"], [{ token = "agent", fg = "#2DD5B7", bold = true }]]
+pi = [["state_icon", "workspace"], ["tab"], [{ token = "agent", fg = "#D2689C", bold = true }]]
 

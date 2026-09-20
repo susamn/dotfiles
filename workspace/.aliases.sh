@@ -12,6 +12,7 @@ alias gsec="$SCRIPTS_PATH/generate-secure-resources.sh"
 alias mln="$SCRIPTS_PATH/music-library-normalizer.py"
 alias mpdc="$SCRIPTS_PATH/mpd-configurer.sh"
 alias mdbk="$SCRIPTS_PATH/mpdtui-db-backup.sh"
+alias mtrim="$SCRIPTS_PATH/music-trimmer.sh"
 alias agm="$SCRIPTS_PATH/agm.sh"
 alias ht2="$TOOLS_PATH/helpful-tools-v2/quick-start.sh"
 alias mtui="$TOOLS_PATH/music-management-tui/music-tui.sh"
@@ -19,6 +20,21 @@ alias mosiac="$TOOLS_PATH/mosiac/quick-start.sh"
 alias pfm="$TOOLS_PATH/performance-manager/quick-start.sh"
 alias mtrm="$TOOLS_PATH/media-trimmer/quick-start.sh"
 alias att="$TOOLS_PATH/api-testing-tool/quick-start.sh"
+
+# Route ssh through kitty's ssh kitten when running in kitty, so the remote
+# host gets the xterm-kitty terminfo entry (without it, remote line editors
+# have no kbs/cub1 and backspace appears to insert a space instead of
+# deleting). TERM is xterm-kitty only when unmultiplexed -- under tmux/screen
+# it becomes tmux-256color, which remote hosts already have, so this no-ops.
+# Use "command ssh" to bypass for hosts where the kitten misbehaves
+# (-N port-forward-only sessions, restricted/rbash remote shells).
+ssh() {
+  if [[ $TERM == xterm-kitty ]] && command -v kitten >/dev/null 2>&1; then
+    kitten ssh "$@"
+  else
+    command ssh "$@"
+  fi
+}
 
 # eww widgets (lyrics scroll + mpd player, see ~/.config/eww/) --
 # restart picks up ~/.config/systemd/user/eww.service, eww.yuck, or
@@ -49,23 +65,36 @@ mpdwidget() {
   esac
 }
 
+# activate/deactivate must run in this shell (they mutate PATH/PYENV_VERSION),
+# so they can't be delegated to pyenv-sync.sh like the other subcommands.
+# Needs "eval $(pyenv init -)" in ~/.bashrc for the pyenv() function to exist.
 pnv() {
-  if [ "$1" = "activate" ]; then
-    if [ -z "$2" ]; then
-      echo "Usage: pnv activate <env_name>"
-      return 1
-    fi
-    pyenv activate "$2"
-  elif [ "$1" = "deactivate" ]; then
-    pyenv deactivate
-  else
-    bash "$TOOLS_PATH/pyenv-sync/pyenv-sync.sh" "$@"
-  fi
+  case "${1:-}" in
+    activate|-a)
+      if [ -n "$2" ]; then
+        pyenv activate "$2"
+      elif command -v fzf >/dev/null 2>&1; then
+        local selected_env
+        selected_env=$(pyenv virtualenvs --bare --skip-aliases | fzf --prompt="Select env> " --height=10 --reverse)
+        [ -n "$selected_env" ] && pyenv activate "$selected_env"
+      else
+        echo "Usage: pnv activate <env_name> (install fzf for interactive selection)"
+        return 1
+      fi
+      ;;
+    deactivate|-d)
+      pyenv deactivate
+      ;;
+    *)
+      bash "$TOOLS_PATH/pyenv-sync/pyenv-sync.sh" "$@"
+      ;;
+  esac
 }
 
 if [ -d "$TOOLS_PATH/linux-system-manager" ]; then
   alias lsm="$TOOLS_PATH/linux-system-manager/linux-system-manager.sh"
 fi
+
 
 if [ -x "$(command -v yt-dlp)" ]; then
   alias ytd="$SCRIPTS_PATH/ytd.sh"
@@ -332,3 +361,18 @@ pyp() {
         pip "$@"
     fi
 }
+
+# yazi with cd-on-exit: `q` leaves the shell where yazi was, `Q` keeps the
+# original cwd. Upstream's recommended wrapper -- yazi itself cannot chdir the
+# parent shell, so it writes the last directory to a temp file on exit.
+y() {
+  local tmp cwd
+  tmp="$(mktemp -t yazi-cwd.XXXXXX)"
+  yazi "$@" --cwd-file="$tmp"
+  if cwd="$(cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+    builtin cd -- "$cwd" || return
+  fi
+  rm -f -- "$tmp"
+}
+
+alias ypkg="$SCRIPTS_PATH/yazi-pkg.sh"

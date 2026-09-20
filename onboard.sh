@@ -477,7 +477,23 @@ run_stow() {
   fi
 }
 
-# --- 10) DESKTOP SETTINGS (dconf) ------------------------
+# --- 10) YAZI PLUGINS ------------------------------------
+# .config/yazi/package.toml pins every plugin (rev + hash); the plugin trees
+# themselves are gitignored, so they must be fetched once per machine. Runs
+# after stow, since it writes into the stowed ~/.config/yazi.
+install_yazi_plugins() {
+  if ! command -v ya &>/dev/null; then
+    warn "ya (yazi CLI) not found — skipping yazi plugin install."
+    return 0
+  fi
+  log "Installing yazi plugins from package.toml..."
+  # Wrapper, not bare `ya pkg install`: it re-applies .config/yazi/patches/*
+  # on top of the freshly deployed plugins.
+  "$HOME/workspace/scripts/yazi-pkg.sh" install \
+    || warn "Some yazi plugins could not be installed or patched (see output above)."
+}
+
+# --- 11) DESKTOP SETTINGS (dconf) ------------------------
 # gsettings writes to ~/.config/dconf/user, a binary DB that stow does not track,
 # so desktop keys do not survive a rebuild the way stowed configs do. Runs after
 # run_stow because it invokes the stowed copy of the script.
@@ -494,7 +510,7 @@ apply_desktop_settings() {
   "$script" || warn "Some desktop settings could not be applied (see output above)."
 }
 
-# --- 11) DEFAULT SHELL CONFIGURATION ---------------------
+# --- 12) DEFAULT SHELL CONFIGURATION ---------------------
 configure_default_shell() {
   if [ "$SHELL" != "$(command -v zsh)" ] && command -v zsh &>/dev/null; then
     log "Changing default login shell to Zsh..."
@@ -517,6 +533,7 @@ main() {
   install_manifest_packages
   setup_zshrc
   run_stow
+  install_yazi_plugins
   apply_desktop_settings
   configure_default_shell
   

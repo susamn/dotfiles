@@ -1,0 +1,69 @@
+# yazi.toml — yazi 26.x. Section is [mgr]; `[manager]` was renamed in 25.5.31.
+# Plugins are NOT tracked in this repo: package.toml pins them, `ya pkg install`
+# restores them into plugins/ (gitignored).
+
+[mgr]
+ratio          = [1, 4, 3]
+sort_by        = "natural"
+sort_dir_first = true
+sort_sensitive = false
+linemode       = "size"
+show_hidden    = false
+show_symlink   = true
+scrolloff      = 5
+
+[preview]
+max_width    = 1000
+max_height   = 1000
+image_filter = "triangle"
+image_quality = 75
+
+[opener]
+edit = [
+  { run = '${EDITOR:-nvim} "$@"', desc = "$EDITOR", block = true, for = "unix" },
+]
+
+[plugin]
+
+# git.yazi — per-file VCS status in the linemode.
+[[plugin.prepend_fetchers]]
+url   = "*"
+run   = "git"
+group = "git"
+
+[[plugin.prepend_fetchers]]
+url   = "*/"
+run   = "git"
+group = "git"
+
+# ouch.yazi — list archive contents in the preview pane (needs the `ouch` binary).
+[[plugin.prepend_previewers]]
+mime = "application/{*zip,tar,bzip2,7z*,rar,xz,zstd,java-archive}"
+run  = "ouch"
+
+# glow.yazi — rendered markdown preview (needs the `glow` binary).
+[[plugin.prepend_previewers]]
+url  = "*.md"
+run  = "glow"
+
+# piper.yazi + exiftool — metadata in the preview pane for the file types yazi
+# has no previewer for (audio, ELF binaries, unknown blobs); everything else
+# keeps its normal preview. These MUST be prepended: yazi's preset previewer
+# list ends with a `{ url = "*", run = "file" }` catch-all, so an appended rule
+# would never be reached.
+# `stat` is the fallback so the pane still shows something when exiftool is
+# not installed (pacman package: perl-image-exiftool).
+#
+# The PATH prefix is load-bearing: exiftool's shebang is `#!/usr/bin/env perl`,
+# and Homebrew's perl comes first in PATH here. Brew perl's @INC has no
+# Image::ExifTool, so a bare `exiftool` dies with "Can't locate
+# Image/ExifTool.pm" and silently falls through to stat.
+[[plugin.prepend_previewers]]
+mime = "audio/*"
+run  = 'piper -- PATH=/usr/bin/vendor_perl:/usr/bin:/bin exiftool "$1" 2>/dev/null || stat "$1"'
+
+# NOTE: yazi strips the `x-` prefix from mime subtypes -- `file` says
+# application/x-pie-executable, yazi matches application/pie-executable.
+[[plugin.prepend_previewers]]
+mime = "application/{executable,pie-executable,sharedlib,object,dosexec,octet-stream}"
+run  = 'piper -- PATH=/usr/bin/vendor_perl:/usr/bin:/bin exiftool "$1" 2>/dev/null || stat "$1"'

@@ -39,3 +39,5 @@ ewwst=Show the eww widget daemon's systemd service status
 mpdwidget=Open or close the mpd player widget on both monitors (mpdwidget open|close)
 mdbk=On-demand backup/restore of ONLY the mpdtui SQLite DB file to an rclone remote (prompts, default gdrive; base <remote>:Backup/mpdtui); subcommands: backup (default), restore, list
 
+y=Opens yazi file manager and cds the shell to the directory you quit in
+ypkg=Installs/upgrades yazi plugins and re-applies the local plugin patches

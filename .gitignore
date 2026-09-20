@@ -46,3 +46,10 @@ skills/**/*.private.md
 # Agent instruction symlinks are created outside this repo (e.g. ~/.claude/CLAUDE.md)
 # by do-stow.sh — nothing to ignore here
 workspace/scripts/__pycache__/
+# ── Yazi (.config/yazi) ──────────────────────────────────────────────────────
+# Tracked: yazi.toml, keymap.toml, init.lua, package.toml (which pins each
+# plugin's rev + hash). plugins/ and flavors/ are third-party trees deployed by
+# `ya pkg install`; restore them on a new machine with that command instead of
+# committing them.
+.config/yazi/plugins/
+.config/yazi/flavors/

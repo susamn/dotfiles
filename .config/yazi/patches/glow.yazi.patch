@@ -1,0 +1,20 @@
+--- a/glow.yazi/main.lua	2026-09-19 00:46:24.810082879 -0400
++++ b/glow.yazi/main.lua	2026-09-19 00:46:24.812725791 -0400
+@@ -39,7 +39,7 @@
+ 
+ 	child:start_kill()
+ 	if job.skip > 0 and i < job.skip + limit then
+-		ya.mgr_emit("peek", { 
++		ya.emit("peek", { 
+ 			tostring(math.max(0, i - limit)), 
+ 			only_if = job.file.url,
+ 			upper_bound = true 
+@@ -55,7 +55,7 @@
+ 	if not h or h.url ~= job.file.url then
+ 		return
+ 	end
+-	ya.mgr_emit('peek', {
++	ya.emit('peek', {
+ 		math.max(0, cx.active.preview.skip + job.units),
+ 		only_if = job.file.url,
+ 	})

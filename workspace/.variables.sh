@@ -1,6 +1,7 @@
 # dotfiles specific
 export SCRIPTS_PATH=$WORKSPACE_PATH/scripts
 export TOOLS_PATH=$WORKSPACE_PATH/tools
+export PROJECTS_PATH=$WORKSPACE_PATH/projects
 export SERVICES_PATH=$WORKSPACE_PATH/services
 export INSTALL_PATH=$WORKSPACE_PATH/install
 export SDK_PATH=$WORKSPACE_PATH/sdk
@@ -13,5 +14,7 @@ alias serv="cd $SERVICES_PATH"
 alias dotf="cd ~/dotfiles"
 alias tool="cd $TOOLS_PATH"
 alias tools="cd $TOOLS_PATH"
+alias proj="cd $PROJECTS_PATH"
+alias prj="cd $PROJECTS_PATH"
 alias work="cd $WORKSPACE_PATH"
 alias wrk="cd $WORKSPACE_PATH"

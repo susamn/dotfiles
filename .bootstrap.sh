@@ -1,5 +1,5 @@
 export WORKSPACE_PATH=~/workspace
-mkdir -p $WORKSPACE_PATH/sdk $WORKSPACE_PATH/scripts $WORKSPACE_PATH/install $WORKSPACE_PATH/tools $WORKSPACE_PATH/services $WORKSPACE_PATH/sdk/repositories
+mkdir -p $WORKSPACE_PATH/sdk $WORKSPACE_PATH/scripts $WORKSPACE_PATH/install $WORKSPACE_PATH/tools $WORKSPACE_PATH/projects $WORKSPACE_PATH/services $WORKSPACE_PATH/sdk/repositories 
 source $WORKSPACE_PATH/.variables.sh
 source $WORKSPACE_PATH/.paths.sh
 source $WORKSPACE_PATH/.generic.aliases.sh

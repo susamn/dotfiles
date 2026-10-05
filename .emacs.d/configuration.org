@@ -103,7 +103,17 @@ Use =C-c r= for =elfeed=
 (setq scroll-margin 0
       scroll-conservatively 100000
       scroll-preserve-screen-position 1)
-(set-frame-font "Hack 12" nil t)
+
+;; Set the font only when it is actually installed. `set-frame-font' signals
+;; "Font not available" for a missing family rather than falling back, and an
+;; error here aborts the rest of this file -- the theme block included -- which
+;; leaves Emacs sitting in an unconfigured default frame. fontconfig will
+;; happily substitute a proportional face for a missing Hack, so a plain
+;; fc-match check would not catch this; `find-font' asks Emacs's own font
+;; backend and is the honest test.
+(if (find-font (font-spec :name "Hack"))
+    (set-frame-font "Hack 12" nil t)
+  (message "configuration.org: Hack font not installed, keeping the default font"))
 #+END_SRC
 *** Theme
 **** Main theme

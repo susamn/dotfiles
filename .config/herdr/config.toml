@@ -99,7 +99,7 @@ tab_bar_right = [{ type = "zoom" }, { type = "hostname" }]
 window_title = "{hostname}: {workspace}"
 
 [ui.sidebar.spaces]
-row_gap = 0
+row_gap = 1
 rows = [
   ["state_icon", "workspace"],
   [

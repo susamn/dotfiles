@@ -64,7 +64,7 @@ mkdir -p "$DEST_DIR" 2>/dev/null || true
 
 # Get and validate URL
 read -rp "YouTube URL: " VIDEO_URL
-[[ "$VIDEO_URL" =~ ^https?://(www\.)?(youtube\.com|youtu\.be) ]] || { echo "Invalid URL" >&2; exit 1; }
+[[ "$VIDEO_URL" =~ ^https?://([a-zA-Z0-9-]+\.)*(youtube\.com|youtu\.be)(/|$) ]] || { echo "Invalid URL" >&2; exit 1; }
 
 # Format selection
 declare -a format_opts
@@ -75,7 +75,13 @@ if $SHOW_FORMAT; then
   format_opts=(-f "$fmt")
 else
   case "$MODE" in
-    audio) format_opts=(--extract-audio --audio-format mp3) ;;
+    # yt-dlp's unconstrained "bestaudio" often picks a webm/opus stream.
+    # ffmpeg's pre-input `-ss` seek (used to honor --download-sections)
+    # silently fails to seek on that stream over YouTube's googlevideo
+    # URLs -- it reads from the start and just truncates by duration, so
+    # the requested start time is ignored. m4a streams seek correctly, so
+    # prefer that container.
+    audio) format_opts=(-f "bestaudio[ext=m4a]/bestaudio" --extract-audio --audio-format mp3) ;;
     video) format_opts=(-f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best") ;;
   esac
 fi
@@ -114,20 +120,22 @@ else
   output_template="$DEST_DIR/${FILE_NAME}.mp3"
 fi
 
-# Existing file check
-shopt -s nullglob
+# Matches actual output file(s) for a %(ext)s-style or fixed-extension
+# template. Uses compgen -G so paths containing spaces glob correctly
+# (a plain unquoted `for f in $pattern` word-splits on spaces).
+matching_files() {
+  local pattern="$1" f
+  while IFS= read -r f; do
+    [ -e "$f" ] && printf '%s\n' "$f"
+  done < <(compgen -G "$pattern" || true)
+}
+
 check_path="${output_template/%\%(ext\)s/*}"
-# If check_path has no glob characters, nullglob won't filter it.
-# We check if the file actually exists.
-files=()
-for f in $check_path; do
-  [ -e "$f" ] && files+=("$f")
-done
+mapfile -t files < <(matching_files "$check_path")
 if [ ${#files[@]} -gt 0 ]; then
   read -rp "File exists. Overwrite? [y/N] " overwrite
   [[ "$overwrite" =~ ^[Yy] ]] || exit 0
 fi
-shopt -u nullglob
 
 # Build command
 declare -a cmd=(
@@ -139,8 +147,25 @@ declare -a cmd=(
   -o "$output_template"
 )
 
-# Speed optimization: Use aria2c if available, otherwise check -m flag
-if command -v aria2c >/dev/null 2>&1; then
+# A trimmed section was requested if start/end differ from the "whole
+# video" defaults (0 / inf).
+NEEDS_SECTION_DOWNLOAD=false
+if [ "$START_TIME" != "0" ] || [ "$END_TIME" != "inf" ]; then
+  NEEDS_SECTION_DOWNLOAD=true
+fi
+
+# Speed optimization: Use aria2c if available, otherwise check -m flag.
+# NOTE: aria2c cannot do time-limited section downloads. yt-dlp normally
+# fetches --download-sections ranges by routing the download through
+# ffmpeg (-ss/-t) instead of the plain HTTP downloader; forcing aria2c
+# as the downloader overrides that and silently downloads the whole
+# video, ignoring the requested start/end time. So skip aria2c whenever
+# a section was actually requested.
+if $NEEDS_SECTION_DOWNLOAD; then
+  if command -v aria2c >/dev/null 2>&1 || $MULTIPART; then
+    echo "Note: time range requested, disabling aria2c/-N for accurate trimming." >&2
+  fi
+elif command -v aria2c >/dev/null 2>&1; then
   # aria2c provides multi-connection downloading (similar to IDM)
   cmd+=(--downloader aria2c --downloader-args "aria2c:-c -x 16 -s 16 -k 1M")
   # Also enable fragment concurrency for DASH/HLS streams
@@ -150,18 +175,24 @@ elif $MULTIPART; then
   cmd+=(-N 8)
 fi
 
+# When the user manually picks a format number (-f), we can't guarantee it
+# seeks correctly (see the webm/opus note above), so force accurate cuts
+# via re-encode as a safety net. The default audio/video format_opts
+# already avoid the problem format, so this only costs re-encode time on
+# the manual-format path.
+if $SHOW_FORMAT && $NEEDS_SECTION_DOWNLOAD; then
+  cmd+=(--force-keyframes-at-cuts)
+fi
+
 cmd+=(-- "$VIDEO_URL")
 
 # Execute download
 echo "Downloading..."
 "${cmd[@]}" || { echo "Download failed" >&2; exit 1; }
 
-# Verify output
-shopt -s nullglob
-case "$MODE" in
-  audio) outputs=("$DEST_DIR/${FILE_NAME}.mp3") ;;
-  video) outputs=("$DEST_DIR/${FILE_NAME}".*) ;;
-esac
+# Verify output (glob by actual output_template, not an assumed extension --
+# e.g. -a combined with -f picks a raw format, so it won't be .mp3)
+mapfile -t outputs < <(matching_files "$check_path")
 
 [ ${#outputs[@]} -gt 0 ] || { echo "No output file created" >&2; exit 1; }
 
